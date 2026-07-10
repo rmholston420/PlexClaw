@@ -47,6 +47,7 @@ const Bridge = (() => {
     newSessionBtn: document.getElementById('new-session'),
     statusDot: document.getElementById('status-dot'),
     connectionLabel: document.getElementById('connection-label'),
+  runtimeModeLabel: document.getElementById('runtime-mode-label'),
     sessionLabel: document.getElementById('session-label'),
     cwdPill: document.getElementById('cwd-pill'),
     cwdLabel: document.getElementById('cwd-label'),
@@ -135,6 +136,26 @@ const Bridge = (() => {
       el.transcript.scrollTop = el.transcript.scrollHeight;
     });
   }
+
+  
+function setRuntimeMode(mockMode) {
+  if (!el.runtimeModeLabel) return;
+  if (mockMode === true) {
+    el.runtimeModeLabel.textContent = 'Mock runtime';
+    el.runtimeModeLabel.className = 'badge mock';
+    el.runtimeModeLabel.title = 'Using mock Claude runtime';
+    return;
+  }
+  if (mockMode === false) {
+    el.runtimeModeLabel.textContent = 'Live runtime';
+    el.runtimeModeLabel.className = 'badge live';
+    el.runtimeModeLabel.title = 'Using live Claude runtime';
+    return;
+  }
+  el.runtimeModeLabel.textContent = 'Unknown runtime';
+  el.runtimeModeLabel.className = 'badge';
+  el.runtimeModeLabel.title = 'Runtime mode';
+}
 
   function setConnection(status) {
     // status: 'disconnected' | 'connecting' | 'connected' | 'error'
@@ -289,6 +310,7 @@ const Bridge = (() => {
     renderRawLog();
     setSessionLabel(null);
     setConnection('disconnected');
+  setRuntimeMode(null);
     if (el.welcome) el.welcome.classList.remove('hidden');
     renderTabs();
   }
@@ -806,7 +828,9 @@ const Bridge = (() => {
     switch (evt.type) {
       case 'session.created':
       case 'session.ready':
-        appendSystemMessage(`Live session ready (${evt.payload?.model || state.model})`);
+        const mockMode = Boolean(evt.payload?.mock_mode);
+      appendSystemMessage(`${mockMode ? 'Mock session ready' : 'Live session ready'} (${evt.payload?.model || state.model})`);
+      setRuntimeMode(mockMode);
         break;
       case 'session.updated':
         appendSystemMessage('Session updated');

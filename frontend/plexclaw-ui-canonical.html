@@ -643,6 +643,8 @@
       white-space: nowrap;
     }
     .badge.accent { border-color: var(--primary); color: var(--primary); background: var(--primary-hl); }
+    .badge.mock { border-color: var(--warn); color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, var(--panel)); }
+    .badge.live { border-color: var(--success); color: var(--success); background: color-mix(in srgb, var(--success) 14%, var(--panel)); }
 
     .mode-toggle {
       display: inline-flex;
@@ -1430,6 +1432,7 @@
           <span class="badge" id="connection-label">Disconnected</span>
         </div>
         <span class="badge" id="session-label">No session</span>
+        <span class="badge" id="runtime-mode-label" title="Runtime mode">Unknown runtime</span>
       <button class="badge cwd-pill" id="cwd-pill" title="Change working directory" aria-label="Change working directory">
         <i data-lucide="folder-open"></i>
         <span id="cwd-label">~</span>
