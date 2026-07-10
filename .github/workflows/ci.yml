@@ -19,6 +19,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
+      - name: Shell syntax
+        run: |
+          bash -n run.sh
+          bash -n scripts/setup-git-hooks.sh
+          bash -n .githooks/pre-push
+      - name: Hook bootstrap
+        run: |
+          bash scripts/setup-git-hooks.sh
+          test "$(git config --local --get core.hooksPath)" = ".githooks"
       - name: Ruff
         run: ruff check .
       - name: Pytest
