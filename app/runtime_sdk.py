@@ -346,6 +346,27 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
   session._client = ClaudeSDKClient(options)
 
   log.info("Session created: %s model=%s provider=%s cwd=%s", session_id, req.model, req.provider, normalized_cwd)
+
+  session.seq += 1
+  await _emit(
+      session,
+      WSEnvelope(
+          protocol_version=PROTOCOL_VERSION,
+          session_id=session.id,
+          seq=session.seq,
+          type="system.message",
+          payload={
+              "subtype": "session.created",
+              "message": "Session created.",
+              "model": session.model,
+              "provider": session.provider,
+              "cwd": session.cwd,
+              "permission_mode": session.permission_mode,
+              "resume_session_id": session.resume_session_id,
+              "fork_session": session.fork_session,
+          },
+      ),
+  )
   return session
 
 async def _stream_sdk(session: LiveSession, prompt: str) -> None:

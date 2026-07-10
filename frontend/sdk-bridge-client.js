@@ -214,6 +214,7 @@ const Bridge = (() => {
     state.terminalOpen = !!tab.terminalOpen;
     state.terminalHeight = tab.terminalHeight || 220;
     state.cwdSelected = tab.cwdSelected || state.cwdSelected;
+    if (state.cwdSelected) setCwd(state.cwdSelected);
     state.model = tab.model || state.model;
     state.provider = tab.provider || state.provider;
 
@@ -1064,17 +1065,29 @@ const Bridge = (() => {
   async function createSession({ resumeSessionId = null, forkSession = false } = {}) {
     state.model = el.modelSelect?.value || state.model;
     state.provider = el.providerSelect?.value || state.provider;
-    state.cwdSelected = (el.cwdInput?.value || state.cwdSelected || '').trim();
+
+    const manualCwd = (el.cwdManualInput?.value || '').trim();
+    const effectiveCwd = (
+      state.cwdBrowsing ||
+      manualCwd ||
+      state.cwdSelected ||
+      state.cwd ||
+      ''
+    ).trim();
+
+    if (effectiveCwd) setCwd(effectiveCwd);
+
     syncStateToActiveTab();
     const body = {
       model: state.model,
-      cwd: state.cwdSelected || null,
+      cwd: effectiveCwd || null,
       provider: state.provider,
       permission_mode: state.permissionMode,
       system_prompt: null,
       resume_session_id: resumeSessionId,
       fork_session: forkSession,
     };
+    console.log('Creating session with cwd:', body.cwd);
     const data = await api('/api/sessions', { method: 'POST', body: JSON.stringify(body) });
     state.sessionId = data.session_id;
     const tab = currentTab();
