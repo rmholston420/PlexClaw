@@ -1463,6 +1463,20 @@ const Bridge = (() => {
       }
     });
 
+    document.addEventListener('keyup', (e) => {
+      if (e.key !== 'Escape') return;
+
+      if (el.searchModal && !el.searchModal.classList.contains('hidden')) {
+        closeSearchModal();
+        return;
+      }
+
+      if (el.cwdModal && !el.cwdModal.classList.contains('hidden')) {
+        closeCwdModal();
+        return;
+      }
+    });
+
     // Prompt chips
     document.querySelectorAll('.prompt-chip').forEach(btn => {
       btn.addEventListener('click', () => {
