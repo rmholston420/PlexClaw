@@ -438,11 +438,25 @@ function setRuntimeMode(mockMode) {
         <span>${info.label || name}</span>
       </span>`;
       btn.disabled = (name !== 'cloud' && health.ok === false);
-      btn.addEventListener('click', () => {
-        state.provider = name;
-        renderProviderSwitcher();
-        renderModelOptions();
-      });
+    btn.addEventListener('click', () => {
+      const previousProvider = state.provider;
+      if (previousProvider === name) return;
+
+      state.provider = name;
+
+      const tab = currentTab();
+      if (state.sessionId && tab) {
+        tab.sessionId = null;
+        state.sessionId = null;
+        setSessionLabel(null);
+        appendSystemMessage(`Provider changed from ${previousProvider} to ${name}. Start a new session to use the new route.`);
+      }
+
+      syncStateToActiveTab();
+      renderProviderSwitcher();
+      renderProviderRuntimeMeta();
+      renderModelOptions();
+    });
       el.providerSwitcher.appendChild(btn);
     });
   }
