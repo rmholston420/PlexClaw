@@ -15,6 +15,11 @@
 - CI source of truth: `.github/workflows/ci.yml`
 - Launcher behavior: `run.sh`
 
+## Runtime contributor notes
+- Filesystem route work must preserve session-aware behavior: when a live session exists, frontend FS requests should pass `session_id` and backend path resolution should derive the jail root from the session `cwd`.
+- Cloud model defaults must stay centralized in `app/provider_defaults.py`; do not reintroduce duplicate hardcoded default lists in request schemas, backend provider responses, or frontend fallbacks.
+- When changing provider or tool-search semantics, keep REST create-session responses, WebSocket lifecycle metadata, frontend runtime cards, and replayed session metadata aligned.
+
 ## Conventions
 - Keep diffs minimal and task-scoped.
 - Follow existing response shapes and naming near the edited code.

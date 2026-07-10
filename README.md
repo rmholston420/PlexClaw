@@ -63,8 +63,30 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 
 ## Current status
 
-- 86 tests passing locally as of July 2026.
+- 109 tests passing locally as of July 2026.
 - Mock runtime fallback, WebSocket session flow, protocol mismatch handling, launcher port checks, launcher shell contract, runtime routing metadata, and tool-search UI semantics are all covered by tests.
+
+## Session-aware filesystem routing
+
+PlexClaw’s filesystem API now supports an optional live `session_id`, allowing backend filesystem browsing and reads to resolve relative to the active session `cwd` instead of only the process startup directory.
+
+Filesystem behavior notes:
+
+- `GET /api/fs/browse`, `GET /api/fs/read`, and `GET /api/fs/git-roots` accept an optional `session_id`.
+- When a valid live session is supplied, the filesystem jail root is derived from that session’s working directory.
+- The frontend browser now passes the active `session_id` for cwd browsing and Git root discovery, so the UI follows the active session context.
+- Legacy `FS_ROOT` compatibility remains in place for tests and non-session fallback behavior.
+
+## Cloud model configuration
+
+Cloud provider models are now configurable through the backend environment and share a single default source of truth.
+
+Configuration behavior:
+
+- `PLEXCLAW_CLOUD_MODELS` overrides the default cloud model list exposed by `GET /api/providers`.
+- The variable is parsed as a comma-separated list; empty entries are ignored.
+- Shared defaults now live in `app/provider_defaults.py`.
+- `SessionCreateRequest.model` derives its default from `DEFAULT_CLOUD_MODELS[0]`, keeping the session schema aligned with provider defaults.
 
 ## Runtime routing & tool search
 

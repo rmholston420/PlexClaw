@@ -24,5 +24,12 @@
 - The runtime system prompt now includes grounding rules that explicitly forbid inventing placeholder paths or unobserved environment details.
 - The tool mode selector now exposes Default, Off, Auto, Auto 5%, and On states with immediate runtime metadata refresh.
 
+### Hardening
+- Filesystem routes now support session-aware jail roots derived from the active live session `cwd`, and the frontend now passes `session_id` to filesystem browsing and Git root endpoints.
+- Cloud model defaults now support the `PLEXCLAW_CLOUD_MODELS` environment override and are centralized in `app/provider_defaults.py` so provider responses and schema defaults share one source of truth.
+- Test isolation is now consolidated through `tests/conftest.py`, and redundant per-file autouse reset fixtures were removed.
+- Removed the unused `WebSocketManager.send_to()` alias after repo-wide verification confirmed no call sites.
+- Deleted the duplicate `BUILDSTATUS.md` file and kept `BUILD_STATUS.md` as the canonical project status document.
+
 ### Quality
-- 106 tests passing locally as of July 2026.
+- 109 tests passing locally as of July 2026.
