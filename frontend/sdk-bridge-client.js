@@ -67,6 +67,7 @@ const Bridge = (() => {
     modelSelect: document.getElementById('model-select'),
     openSearchBtn: document.getElementById('open-search'),
     exportSessionBtn: document.getElementById('export-session'),
+    exportSessionJsonBtn: document.getElementById('export-session-json'),
     searchModal: document.getElementById('search-modal'),
     searchBackdrop: document.getElementById('search-backdrop'),
     searchClose: document.getElementById('search-close'),
@@ -575,14 +576,17 @@ const Bridge = (() => {
 
 
   // ---- Markdown-lite renderer ----
-  async function exportCurrentSession() {
+  async function exportCurrentSession(format = 'md') {
     if (!state.sessionId) {
       appendSystemMessage('No active session to export.', 'error');
       return;
     }
 
+    const safeFormat = format === 'json' ? 'json' : 'md';
+    const ext = safeFormat === 'json' ? 'json' : 'md';
+
     try {
-      const response = await fetch(`/api/sessions/${encodeURIComponent(state.sessionId)}/export?format=md`);
+      const response = await fetch(`/api/sessions/${encodeURIComponent(state.sessionId)}/export?format=${safeFormat}`);
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || `Export failed (${response.status})`);
@@ -592,7 +596,7 @@ const Bridge = (() => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `session-${state.sessionId.slice(0, 8)}.md`;
+      a.download = `session-${state.sessionId.slice(0, 8)}.${ext}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1352,7 +1356,8 @@ const Bridge = (() => {
     el.archiveSort.addEventListener('change', renderArchive);
     el.refreshArchive.addEventListener('click', loadArchive);
     el.openSearchBtn?.addEventListener('click', openSearchModal);
-    el.exportSessionBtn?.addEventListener('click', exportCurrentSession);
+    el.exportSessionBtn?.addEventListener('click', () => exportCurrentSession('md'));
+    el.exportSessionJsonBtn?.addEventListener('click', () => exportCurrentSession('json'));
     el.searchBackdrop?.addEventListener('click', closeSearchModal);
     el.searchClose?.addEventListener('click', closeSearchModal);
     el.searchInputModal?.addEventListener('input', runSessionSearch);
