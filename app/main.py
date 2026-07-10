@@ -365,6 +365,11 @@ async def get_archive_messages(session_id: str) -> list:
     return await runtime.get_archive_messages(session_id)
 
 
+@app.get("/api/archive/sessions/{session_id}/replay")
+async def get_archive_replay(session_id: str) -> list:
+    return await runtime.get_archive_replay_events(session_id)
+
+
 @app.post("/api/archive/sessions/{session_id}/rename")
 async def rename_session(session_id: str, body: RenameRequest) -> dict:
     await runtime.rename_archive_session(session_id, body.title)

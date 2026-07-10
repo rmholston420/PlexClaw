@@ -703,6 +703,104 @@ def _sdkmessage_to_dict(msg: Any) -> dict:
     }
 
 
+def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[dict]:
+    events: list[dict] = []
+    seq = 1
+
+    def push(env) -> None:
+        nonlocal seq
+        if hasattr(env, "model_dump"):
+            events.append(env.model_dump())
+        else:
+            events.append(dict(env))
+        seq += 1
+
+    for item in messages:
+        msg = item.get("message") or {}
+        role = msg.get("role")
+        content = msg.get("content")
+
+        if role == "assistant":
+            saw_text = False
+
+            if isinstance(content, str):
+                if content:
+                    push(normalize_text_delta(session_id, seq, content))
+                    saw_text = True
+
+            elif isinstance(content, list):
+                for block in content:
+                    if not isinstance(block, dict):
+                        continue
+
+                    btype = block.get("type")
+
+                    if btype == "text":
+                        text = block.get("text", "")
+                        if text:
+                            push(normalize_text_delta(session_id, seq, text))
+                            saw_text = True
+
+                    elif btype == "tool_use":
+                        tool_id = str(block.get("id", ""))
+                        tool_name = str(block.get("name", "tool"))
+                        tool_input = block.get("input", {}) or {}
+
+                        push(
+                            normalize_tool_started(
+                                session_id,
+                                seq,
+                                tool_id,
+                                tool_name,
+                                {},
+                            )
+                        )
+
+                        env = normalize_tool_delta(
+                            session_id,
+                            seq,
+                            tool_id,
+                            "",
+                        )
+                        env.payload["tool_name"] = tool_name
+                        env.payload["tool_input"] = tool_input
+                        push(env)
+
+                    else:
+                        push(
+                            normalize_system_message(
+                                session_id,
+                                seq,
+                                f"Unsupported archive assistant block: {btype}",
+                                level="warn",
+                            )
+                        )
+
+            if saw_text or content:
+                push(
+                    normalize_assistant_completed(
+                        session_id,
+                        seq,
+                        msg.get("stop_reason", "end_turn"),
+                    )
+                )
+
+        elif role == "user":
+            continue
+
+        else:
+            push(
+                normalize_system_message(
+                    session_id,
+                    seq,
+                    f"Unsupported archive message role: {role or item.get('type')}",
+                    level="warn",
+                )
+            )
+
+    return events
+
+
 async def list_archive_sessions() -> list[dict]:
     if not _SDK_AVAILABLE:
         return []
@@ -741,6 +839,11 @@ async def get_archive_messages(session_id: str) -> list:
     except Exception as exc:
         log.warning("get_session_messages error: %s", exc)
         return []
+
+
+async def get_archive_replay_events(session_id: str) -> list[dict]:
+    messages = await get_archive_messages(session_id)
+    return _archive_messages_to_events(session_id, messages)
 
 
 async def rename_archive_session(session_id: str, title: str) -> None:

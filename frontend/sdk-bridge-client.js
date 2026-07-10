@@ -1165,9 +1165,12 @@ const Bridge = (() => {
     catch (e) { console.warn('Interrupt error', e); }
   }
 
-  async function replaySession(id) {
+  async function replaySession(id, source = 'live') {
     let events;
-    try { events = await api(`/api/sessions/${id}/replay`); }
+    const endpoint = source === 'archive'
+      ? `/api/archive/sessions/${id}/replay`
+      : `/api/sessions/${id}/replay`;
+    try { events = await api(endpoint); }
     catch (e) { appendSystemMessage('Could not load replay data.', 'error'); return; }
     clearTranscript();
     setReplayMode(true);
@@ -1337,7 +1340,7 @@ const Bridge = (() => {
           catch (e) { appendSystemMessage('Failed to fork session.', 'error'); }
         });
         card.querySelector('[data-action="replay"]').addEventListener('click', async () => {
-          await replaySession(item.id);
+          await replaySession(item.id, 'archive');
         });
         card.querySelector('[data-action="rename"]').addEventListener('click', async () => {
           await renameSession(item.id, item.title || '');
