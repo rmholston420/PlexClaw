@@ -1131,6 +1131,11 @@ function setRuntimeMode(mockMode) {
     console.log('Creating session with cwd:', body.cwd);
     const data = await api('/api/sessions', { method: 'POST', body: JSON.stringify(body) });
     state.sessionId = data.session_id;
+  if (data.model) state.model = data.model;
+  if (data.provider) state.provider = data.provider;
+  if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);
+  renderModelOptions();
+  renderProviderSwitcher();
     const tab = currentTab();
     if (tab && !tab.sessionId) tab.title = (resumeSessionId ? 'Resumed' : 'Live') + ' ' + state.sessionId.slice(0, 8);
     setSessionLabel(state.sessionId);

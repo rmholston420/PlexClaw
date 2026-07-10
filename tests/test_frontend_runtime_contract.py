@@ -11,3 +11,6 @@ def test_frontend_runtime_badge_and_labels_present() -> None:
     assert "function setRuntimeMode(mockMode)" in js
     assert "Mock session ready" in js
     assert "Live session ready" in js
+    assert "if (data.model) state.model = data.model;" in js
+    assert "if (data.provider) state.provider = data.provider;" in js
+    assert "if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);" in js
