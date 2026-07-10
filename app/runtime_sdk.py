@@ -28,6 +28,7 @@ from app.normalizer import (
     normalize_system_message,
     normalize_text_delta,
     normalize_tool_completed,
+    normalize_tool_delta,
     normalize_tool_started,
 )
 from app.schemas import PROTOCOL_VERSION, SessionCreateRequest, WSEnvelope

@@ -242,6 +242,17 @@ async def get_provider_health() -> dict:
 
 def _render_session_markdown(session_id: str, events: list[dict]) -> str:
     lines = [f"# Session {session_id}", ""]
+
+    tool_inputs: dict[str, dict] = {}
+    for evt in events:
+        payload = evt.get("payload", {})
+        if (
+            evt.get("type") == "tool.delta"
+            and payload.get("tool_id") is not None
+            and "tool_input" in payload
+        ):
+            tool_inputs[str(payload["tool_id"])] = payload.get("tool_input") or {}
+
     assistant_buf: list[str] = []
 
     def flush_assistant() -> None:
@@ -268,12 +279,12 @@ def _render_session_markdown(session_id: str, events: list[dict]) -> str:
             assistant_buf.append(str(payload.get("text", "")))
         elif etype == "tool.started":
             flush_assistant()
+            tool_id = str(payload.get("tool_id", ""))
+            final_input = tool_inputs.get(tool_id, payload.get("tool_input", {}))
             lines.append(f"## Tool: {payload.get('tool_name', 'tool')}")
             lines.append("")
             lines.append("```json")
-            lines.append(
-                json.dumps(payload.get("tool_input", {}), indent=2, ensure_ascii=False)
-            )
+            lines.append(json.dumps(final_input, indent=2, ensure_ascii=False))
             lines.append("```")
             lines.append("")
         elif etype == "tool.completed":
