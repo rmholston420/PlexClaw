@@ -115,6 +115,37 @@ async def health() -> dict:
 # ---------------------------------------------------------------------------
 
 
+@app.get("/api/diag/runtime")
+async def runtime_diagnostics() -> dict:
+    sessions = runtime.list_live_sessions()
+    now = runtime.time.monotonic()
+    items = []
+    for s in sessions:
+        items.append(
+            {
+                "session_id": s.id,
+                "model": s.model,
+                "provider": s.provider,
+                "status": s.status,
+                "mock_mode": s.mock_mode,
+                "permission_mode": s.permission_mode,
+                "cwd": s.cwd,
+                "tag": s.tag,
+                "title": s.title,
+                "connections": ws_manager.connection_count(s.id),
+                "idle_seconds": round(max(0.0, now - s.last_activity_at), 3),
+            }
+        )
+
+    return {
+        "ok": True,
+        "protocol_version": PROTOCOL_VERSION,
+        "live_session_count": len(sessions),
+        "websocket_session_count": ws_manager.session_count(),
+        "sessions": items,
+    }
+
+
 @app.get("/api/sessions")
 async def list_sessions() -> list:
     """Return all currently live (in-memory) sessions.
