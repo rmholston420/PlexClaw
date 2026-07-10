@@ -11,25 +11,14 @@ if [ -f ".githooks/pre-push" ]; then
 fi
 
 python - <<'PYPORT'
-import socket
 import sys
 
-ports = [(8020, "backend"), (5555, "frontend")]
-blocked = []
+from app.port_check import blocked_ports, format_blocked_ports
 
-for port, label in ports:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        sock.bind(("127.0.0.1", port))
-    except OSError:
-        blocked.append((port, label))
-    finally:
-        sock.close()
-
+blocked = blocked_ports()
 if blocked:
-    for port, label in blocked:
-        print(f"[run.sh] Port {port} already in use ({label}).", file=sys.stderr)
-    print("[run.sh] Stop the existing process or free the port, then retry.", file=sys.stderr)
+    for line in format_blocked_ports(blocked):
+        print(line, file=sys.stderr)
     sys.exit(1)
 PYPORT
 
