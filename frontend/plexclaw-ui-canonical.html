@@ -511,14 +511,19 @@
     max-height: 88vh;
   }
   .search-header {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--s3);
     padding: var(--s4);
     border-bottom: 1px solid var(--divider);
+    align-items: center;
+  }
+  .search-header-copy {
+    min-width: 0;
   }
   .search-input-lg {
-    flex: 1;
+    grid-column: 1 / -1;
+    width: 100%;
     min-width: 0;
     background: var(--surface-offset);
     color: var(--text);
@@ -979,6 +984,9 @@
       padding: var(--s3) var(--s6) var(--s4);
       background: var(--surface);
       flex-shrink: 0;
+      width: 100%;
+      min-width: 0;
+      align-self: stretch;
     }
     .composer-toolbar {
       display: flex;
@@ -1011,12 +1019,22 @@
 
     .composer-input-row {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: var(--s2);
       align-items: end;
+      width: 100%;
+      min-width: 0;
+    }
+    #attachment-row,
+    #attachment-error {
+      grid-column: 1 / -1;
     }
     .composer-textarea {
+      grid-column: 1;
+      display: block;
       width: 100%;
+      min-width: 0;
+      justify-self: stretch;
       min-height: 72px;
       max-height: 240px;
       resize: vertical;
@@ -1038,6 +1056,7 @@
   .composer.dragover { outline: 2px dashed var(--primary); outline-offset: -6px; }
 
     .send-btn {
+      grid-column: 2;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1343,7 +1362,7 @@
     <div class="search-backdrop" id="search-backdrop"></div>
     <div class="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
       <div class="search-header">
-        <div style="min-width:0; flex:1;">
+        <div class="search-header-copy">
           <div class="section-title" id="search-title">Search sessions</div>
           <div class="section-subtitle">Find text across saved session events</div>
         </div>
