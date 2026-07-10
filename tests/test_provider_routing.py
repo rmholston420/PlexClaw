@@ -13,13 +13,6 @@ class DummyClient:
         self.options = options
 
 
-@pytest.fixture(autouse=True)
-def clear_sessions():
-    runtime._sessions.clear()
-    yield
-    runtime._sessions.clear()
-
-
 @pytest.mark.asyncio
 async def test_create_session_cloud_has_no_base_url_env(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(runtime, "_SDK_AVAILABLE", True)

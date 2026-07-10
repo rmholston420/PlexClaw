@@ -9,13 +9,6 @@ from app import runtime_sdk as runtime
 from app.main import app
 
 
-@pytest.fixture(autouse=True)
-def clear_sessions():
-    runtime._sessions.clear()
-    yield
-    runtime._sessions.clear()
-
-
 def test_runtime_diag_empty():
     client = TestClient(app)
     resp = client.get("/api/diag/runtime")

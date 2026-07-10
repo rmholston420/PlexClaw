@@ -8,13 +8,6 @@ from app import runtime_sdk as runtime
 from app.schemas import SessionCreateRequest
 
 
-@pytest.fixture(autouse=True)
-def clear_sessions():
-    runtime._sessions.clear()
-    yield
-    runtime._sessions.clear()
-
-
 @pytest.mark.asyncio
 async def test_reap_idle_sessions_removes_old_disconnected_ready_session(monkeypatch):
     monkeypatch.setenv("PLEXCLAW_SESSION_IDLE_TIMEOUT_SECONDS", "60")

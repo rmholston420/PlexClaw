@@ -3,9 +3,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-import app.event_store as event_store
 from app import runtime_sdk as runtime
-from app.event_store import init_db
 from app.main import app
 
 
@@ -16,32 +14,11 @@ def client():
 
 
 @pytest.fixture(autouse=True)
-def reset_runtime_and_db(tmp_path, monkeypatch):
-    runtime._sessions.clear()
+def force_sdk_available():
     old_available = runtime._SDK_AVAILABLE
     runtime._SDK_AVAILABLE = True
-
-    db_path = tmp_path / "events.db"
-    monkeypatch.setattr(event_store, "DB_PATH", db_path)
-    monkeypatch.setattr(event_store, "_conn", None)
-    monkeypatch.setattr(event_store, "_conn_path", None)
-    monkeypatch.setattr(event_store, "_fts_available", None)
-    init_db()
-
     yield
-
-    runtime._sessions.clear()
     runtime._SDK_AVAILABLE = old_available
-
-    conn = getattr(event_store, "_conn", None)
-    if conn is not None:
-        try:
-            conn.close()
-        except Exception:
-            pass
-    event_store._conn = None
-    event_store._conn_path = None
-    event_store._fts_available = None
 
 
 def test_create_session_rejects_invalid_provider(client):
