@@ -112,6 +112,11 @@ const Bridge = (() => {
     el.terminalToggle?.classList.toggle('active', state.terminalOpen);
   }
 
+  function applyTerminalHeight() {
+    if (!el.terminalDrawer) return;
+    el.terminalDrawer.style.height = `${state.terminalHeight}px`;
+  }
+
   function scrollBottom() {
     requestAnimationFrame(() => {
       el.transcript.scrollTop = el.transcript.scrollHeight;
@@ -1192,6 +1197,63 @@ const Bridge = (() => {
     });
     el.modeManualBtn?.addEventListener('click', () => setPermissionMode('manual'));
     el.modeAutoBtn?.addEventListener('click', () => setPermissionMode('auto'));
+    el.terminalToggle?.addEventListener('click', () => {
+      setTerminalOpen(!state.terminalOpen);
+      syncStateToActiveTab();
+    });
+    el.terminalErrorsOnly?.addEventListener('change', () => {
+      state.terminalErrorsOnly = !!el.terminalErrorsOnly.checked;
+      renderRawLog();
+      syncStateToActiveTab();
+    });
+    el.terminalClear?.addEventListener('click', () => {
+      state.rawLogLines = [];
+      renderRawLog();
+      syncStateToActiveTab();
+    });
+    el.terminalCopy?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(el.terminalPre?.textContent || '');
+        appendSystemMessage('Raw terminal copied to clipboard.');
+      } catch (_) {
+        appendSystemMessage('Could not copy raw terminal.', 'error');
+      }
+    });
+
+    let resizingTerminal = false;
+    let resizeMove = null;
+    let resizeUp = null;
+
+    el.terminalResizeHandle?.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      resizingTerminal = true;
+
+      resizeMove = (evt) => {
+        if (!resizingTerminal) return;
+        const maxHeight = Math.floor(window.innerHeight * 0.6);
+        const nextHeight = Math.max(100, Math.min(maxHeight, window.innerHeight - evt.clientY));
+        state.terminalHeight = nextHeight;
+        applyTerminalHeight();
+        syncStateToActiveTab();
+      };
+
+      resizeUp = () => {
+        resizingTerminal = false;
+        window.removeEventListener('pointermove', resizeMove);
+        window.removeEventListener('pointerup', resizeUp);
+      };
+
+      window.addEventListener('pointermove', resizeMove);
+      window.addEventListener('pointerup', resizeUp);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '`') {
+        e.preventDefault();
+        setTerminalOpen(!state.terminalOpen);
+        syncStateToActiveTab();
+      }
+    });
 
     // Prompt chips
     document.querySelectorAll('.prompt-chip').forEach(btn => {
@@ -1226,6 +1288,10 @@ const Bridge = (() => {
     await loadProviders();
     bindEvents();
     bindTextareaResize();
+    applyTerminalHeight();
+    setTerminalOpen(state.terminalOpen);
+    if (el.terminalErrorsOnly) el.terminalErrorsOnly.checked = state.terminalErrorsOnly;
+    renderRawLog();
     await loadArchive();
   }
 
