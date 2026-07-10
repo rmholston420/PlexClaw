@@ -629,6 +629,40 @@ async def interrupt_session(session_id: str) -> None:
     await _emit(session, env)
 
 
+async def delete_session(session_id: str) -> None:
+    session = _sessions.get(session_id)
+    if not session:
+        raise KeyError(f"Session {session_id} not found")
+
+    if _SDK_AVAILABLE and session._client:
+        try:
+            interrupt = getattr(session._client, "interrupt", None)
+            if interrupt is not None:
+                await interrupt()
+        except Exception as exc:
+            log.warning("Session delete interrupt failed: %s", exc)
+
+        try:
+            close = getattr(session._client, "close", None)
+            if close is not None:
+                result = close()
+                if hasattr(result, "__await__"):
+                    await result
+        except Exception as exc:
+            log.warning("Session delete close failed: %s", exc)
+
+    session.context_files.clear()
+    session._pending_tool_id = None
+    session._pending_tool_name = None
+    session._pending_tool_input = None
+    session._approval_decision = None
+    session._context_injected = False
+    session.status = "deleted"
+    session._client = None
+
+    _sessions.pop(session_id, None)
+
+
 # ---------------------------------------------------------------------------
 # Archive passthroughs
 #

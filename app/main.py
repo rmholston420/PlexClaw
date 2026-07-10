@@ -116,6 +116,15 @@ async def interrupt_session(session_id: str) -> dict:
     return {"ok": True}
 
 
+@app.delete("/api/sessions/{session_id}")
+async def delete_session(session_id: str) -> dict:
+    try:
+        await runtime.delete_session(session_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True}
+
+
 @app.post("/api/sessions/{session_id}/context")
 async def upload_context_file(session_id: str, file: UploadFile = File(...)) -> dict:
     try:

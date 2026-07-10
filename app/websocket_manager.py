@@ -15,9 +15,19 @@ class WebSocketManager:
         self._sessions.setdefault(session_id, []).append(ws)
 
     def remove(self, session_id: str, ws: WebSocket) -> None:
-        conns = self._sessions.get(session_id, [])
+        conns = self._sessions.get(session_id)
+        if not conns:
+            return
         if ws in conns:
             conns.remove(ws)
+        if not conns:
+            self._sessions.pop(session_id, None)
+
+    def connection_count(self, session_id: str) -> int:
+        return len(self._sessions.get(session_id, []))
+
+    def session_count(self) -> int:
+        return len(self._sessions)
 
     async def broadcast(self, envelope: WSEnvelope) -> None:
         data = envelope.model_dump_json()
