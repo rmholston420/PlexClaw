@@ -21,27 +21,30 @@ All 10 slices from the build spec are implemented and committed.
 - **`runtime_sdk.py`** updated — `create_session` no longer raises `RuntimeError` when the SDK is missing; instead a `MockSDKClient` is used transparently
 - **`submit_prompt`** streams token-by-token mock text through the identical normalizer pipeline, so all UI streaming paths (assistant.delta, assistant.completed) are exercised
 - The `session.created` system message includes `"mock_mode": true` so the frontend can surface a warning badge
-- **`tests/test_mock_sdk.py`** — five async unit tests covering token streaming, echo content, interrupt, stop_reason, and mock-mode banner
+- **`tests/test_mock_sdk.py`** — async unit coverage for token streaming, echo content, interrupt, stop reason, and mock-mode banner behavior
 
-## Mock mode
+## Post-slice: Provider routing & tool search (July 2026)
 
-The app fully starts and is usable without `claude-agent-sdk`. Sessions are created, prompts are streamed back as echo responses with a prominent ⚠️ mock-mode banner. Set `ANTHROPIC_API_KEY` and `pip install claude-agent-sdk` to activate real Claude Code sessions.
+- Provider selection in the frontend routes sessions through Anthropic-compatible backends (cloud, Ollama, vLLM) via `ANTHROPIC_BASE_URL`, matching Claude Code’s environment-variable model.
+- Session creation supports per-session tool-search env control via `tool_search_mode`, returning `provider_base_url`, `tool_search_mode`, and `tool_search_active` in both REST create-session responses and WebSocket lifecycle metadata.
+- The PlexClaw top bar shows grouped runtime routing metadata, including the effective provider route and current tool-search state for the active session.
+- Switching providers with an active live session clears that session context, updates tab state, and emits a system message prompting the user to start a new session on the new route.
+- Frontend/runtime semantics coverage includes provider metadata rendering, create-session response parity, tool-search selector wiring, tool-search state clearing on provider change, replay/runtime state separation, and per-tab state preservation.
 
-## Post-slice: Provider routing & UI semantics (July 2026)
+## Post-slice: Docs alignment (July 2026)
 
-- Provider selection in the frontend now routes sessions through Anthropic-compatible backends (cloud, Ollama, vLLM) via `ANTHROPIC_BASE_URL`, matching Claude Code's environment-variable model.
-- The PlexClaw UI shows the effective provider base URL for each session in the header, so users can see exactly where requests are being sent.
-- Switching providers with an active live session now clears that session context, updates tab state, and emits a system message prompting the user to start a new session on the new route.
-- Frontend guardrail tests ensure that provider runtime metadata is rendered, `provider_base_url` is captured from session events and API responses, live-session reset semantics are preserved, tool-search runtime state is shown in the UI, and the new tool-search selector is wired into session state.
-- Session creation now supports per-session tool-search env control via `tool_search_mode`, returning `provider_base_url`, `tool_search_mode`, and `tool_search_active` in both the create-session REST response and websocket lifecycle metadata, while the PlexClaw header exposes a user-facing selector for those modes.
-- The Python test suite has grown from 53 to 71 tests, covering provider routing, frontend semantics, tool-search env support, REST/WebSocket response parity, tool-search selector UI wiring, and package structure, while keeping all original slice tests passing.
+- `README.md` now documents the runtime routing and tool-search UI and reflects the current 86-test state.
+- `CHANGELOG.md` version `0.2.0` now records centralized runtime configuration, grouped runtime metadata, and explicit tool mode selector states.
+- `AGENTS.md` now documents how runtime routing interacts with agent sessions, providers, hooks, tool-search behavior, and archive/replay semantics.
 
 ## Quality status
 
-- **71 tests passing**
+- **86 tests passing**
 - Mock SDK fallback is implemented and covered by unit tests
 - WebSocket happy-path session flow is covered
 - WebSocket protocol mismatch rejection is covered
+- Provider routing, tool-search env behavior, frontend runtime metadata rendering, and replay/runtime separation are covered
+- Archive replay normalization and create-session response parity are covered
 - Launcher port preflight is extracted into `app/port_check.py` and covered
 - `run.sh` shell contract is covered by regression tests
 - Repo-tracked pre-push hook is versioned under `.githooks/pre-push`
@@ -49,7 +52,7 @@ The app fully starts and is usable without `claude-agent-sdk`. Sessions are crea
 ## Launcher behavior
 
 - `run.sh` auto-enables repo-tracked hooks for the current clone when needed
-- `run.sh` fails fast with a clear error if port 8020 or 5555 is already occupied
+- `run.sh` fails fast with a clear error if port 8020 or 5555 are already occupied
 - `scripts/setup-git-hooks.sh` can be run manually to configure `core.hooksPath` to `.githooks`
 
 ## Quick start
@@ -58,6 +61,6 @@ The app fully starts and is usable without `claude-agent-sdk`. Sessions are crea
 bash run.sh
 ```
 
-Backend: http://127.0.0.1:8020  
-Frontend root: http://127.0.0.1:5555  
-Canonical UI: http://127.0.0.1:5555/plexclaw-ui-canonical.html
+Backend: [http://127.0.0.1:8020](http://127.0.0.1:8020)
+Frontend root: [http://127.0.0.1:5555](http://127.0.0.1:5555)
+Canonical UI: [http://127.0.0.1:5555/plexclaw-ui-canonical.html](http://127.0.0.1:5555/plexclaw-ui-canonical.html)
