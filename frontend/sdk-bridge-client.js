@@ -658,7 +658,10 @@ function renderProviderRuntimeMeta() {
  }
 
   async function browseCwd(path = null) {
-    const query = path ? `?path=${encodeURIComponent(path)}` : '';
+    const params = new URLSearchParams();
+    if (path) params.set('path', path);
+    if (state.sessionId) params.set('session_id', state.sessionId);
+    const query = params.toString() ? `?${params.toString()}` : '';
     const data = await api(`/api/fs/browse${query}`);
     state.cwdBrowsing = data.path;
     if (el.cwdCurrentPath) el.cwdCurrentPath.textContent = data.path;
@@ -693,7 +696,8 @@ function renderProviderRuntimeMeta() {
   }
 
   async function loadGitRoots() {
-    const data = await api('/api/fs/git-roots');
+    const query = state.sessionId ? `?session_id=${encodeURIComponent(state.sessionId)}` : '';
+    const data = await api(`/api/fs/git-roots${query}`);
     if (!el.cwdGitRoots) return;
     el.cwdGitRoots.innerHTML = '';
     (data.roots || []).forEach((root) => {
@@ -710,8 +714,9 @@ function renderProviderRuntimeMeta() {
 
   async function initCwd() {
     try {
-      const fsData = await api('/api/fs/browse');
-      const gitData = await api('/api/fs/git-roots');
+      const query = state.sessionId ? `?session_id=${encodeURIComponent(state.sessionId)}` : '';
+      const fsData = await api(`/api/fs/browse${query}`);
+      const gitData = await api(`/api/fs/git-roots${query}`);
       const roots = gitData.roots || [];
       const initial = roots[0] || fsData.root || fsData.path || '';
       setCwd(initial);
