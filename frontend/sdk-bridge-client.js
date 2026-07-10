@@ -4,7 +4,6 @@ const Bridge = (() => {
     wsBase: 'ws://127.0.0.1:8020/ws',
     protocolVersion: '0.2.0',
     sessionId: null,
-      permissionMode: state.permissionMode,
     socket: null,
     model: 'claude-sonnet-4-5',
     provider: 'cloud',
@@ -17,6 +16,7 @@ const Bridge = (() => {
     replayMode: false,
     archive: [],
     attachments: [],
+    attachmentTokens: 0,
     rawLogLines: [],
     terminalOpen: false,
     terminalErrorsOnly: false,
@@ -147,6 +147,7 @@ const Bridge = (() => {
       sessionId: null,
       transcriptHtml: '',
       attachments: [],
+      attachmentTokens: 0,
       replayMode: false,
       rawLogLines: [],
       terminalErrorsOnly: false,
@@ -166,6 +167,7 @@ const Bridge = (() => {
     tab.sessionId = state.sessionId;
     tab.transcriptHtml = el.transcript?.innerHTML || '';
     tab.attachments = [...state.attachments];
+    tab.attachmentTokens = state.attachmentTokens;
     tab.permissionMode = state.permissionMode;
     tab.replayMode = state.replayMode;
     tab.rawLogLines = [...state.rawLogLines];
@@ -180,6 +182,7 @@ const Bridge = (() => {
     if (!tab) return;
     state.sessionId = tab.sessionId;
     state.attachments = [...(tab.attachments || [])];
+    state.attachmentTokens = tab.attachmentTokens || 0;
     state.permissionMode = tab.permissionMode || 'manual';
     state.replayMode = !!tab.replayMode;
     state.rawLogLines = [...(tab.rawLogLines || [])];
@@ -196,10 +199,12 @@ const Bridge = (() => {
     state.toolEls.clear();
     state.firstToolExpanded = true;
     renderAttachments();
+    updateTokenCounter();
     renderRawLog();
     renderModelOptions();
     renderProviderSwitcher();
     renderPermissionMode();
+    updateTokenCounter();
     if (el.terminalErrorsOnly) el.terminalErrorsOnly.checked = state.terminalErrorsOnly;
     if (!tab.transcriptHtml && el.welcome) el.welcome.classList.remove('hidden');
   }
@@ -743,6 +748,25 @@ const Bridge = (() => {
   }
 
 
+  function estimateAttachmentTokens(files) {
+    return (files || []).reduce((sum, item) => {
+      const size = Number(item.size || 0);
+      return sum + Math.ceil(size / 4);
+    }, 0);
+  }
+
+  function updateTokenCounter() {
+    if (!el.tokenCounter) return;
+    const promptText = (el.promptInput?.value || '').trim();
+    const promptTokens = promptText ? Math.ceil(promptText.length / 4) : 0;
+    const attachmentTokens = estimateAttachmentTokens(state.attachments);
+    state.attachmentTokens = attachmentTokens;
+    const total = promptTokens + attachmentTokens;
+    el.tokenCounter.textContent = attachmentTokens > 0
+      ? `~${total} tokens (${promptTokens} prompt + ${attachmentTokens} files)`
+      : `~${promptTokens} tokens`;
+  }
+
   function renderAttachments() {
     if (!el.attachmentRow) return;
     el.attachmentRow.innerHTML = '';
@@ -761,21 +785,25 @@ const Bridge = (() => {
       });
       el.attachmentRow.appendChild(chip);
     });
+    updateTokenCounter();
   }
 
   async function loadAttachments() {
     if (!state.sessionId) {
       state.attachments = [];
+      state.attachmentTokens = 0;
       renderAttachments();
       return;
     }
     try {
       const data = await api(`/api/sessions/${state.sessionId}/context`);
       state.attachments = data.files || [];
+      state.attachmentTokens = estimateAttachmentTokens(state.attachments);
       renderAttachments();
     } catch (err) {
       console.warn('Attachment load error', err);
       state.attachments = [];
+      state.attachmentTokens = 0;
       renderAttachments();
     }
   }
@@ -1072,6 +1100,7 @@ const Bridge = (() => {
     el.promptInput.addEventListener('input', () => {
       el.promptInput.style.height = 'auto';
       el.promptInput.style.height = Math.min(el.promptInput.scrollHeight, 240) + 'px';
+      updateTokenCounter();
     });
   }
 
