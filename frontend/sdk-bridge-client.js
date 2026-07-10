@@ -20,6 +20,9 @@ const Bridge = (() => {
     terminalOpen: false,
     terminalErrorsOnly: false,
     terminalHeight: 220,
+    tabs: [],
+    activeTabId: null,
+    nextTabNumber: 1,
     lineageOpen: new Map(),
     toolEls: new Map(),
     firstToolExpanded: false,
@@ -66,6 +69,8 @@ const Bridge = (() => {
     terminalCopy: document.getElementById('terminal-copy'),
     terminalPre: document.getElementById('terminal-pre'),
     terminalCount: document.getElementById('terminal-count'),
+    tabbar: document.getElementById('tabbar'),
+    newTabBtn: document.getElementById('new-tab-btn'),
   };
 
   // ---- Helpers ----
@@ -131,10 +136,146 @@ const Bridge = (() => {
     el.replayBanner.classList.toggle('visible', on);
   }
 
+  function makeEmptyTabState() {
+    const id = `tab-${state.nextTabNumber++}`;
+    return {
+      id,
+      title: `Tab ${state.nextTabNumber - 1}`,
+      sessionId: null,
+      transcriptHtml: '',
+      attachments: [],
+      replayMode: false,
+      rawLogLines: [],
+      terminalErrorsOnly: false,
+      cwdSelected: state.cwdSelected,
+      model: state.model,
+      provider: state.provider,
+    };
+  }
+
+  function currentTab() {
+    return state.tabs.find(t => t.id === state.activeTabId) || null;
+  }
+
+  function syncStateToActiveTab() {
+    const tab = currentTab();
+    if (!tab) return;
+    tab.sessionId = state.sessionId;
+    tab.transcriptHtml = el.transcript?.innerHTML || '';
+    tab.attachments = [...state.attachments];
+    tab.replayMode = state.replayMode;
+    tab.rawLogLines = [...state.rawLogLines];
+    tab.terminalErrorsOnly = state.terminalErrorsOnly;
+    tab.cwdSelected = state.cwdSelected;
+    tab.model = state.model;
+    tab.provider = state.provider;
+  }
+
+  function syncActiveTabToState() {
+    const tab = currentTab();
+    if (!tab) return;
+    state.sessionId = tab.sessionId;
+    state.attachments = [...(tab.attachments || [])];
+    state.replayMode = !!tab.replayMode;
+    state.rawLogLines = [...(tab.rawLogLines || [])];
+    state.terminalErrorsOnly = !!tab.terminalErrorsOnly;
+    state.cwdSelected = tab.cwdSelected || state.cwdSelected;
+    state.model = tab.model || state.model;
+    state.provider = tab.provider || state.provider;
+
+    setSessionLabel(state.sessionId);
+    setReplayMode(state.replayMode);
+    if (el.transcript) {
+      el.transcript.innerHTML = tab.transcriptHtml || '';
+    }
+    state.toolEls.clear();
+    state.firstToolExpanded = true;
+    renderAttachments();
+    renderRawLog();
+    renderModelOptions();
+    renderProviderSwitcher();
+    if (el.terminalErrorsOnly) el.terminalErrorsOnly.checked = state.terminalErrorsOnly;
+    if (!tab.transcriptHtml && el.welcome) el.welcome.classList.remove('hidden');
+  }
+
+  function renderTabs() {
+    if (!el.tabbar) return;
+    const existingNew = el.newTabBtn;
+    el.tabbar.querySelectorAll('.session-tab').forEach(node => node.remove());
+
+    state.tabs.forEach((tab) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'session-tab' + (tab.id === state.activeTabId ? ' active' : '');
+      btn.setAttribute('data-tab-id', tab.id);
+      btn.innerHTML = `
+        <span class="status-dot ${tab.sessionId ? 'connected' : 'disconnected'}"></span>
+        <span class="session-tab-title">${escapeHtml(tab.title)}</span>
+        <span class="session-tab-close" data-close-tab="${tab.id}">×</span>
+      `;
+      btn.addEventListener('click', (e) => {
+        if (e.target?.matches?.('[data-close-tab]')) return;
+        switchTab(tab.id);
+      });
+      btn.querySelector('[data-close-tab]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTab(tab.id);
+      });
+      existingNew?.before(btn);
+    });
+  }
+
+  function openNewTab() {
+    syncStateToActiveTab();
+    const tab = makeEmptyTabState();
+    state.tabs.push(tab);
+    state.activeTabId = tab.id;
+    state.socket && state.socket.close();
+    state.socket = null;
+    state.sessionId = null;
+    state.attachments = [];
+    state.rawLogLines = [];
+    state.replayMode = false;
+    clearTranscript();
+    renderAttachments();
+    renderRawLog();
+    setSessionLabel(null);
+    setConnection('disconnected');
+    if (el.welcome) el.welcome.classList.remove('hidden');
+    renderTabs();
+  }
+
+  function switchTab(tabId) {
+    if (tabId === state.activeTabId) return;
+    syncStateToActiveTab();
+    if (state.socket) { try { state.socket.close(); } catch (_) {} }
+    state.socket = null;
+    state.activeTabId = tabId;
+    syncActiveTabToState();
+    if (state.sessionId) connectSocket();
+    renderTabs();
+  }
+
+  function closeTab(tabId) {
+    if (state.tabs.length <= 1) return;
+    const idx = state.tabs.findIndex(t => t.id === tabId);
+    if (idx === -1) return;
+    const closingActive = state.activeTabId === tabId;
+    state.tabs.splice(idx, 1);
+    if (closingActive) {
+      const next = state.tabs[Math.max(0, idx - 1)] || state.tabs[0];
+      state.activeTabId = next.id;
+      syncActiveTabToState();
+      if (state.sessionId) connectSocket();
+    }
+    renderTabs();
+  }
+
   function clearTranscript() {
     el.transcript.innerHTML = '';
     state.toolEls.clear();
     state.firstToolExpanded = false;
+    syncStateToActiveTab();
   }
 
 
@@ -632,6 +773,7 @@ const Bridge = (() => {
 
   async function createSession({ resumeSessionId = null, forkSession = false } = {}) {
     state.model = el.modelSelect?.value || state.model;
+    syncStateToActiveTab();
     const body = {
       model: state.model,
       cwd: state.cwdSelected,
@@ -643,9 +785,14 @@ const Bridge = (() => {
     };
     const data = await api('/api/sessions', { method: 'POST', body: JSON.stringify(body) });
     state.sessionId = data.session_id;
+    const tab = currentTab();
+    if (tab && !tab.sessionId) tab.title = (resumeSessionId ? 'Resumed' : 'Live') + ' ' + state.sessionId.slice(0, 8);
     setSessionLabel(state.sessionId);
+    syncStateToActiveTab();
+    renderTabs();
     connectSocket();
     await loadAttachments();
+    syncStateToActiveTab();
     return data;
   }
 
@@ -684,6 +831,7 @@ const Bridge = (() => {
     scrollBottom();
 
     state.socket.send(JSON.stringify({ prompt }));
+    syncStateToActiveTab();
     el.promptInput.value = '';
     el.promptInput.style.height = '';
   }
