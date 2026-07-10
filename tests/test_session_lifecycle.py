@@ -59,10 +59,12 @@ async def test_delete_session_clears_context_and_client():
     )
     session._client = DummyClient()
     session.context_files["notes.txt"] = "hello"
-    session._pending_tool_id = "tool-1"
-    session._pending_tool_name = "bash"
-    session._pending_tool_input = {"cmd": "pwd"}
-    session._approval_decision = "approve"
+    session.pending_approvals["tool-1"] = runtime.PendingApproval(
+        tool_id="tool-1",
+        tool_name="bash",
+        tool_input={"cmd": "pwd"},
+    )
+    session.pending_approvals["tool-1"].decision = "approve"
     session._context_injected = True
 
     await runtime.delete_session(session.id)

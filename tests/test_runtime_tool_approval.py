@@ -17,7 +17,11 @@ async def test_approve_tool_call_rejects_wrong_tool_id():
             permission_mode="manual",
         )
     )
-    session._pending_tool_id = "tool-1"
+    session.pending_approvals["tool-1"] = runtime.PendingApproval(
+        tool_id="tool-1",
+        tool_name="bash",
+        tool_input={"cmd": "pwd"},
+    )
 
     with pytest.raises(KeyError):
         await runtime.approve_tool_call(session.id, "wrong-tool")
@@ -32,7 +36,11 @@ async def test_reject_tool_call_rejects_wrong_tool_id():
             permission_mode="manual",
         )
     )
-    session._pending_tool_id = "tool-1"
+    session.pending_approvals["tool-1"] = runtime.PendingApproval(
+        tool_id="tool-1",
+        tool_name="bash",
+        tool_input={"cmd": "pwd"},
+    )
 
     with pytest.raises(KeyError):
         await runtime.reject_tool_call(session.id, "wrong-tool")
