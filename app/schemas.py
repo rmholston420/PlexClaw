@@ -52,6 +52,9 @@ class SessionCreateResponse(BaseModel):
     mock_mode: bool = False
     model: str
     provider: str
+    provider_base_url: str | None = None
+    tool_search_mode: str | None = None
+    tool_search_active: bool | None = None
     permission_mode: str | None = None
     cwd: str | None = None
 

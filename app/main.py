@@ -82,6 +82,11 @@ async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
         session = await runtime.create_session(req)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    provider_env = runtime._provider_env(session.provider)
+    provider_base_url = provider_env.get("ANTHROPIC_BASE_URL")
+    tool_search_mode = req.tool_search_mode
+    tool_search_active = bool(tool_search_mode) if tool_search_mode is not None else None
+
     return SessionCreateResponse(
         session_id=session.id,
         status="created",
@@ -89,6 +94,9 @@ async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
         mock_mode=session.mock_mode,
         model=session.model,
         provider=session.provider,
+        provider_base_url=provider_base_url,
+        tool_search_mode=tool_search_mode,
+        tool_search_active=tool_search_active,
         permission_mode=session.permission_mode,
         cwd=session.cwd,
     )
