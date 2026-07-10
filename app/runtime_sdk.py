@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -83,6 +84,21 @@ Coding behavior:
 If the user starts with a direct engineering task, respond
 like an experienced pair programmer already inside the project.
 """.strip()
+
+
+def _provider_env(provider: str) -> dict[str, str]:
+    env: dict[str, str] = {}
+    if provider == "ollama":
+        env["ANTHROPIC_BASE_URL"] = os.getenv(
+            "OLLAMA_BASE_URL",
+            "http://127.0.0.1:11434",
+        ).rstrip("/")
+    elif provider == "vllm":
+        env["ANTHROPIC_BASE_URL"] = os.getenv(
+            "VLLM_BASE_URL",
+            "http://127.0.0.1:30000",
+        ).rstrip("/")
+    return env
 
 
 # ---------------------------------------------------------------------------
@@ -338,34 +354,8 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
     )
     _sessions[session_id] = session
 
-    default_system_prompt = (
-        "You are a coding assistant inside PlexClaw.\n"
-        "\n"
-        "Respond in plain natural language unless a real tool call is necessary. "
-        "Do not emit XML, pseudo-XML, tool tags, function-call "
-        "markup, or schema markup as assistant text.\n"
-        "\n"
-        "Prefer answering directly in plain language when the user asks for "
-        "explanation, planning, review, summary, or small code snippets that do not "
-        "require modifying files or inspecting the filesystem.\n"
-        "\n"
-        "Use tools only when they are genuinely necessary to complete the "
-        "request accurately, such as reading project files, searching the "
-        "codebase, or writing requested changes.\n"
-        "\n"
-        "Before using a write or edit tool, briefly explain what you plan to "
-        "change unless the user explicitly asked for immediate file modification.\n"
-        "\n"
-        "Do not create files, reports, workflows, or analysis documents unless "
-        "the user explicitly asks for them.\n"
-        "\n"
-        "If you are not actually calling a tool through the runtime, never simulate "
-        "a tool call in text and never print tags like <tool_call>, <function>, "
-        "<parameter>, or similar markup.\n"
-        "\n"
-        "When a concise direct answer is sufficient, respond without calling tools."
-    )
-    effective_system_prompt = req.system_prompt or default_system_prompt
+    effective_system_prompt = req.system_prompt or DEFAULT_SYSTEM_PROMPT
+    provider_env = _provider_env(req.provider)
 
     if mock_mode:
         session._client = MockSDKClient(options=None)
@@ -378,6 +368,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
             resume=req.resume_session_id,
             fork_session=req.fork_session,
             include_partial_messages=True,
+            env=provider_env,
         )
         session._client = ClaudeSDKClient(options)
 
