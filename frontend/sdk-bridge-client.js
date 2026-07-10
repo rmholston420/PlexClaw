@@ -76,6 +76,8 @@ const Bridge = (() => {
     terminalCount: document.getElementById('terminal-count'),
     tabbar: document.getElementById('tabbar'),
     newTabBtn: document.getElementById('new-tab-btn'),
+    tabScrollLeft: document.getElementById('tab-scroll-left'),
+    tabScrollRight: document.getElementById('tab-scroll-right'),
   };
 
   // ---- Helpers ----
@@ -247,6 +249,16 @@ const Bridge = (() => {
       });
       existingNew?.before(btn);
     });
+
+    updateTabScrollButtons();
+  }
+
+  function updateTabScrollButtons() {
+    if (!el.tabbar) return;
+    const maxScroll = el.tabbar.scrollWidth - el.tabbar.clientWidth;
+    const canScroll = maxScroll > 4;
+    if (el.tabScrollLeft) el.tabScrollLeft.disabled = !canScroll || el.tabbar.scrollLeft <= 4;
+    if (el.tabScrollRight) el.tabScrollRight.disabled = !canScroll || el.tabbar.scrollLeft >= maxScroll - 4;
   }
 
   function openNewTab() {
@@ -1203,6 +1215,15 @@ const Bridge = (() => {
     });
     el.modeManualBtn?.addEventListener('click', () => setPermissionMode('manual'));
     el.modeAutoBtn?.addEventListener('click', () => setPermissionMode('auto'));
+    el.tabScrollLeft?.addEventListener('click', () => {
+      el.tabbar?.scrollBy({ left: -240, behavior: 'smooth' });
+      window.setTimeout(updateTabScrollButtons, 180);
+    });
+    el.tabScrollRight?.addEventListener('click', () => {
+      el.tabbar?.scrollBy({ left: 240, behavior: 'smooth' });
+      window.setTimeout(updateTabScrollButtons, 180);
+    });
+    el.tabbar?.addEventListener('scroll', updateTabScrollButtons);
     el.terminalToggle?.addEventListener('click', () => {
       setTerminalOpen(!state.terminalOpen);
       syncStateToActiveTab();
@@ -1322,6 +1343,7 @@ const Bridge = (() => {
     setTerminalOpen(state.terminalOpen);
     if (el.terminalErrorsOnly) el.terminalErrorsOnly.checked = state.terminalErrorsOnly;
     renderRawLog();
+    updateTabScrollButtons();
     await loadArchive();
   }
 

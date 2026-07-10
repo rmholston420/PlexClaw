@@ -663,6 +663,15 @@
   .tabbar-new {
     flex: 0 0 auto;
   }
+  .tabbar-scroll {
+    flex: 0 0 auto;
+    min-width: 32px;
+    padding-inline: 10px;
+  }
+  .tabbar-scroll[disabled] {
+    opacity: 0.4;
+    cursor: default;
+  }
 /* ===== TRANSCRIPT ===== */
     .transcript {
       overflow-y: auto;
@@ -1129,7 +1138,9 @@
       </div>
     </div>
   <div class="tabbar" id="tabbar">
+    <button class="action-btn tabbar-scroll" id="tab-scroll-left" aria-label="Scroll tabs left">‹</button>
     <button class="action-btn tabbar-new" id="new-tab-btn">New tab</button>
+    <button class="action-btn tabbar-scroll" id="tab-scroll-right" aria-label="Scroll tabs right">›</button>
   </div>
 
 
