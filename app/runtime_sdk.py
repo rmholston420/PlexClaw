@@ -187,7 +187,7 @@ class PendingApproval:
     decision: str | None = None
 
 class _LegacyApprovalEventProxy:
-    def __init__(self, session: "LiveSession") -> None:
+    def __init__(self, session: LiveSession) -> None:
         self._session = session
 
     def clear(self) -> None:
@@ -199,7 +199,10 @@ class _LegacyApprovalEventProxy:
             pending.event.set()
 
     def is_set(self) -> bool:
-        return any(pending.event.is_set() for pending in self._session.pending_approvals.values())
+        return any(
+            pending.event.is_set()
+            for pending in self._session.pending_approvals.values()
+        )
 
 
 @dataclass
