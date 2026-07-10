@@ -41,6 +41,7 @@ const Bridge = (() => {
   };
 
   const el = {
+    cwdContextLabel: document.getElementById('cwd-context-label'),
     transcript: document.getElementById('transcript'),
     welcome: document.getElementById('welcome'),
     attachmentRow: document.getElementById('attachment-row'),
@@ -664,6 +665,7 @@ function renderProviderRuntimeMeta() {
     const query = params.toString() ? `?${params.toString()}` : '';
     const data = await api(`/api/fs/browse${query}`);
     state.cwdBrowsing = data.path;
+   renderFsContextLabel();
     if (el.cwdCurrentPath) el.cwdCurrentPath.textContent = data.path;
     if (!el.cwdBrowser) return;
 
@@ -712,6 +714,22 @@ function renderProviderRuntimeMeta() {
     });
   }
 
+  function renderFsContextLabel() {
+    if (!el.cwdContextLabel) return;
+    const sessionId = state.sessionId || null;
+    const cwd = state.cwdBrowsing || state.cwdSelected || '';
+    if (!sessionId && !cwd) {
+      el.cwdContextLabel.textContent = '';
+      el.cwdContextLabel.hidden = true;
+      return;
+    }
+    const parts = [];
+    if (sessionId) parts.push(`session ${sessionId.slice(0, 8)}`);
+    if (cwd) parts.push(`cwd ${cwd}`);
+    el.cwdContextLabel.textContent = `Filesystem view for ${parts.join(' · ')}`;
+    el.cwdContextLabel.hidden = false;
+  }
+
   async function initCwd() {
     try {
       const query = state.sessionId ? `?session_id=${encodeURIComponent(state.sessionId)}` : '';
@@ -722,6 +740,7 @@ function renderProviderRuntimeMeta() {
       setCwd(initial);
       state.cwdSelected = initial;
       state.cwdBrowsing = initial;
+      renderFsContextLabel();
       if (el.cwdCurrentPath) el.cwdCurrentPath.textContent = initial;
     } catch (err) {
       console.warn('CWD init error', err);
