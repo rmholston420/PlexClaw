@@ -65,6 +65,7 @@ const Bridge = (() => {
     providerSwitcher: document.getElementById('provider-switcher'),
     modelSelect: document.getElementById('model-select'),
     openSearchBtn: document.getElementById('open-search'),
+    exportSessionBtn: document.getElementById('export-session'),
     searchModal: document.getElementById('search-modal'),
     searchBackdrop: document.getElementById('search-backdrop'),
     searchClose: document.getElementById('search-close'),
@@ -572,6 +573,34 @@ const Bridge = (() => {
 
 
   // ---- Markdown-lite renderer ----
+  async function exportCurrentSession() {
+    if (!state.sessionId) {
+      appendSystemMessage('No active session to export.', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${encodeURIComponent(state.sessionId)}/export?format=md`);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Export failed (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `session-${state.sessionId.slice(0, 8)}.md`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      appendSystemMessage(`Export failed: ${err.message || err}`, 'error');
+    }
+  }
+
+
   function renderMarkdown(text) {
     const div = document.createElement('div');
     // Split on code fences first
@@ -1288,6 +1317,7 @@ const Bridge = (() => {
     el.archiveSort.addEventListener('change', renderArchive);
     el.refreshArchive.addEventListener('click', loadArchive);
     el.openSearchBtn?.addEventListener('click', openSearchModal);
+    el.exportSessionBtn?.addEventListener('click', exportCurrentSession);
     el.searchBackdrop?.addEventListener('click', closeSearchModal);
     el.searchClose?.addEventListener('click', closeSearchModal);
     el.searchInputModal?.addEventListener('input', runSessionSearch);
