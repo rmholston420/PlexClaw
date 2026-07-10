@@ -20,7 +20,7 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
 from app import fs_routes
 from app import runtime_sdk as runtime
@@ -99,6 +99,12 @@ app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=get_allowed_hosts(),
 )
+
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> FileResponse:
+    return FileResponse("frontend/static/favicon.svg", media_type="image/svg+xml")
 
 
 # ---------------------------------------------------------------------------

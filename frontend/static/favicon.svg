@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PlexClaw favicon">
+  <rect width="64" height="64" rx="14" fill="#0c0f1a"/>
+  <path d="M18 45 L24 18 L31 31 L37 16 L44 31 L49 20 L45 45 Z"
+        fill="none"
+        stroke="#4fc3d4"
+        stroke-width="5"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  <circle cx="46" cy="46" r="4" fill="#4fc3d4"/>
+</svg>
