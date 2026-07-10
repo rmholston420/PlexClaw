@@ -115,6 +115,7 @@ async def health() -> dict:
 
 
 @app.get("/api/diag/runtime")
+@app.get("/api/runtime/diag")
 async def runtime_diagnostics() -> dict:
     sessions = runtime.list_live_sessions()
     now = runtime.time.monotonic()
