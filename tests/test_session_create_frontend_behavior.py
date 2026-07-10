@@ -40,4 +40,7 @@ def test_session_create_response_matches_frontend_bootstrap_expectations() -> No
     assert "function setRuntimeMode(mockMode)" in js
     assert "if (data.model) state.model = data.model;" in js
     assert "if (data.provider) state.provider = data.provider;" in js
+    assert "if (data.permission_mode) state.permissionMode = data.permission_mode;" in js
+    assert "if (Object.prototype.hasOwnProperty.call(data, 'cwd')) setCwd(data.cwd);" in js
+    assert "renderPermissionMode();" in js
     assert "if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);" in js

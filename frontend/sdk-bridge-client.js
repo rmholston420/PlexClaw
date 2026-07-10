@@ -1133,9 +1133,12 @@ function setRuntimeMode(mockMode) {
     state.sessionId = data.session_id;
   if (data.model) state.model = data.model;
   if (data.provider) state.provider = data.provider;
+  if (data.permission_mode) state.permissionMode = data.permission_mode;
+  if (Object.prototype.hasOwnProperty.call(data, 'cwd')) setCwd(data.cwd);
   if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);
   renderModelOptions();
   renderProviderSwitcher();
+  renderPermissionMode();
     const tab = currentTab();
     if (tab && !tab.sessionId) tab.title = (resumeSessionId ? 'Resumed' : 'Live') + ' ' + state.sessionId.slice(0, 8);
     setSessionLabel(state.sessionId);
