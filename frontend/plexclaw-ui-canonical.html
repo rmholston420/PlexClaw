@@ -1445,6 +1445,13 @@
 <div class="provider-switcher" id="provider-switcher" aria-label="Providers"></div>
       <div class="badge" id="provider-runtime-meta" title="Effective provider routing">Provider: cloud</div>
      <div class="badge" id="tool-runtime-meta" title="Tool search state">Tools: default</div>
+     <select class="model-select" id="tool-search-select" title="Tool search mode" aria-label="Tool search mode">
+       <option value="">Tool search: Default</option>
+       <option value="false">Tool search: Off</option>
+       <option value="auto">Tool search: Auto</option>
+       <option value="auto:5">Tool search: Auto 5%</option>
+       <option value="true">Tool search: On</option>
+     </select>
         <div class="mode-toggle" id="mode-toggle" aria-label="Tool approval mode">
           <button class="mode-toggle-btn" id="mode-manual-btn" type="button">Manual</button>
           <button class="mode-toggle-btn" id="mode-auto-btn" type="button">Auto</button>

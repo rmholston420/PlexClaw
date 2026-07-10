@@ -71,6 +71,7 @@ const Bridge = (() => {
     providerSwitcher: document.getElementById('provider-switcher'),
    providerRuntimeMeta: document.getElementById('provider-runtime-meta'),
   toolRuntimeMeta: document.getElementById('tool-runtime-meta'),
+  toolSearchSelect: document.getElementById('tool-search-select'),
     modelSelect: document.getElementById('model-select'),
     openSearchBtn: document.getElementById('open-search'),
     exportSessionBtn: document.getElementById('export-session'),
@@ -184,6 +185,10 @@ function renderProviderRuntimeMeta() {
     } else {
       el.toolRuntimeMeta.textContent = 'Tools: default';
     }
+  }
+
+  if (el.toolSearchSelect) {
+    el.toolSearchSelect.value = state.toolSearchMode || '';
   }
 }
 
@@ -319,6 +324,12 @@ function renderProviderRuntimeMeta() {
       });
       existingNew?.before(btn);
     });
+
+  el.toolSearchSelect?.addEventListener('change', () => {
+    state.toolSearchMode = el.toolSearchSelect.value || null;
+    renderProviderRuntimeMeta();
+    syncStateToActiveTab();
+  });
 
     updateTabScrollButtons();
   }
@@ -1167,6 +1178,7 @@ function renderProviderRuntimeMeta() {
   async function createSession({ resumeSessionId = null, forkSession = false } = {}) {
     state.model = el.modelSelect?.value || state.model;
     state.provider = el.providerSelect?.value || state.provider;
+    state.toolSearchMode = el.toolSearchSelect?.value || null;
 
     const manualCwd = (el.cwdManualInput?.value || '').trim();
     const effectiveCwd = (
