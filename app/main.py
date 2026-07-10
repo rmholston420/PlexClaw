@@ -373,21 +373,21 @@ async def tag_session(session_id: str, body: TagRequest) -> dict:
 
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
-    await websocket.accept()
-    ws_manager.add(session_id, websocket)
+    client_protocol = websocket.query_params.get("protocol_version")
+    if client_protocol != PROTOCOL_VERSION:
+        await websocket.close(
+            code=4400,
+            reason=f"protocol_version mismatch: server={PROTOCOL_VERSION}",
+        )
+        return
 
     session = runtime.get_session(session_id)
     if not session:
-        await websocket.send_text(
-            WSEnvelope(
-                type="session.failed",
-                session_id=session_id,
-                seq=0,
-                payload={"error": "Session not found"},
-            ).model_dump_json()
-        )
-        await websocket.close()
+        await websocket.close(code=4404, reason="session not found")
         return
+
+    await websocket.accept()
+    ws_manager.add(session_id, websocket)
 
     # Emit session.ready
     ready = WSEnvelope(
