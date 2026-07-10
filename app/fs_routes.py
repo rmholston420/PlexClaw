@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -26,7 +25,7 @@ async def browse(
     if not base.is_dir():
         raise HTTPException(status_code=400, detail=f"not a directory: {base}")
 
-    entries: List[dict] = []
+    entries: list[dict] = []
 
     parent = base.parent
     if parent != base:

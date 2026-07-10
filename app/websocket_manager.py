@@ -1,16 +1,15 @@
 """Per-session WebSocket fanout manager."""
+
 from __future__ import annotations
 
-import asyncio
-import json
-from typing import Dict, List
 from fastapi import WebSocket
+
 from app.schemas import WSEnvelope
 
 
 class WebSocketManager:
     def __init__(self) -> None:
-        self._sessions: Dict[str, List[WebSocket]] = {}
+        self._sessions: dict[str, list[WebSocket]] = {}
 
     def add(self, session_id: str, ws: WebSocket) -> None:
         self._sessions.setdefault(session_id, []).append(ws)

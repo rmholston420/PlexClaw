@@ -1,9 +1,10 @@
 """Protocol schemas for PlexClaw WebSocket bridge."""
+
 from __future__ import annotations
 
-from typing import Any, Optional
-from pydantic import BaseModel, Field
-import uuid
+from typing import Any
+
+from pydantic import BaseModel
 
 PROTOCOL_VERSION = "0.2.0"
 
@@ -20,17 +21,18 @@ class WSEnvelope(BaseModel):
 
 class SessionCreateRequest(BaseModel):
     model: str = "claude-sonnet-4-5"
-    cwd: Optional[str] = None
+    cwd: str | None = None
     provider: str = "cloud"
     permission_mode: str = "manual"
-    system_prompt: Optional[str] = None
-    resume_session_id: Optional[str] = None
+    system_prompt: str | None = None
+    resume_session_id: str | None = None
     fork_session: bool = False
 
 
-
 class SessionUpdateRequest(BaseModel):
-    permission_mode: Optional[str] = None
+    permission_mode: str | None = None
+
+
 class SessionCreateResponse(BaseModel):
     session_id: str
     status: str = "created"
@@ -39,7 +41,7 @@ class SessionCreateResponse(BaseModel):
 
 class PromptRequest(BaseModel):
     prompt: str
-    session_id: Optional[str] = None
+    session_id: str | None = None
 
 
 class InterruptRequest(BaseModel):
@@ -51,4 +53,4 @@ class RenameRequest(BaseModel):
 
 
 class TagRequest(BaseModel):
-    tag: Optional[str] = None
+    tag: str | None = None

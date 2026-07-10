@@ -1,4 +1,5 @@
 """PlexClaw FastAPI backend – port 8020."""
+
 from __future__ import annotations
 
 import asyncio
@@ -6,20 +7,26 @@ import json
 import logging
 import os
 import urllib.request
-from typing import Optional
+from contextlib import asynccontextmanager
 
-
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi import (
+    FastAPI,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, PlainTextResponse
 
+from app import fs_routes
 from app import runtime_sdk as runtime
 from app.archive_normalizer import normalize_session, normalize_session_list
 from app.event_store import init_db, query_events, search_events
 from app.schemas import (
     PROTOCOL_VERSION,
-    InterruptRequest,
     RenameRequest,
     SessionCreateRequest,
     SessionCreateResponse,
@@ -28,10 +35,21 @@ from app.schemas import (
     WSEnvelope,
 )
 from app.websocket_manager import ws_manager
-from app import fs_routes
 
 logging.basicConfig(level=logging.INFO)
-app = FastAPI(title="PlexClaw Bridge", version="0.2.0")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(
+    title="PlexClaw Bridge",
+    version="0.2.0",
+    lifespan=lifespan,
+)
 
 app.include_router(fs_routes.router)
 
@@ -41,11 +59,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def startup() -> None:
-    init_db()
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +89,6 @@ async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
     )
 
 
-
 @app.patch("/api/sessions/{session_id}")
 async def update_session(session_id: str, req: SessionUpdateRequest) -> dict:
     try:
@@ -93,6 +105,8 @@ async def update_session(session_id: str, req: SessionUpdateRequest) -> dict:
         "status": session.status,
         "permission_mode": session.permission_mode,
     }
+
+
 @app.post("/api/sessions/{session_id}/interrupt")
 async def interrupt_session(session_id: str) -> dict:
     try:
@@ -107,12 +121,20 @@ async def upload_context_file(session_id: str, file: UploadFile = File(...)) -> 
     try:
         raw = await file.read()
         text = raw.decode("utf-8")
-        item = runtime.add_context_file(session_id, file.filename or "attachment.txt", text)
-        return {"ok": True, "file": item, "files": runtime.list_context_files(session_id)}
+        item = runtime.add_context_file(
+            session_id, file.filename or "attachment.txt", text
+        )
+        return {
+            "ok": True,
+            "file": item,
+            "files": runtime.list_context_files(session_id),
+        }
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except UnicodeDecodeError as exc:
-        raise HTTPException(status_code=400, detail="Only UTF-8 text files are supported") from exc
+        raise HTTPException(
+            status_code=400, detail="Only UTF-8 text files are supported"
+        ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -149,9 +171,11 @@ CLOUD_MODELS = [
 async def _fetch_ollama_models() -> list[str]:
     base = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
     try:
+
         def _load():
             with urllib.request.urlopen(f"{base}/api/tags", timeout=2.0) as res:
                 return json.loads(res.read().decode("utf-8"))
+
         data = await asyncio.to_thread(_load)
         return [m.get("name") for m in data.get("models", []) if m.get("name")]
     except Exception:
@@ -161,9 +185,11 @@ async def _fetch_ollama_models() -> list[str]:
 async def _fetch_vllm_models() -> list[str]:
     base = os.getenv("VLLM_BASE_URL", "http://127.0.0.1:30000").rstrip("/")
     try:
+
         def _load():
             with urllib.request.urlopen(f"{base}/v1/models", timeout=2.0) as res:
                 return json.loads(res.read().decode("utf-8"))
+
         data = await asyncio.to_thread(_load)
         return [m.get("id") for m in data.get("data", []) if m.get("id")]
     except Exception:
@@ -182,7 +208,11 @@ async def get_providers() -> dict:
         "default_provider": "cloud",
         "providers": {
             "cloud": {"label": "Cloud", "models": CLOUD_MODELS},
-            "ollama": {"label": "Ollama", "base_url": ollama_base, "models": ollama_models},
+            "ollama": {
+                "label": "Ollama",
+                "base_url": ollama_base,
+                "models": ollama_models,
+            },
             "vllm": {"label": "vLLM", "base_url": vllm_base, "models": vllm_models},
         },
     }
@@ -232,7 +262,9 @@ def _render_session_markdown(session_id: str, events: list[dict]) -> str:
             lines.append(f"## Tool: {payload.get('tool_name', 'tool')}")
             lines.append("")
             lines.append("```json")
-            lines.append(json.dumps(payload.get("tool_input", {}), indent=2, ensure_ascii=False))
+            lines.append(
+                json.dumps(payload.get("tool_input", {}), indent=2, ensure_ascii=False)
+            )
             lines.append("```")
             lines.append("")
         elif etype == "tool.completed":
@@ -280,8 +312,8 @@ async def export_session(session_id: str, format: str = "json"):
 @app.get("/api/sessions/{session_id}/events")
 async def get_events(
     session_id: str,
-    event_type: Optional[str] = None,
-    since_seq: Optional[int] = None,
+    event_type: str | None = None,
+    since_seq: int | None = None,
 ) -> list:
     return query_events(session_id, event_type=event_type, since_seq=since_seq)
 

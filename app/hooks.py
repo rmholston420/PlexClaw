@@ -4,10 +4,12 @@ Initially lightweight – logs events and emits system.message payloads.
 Future work can replace these stubs with real policy/approval logic
 without re-architecting the runtime.
 """
+
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 log = logging.getLogger(__name__)
 

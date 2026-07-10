@@ -10,44 +10,15 @@ Anthropic-compatible providers like Ollama.
 Package: pip install claude-agent-sdk
 Docs:    https://code.claude.com/docs/en/agent-sdk/python
 """
+
 from __future__ import annotations
-
-DEFAULT_SYSTEM_PROMPT = """
-You are PlexClaw, a repo-aware coding assistant running inside the user's current working directory.
-
-Core behavior:
-- Be practical, concise, and action-oriented.
-- Default to helping with code, debugging, shell commands, repo navigation, and implementation tasks.
-- Prefer direct answers and concrete next steps over generic brainstorming.
-- When the user is working in a repository, stay grounded in that repository and its files.
-
-Response style:
-- Use plain natural language.
-- Do not emit fake XML or pseudo-tool markup such as <tool_call>, </tool_call>, <function_call>, or similar tags in normal responses.
-- Do not narrate hidden chain-of-thought.
-- Keep the first reply short unless the user asks for depth.
-- When useful, give a minimal sequence of next steps instead of a long essay.
-
-Tool behavior:
-- Use tools only when needed.
-- Do not claim to have run commands, inspected files, or changed code unless that actually happened.
-- If a tool is unavailable or a file has not been inspected, say so briefly and continue with the best concrete guidance you can.
-- When suggesting commands or patches, make them copy-pasteable.
-
-Coding behavior:
-- Prefer small, safe edits over sweeping rewrites.
-- Preserve existing project conventions when they are visible.
-- When uncertain, ask one focused clarifying question rather than making broad assumptions.
-
-If the user starts with a direct engineering task, respond like an experienced pair programmer already inside the project.
-""".strip()
 
 import asyncio
 import logging
 import uuid
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from pathlib import Path
+from typing import Any
 
 from app.event_store import append_event
 from app.hooks import HookContext, run_hooks
@@ -64,23 +35,77 @@ from app.websocket_manager import ws_manager
 
 log = logging.getLogger(__name__)
 
+DEFAULT_SYSTEM_PROMPT = """
+You are PlexClaw, a repo-aware coding assistant running inside
+the user's current working directory.
+
+Core behavior:
+- Be practical, concise, and action-oriented.
+- Default to helping with code, debugging, shell commands,
+  repo navigation, and implementation tasks.
+- Prefer direct answers and concrete next steps over
+  generic brainstorming.
+- When the user is working in a repository, stay grounded in
+  that repository and its files.
+
+Response style:
+- Use plain natural language.
+- Do not emit fake XML or pseudo-tool markup such as
+  <tool_call>, </tool_call>, <function_call>, or similar tags
+  in normal responses.
+- Do not narrate hidden chain-of-thought.
+- Keep the first reply short unless the user asks for depth.
+- When useful, give a minimal sequence of next steps instead
+  of a long essay.
+
+Tool behavior:
+- Use tools only when needed.
+- Do not claim to have run commands, inspected files, or
+  changed code unless that actually happened.
+- If a tool is unavailable or a file has not been inspected,
+  say so briefly and continue with the best concrete guidance
+  you can.
+- When suggesting commands or patches, make them copy-pasteable.
+
+Coding behavior:
+- Prefer small, safe edits over sweeping rewrites.
+- Preserve existing project conventions when they are visible.
+- When uncertain, ask one focused clarifying question rather
+  than making broad assumptions.
+
+If the user starts with a direct engineering task, respond
+like an experienced pair programmer already inside the project.
+""".strip()
+
+
 # ---------------------------------------------------------------------------
 # SDK import — real package is `claude-agent-sdk` (pip install claude-agent-sdk)
 # ---------------------------------------------------------------------------
 try:
     import claude_agent_sdk as sdk  # type: ignore
-    from claude_agent_sdk.types import StreamEvent  # type: ignore
     from claude_agent_sdk import (  # type: ignore
         AssistantMessage,
-        ResultMessage,
         ClaudeAgentOptions,
         ClaudeSDKClient,
-        list_sessions as _sdk_list_sessions,
+        ResultMessage,
+    )
+    from claude_agent_sdk import (
         get_session_info as _sdk_get_session_info,
+    )
+    from claude_agent_sdk import (
         get_session_messages as _sdk_get_session_messages,
+    )
+    from claude_agent_sdk import (
+        list_sessions as _sdk_list_sessions,
+    )
+    from claude_agent_sdk import (
         rename_session as _sdk_rename_session,
+    )
+    from claude_agent_sdk import (
         tag_session as _sdk_tag_session,
     )
+    from claude_agent_sdk.types import StreamEvent  # type: ignore
+
     _SDK_AVAILABLE = True
 except ImportError:
     sdk = None  # type: ignore
@@ -97,7 +122,9 @@ except ImportError:
     _SDK_AVAILABLE = False
     log.warning(
         "claude_agent_sdk not installed. "
-        "Install with: pip install claude-agent-sdk and configure local routing with ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN as needed."
+        "Install with: pip install claude-agent-sdk and configure "
+        "local routing with ANTHROPIC_BASE_URL and "
+        "ANTHROPIC_AUTH_TOKEN as needed."
     )
 
 
@@ -105,22 +132,22 @@ except ImportError:
 class LiveSession:
     id: str
     model: str
-    cwd: Optional[str]
+    cwd: str | None
     provider: str
     permission_mode: str
-    resume_session_id: Optional[str]
+    resume_session_id: str | None
     fork_session: bool
     status: str = "created"  # created | ready | running | interrupted | failed
     title: str = ""
-    tag: Optional[str] = None
+    tag: str | None = None
     seq: int = 0
     _client: Any = field(default=None, repr=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, repr=False)
     _approval_event: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
-    _pending_tool_id: Optional[str] = field(default=None, repr=False)
-    _pending_tool_name: Optional[str] = field(default=None, repr=False)
+    _pending_tool_id: str | None = field(default=None, repr=False)
+    _pending_tool_name: str | None = field(default=None, repr=False)
     _pending_tool_input: Any = field(default=None, repr=False)
-    _approval_decision: Optional[str] = field(default=None, repr=False)
+    _approval_decision: str | None = field(default=None, repr=False)
     context_files: dict[str, str] = field(default_factory=dict, repr=False)
     _context_injected: bool = field(default=False, repr=False)
 
@@ -132,7 +159,7 @@ class LiveSession:
 _sessions: dict[str, LiveSession] = {}
 
 
-def get_session(session_id: str) -> Optional[LiveSession]:
+def get_session(session_id: str) -> LiveSession | None:
     return _sessions.get(session_id)
 
 
@@ -205,7 +232,9 @@ def list_context_files(session_id: str) -> list[dict[str, str | int]]:
     ]
 
 
-def add_context_file(session_id: str, filename: str, content: str) -> dict[str, str | int]:
+def add_context_file(
+    session_id: str, filename: str, content: str
+) -> dict[str, str | int]:
     session = _sessions.get(session_id)
     if not session:
         raise KeyError(f"Session {session_id} not found")
@@ -262,8 +291,9 @@ async def _emit(session: LiveSession, envelope: WSEnvelope) -> None:
     )
 
 
-
-async def update_session(session_id: str, *, permission_mode: Optional[str] = None) -> LiveSession:
+async def update_session(
+    session_id: str, *, permission_mode: str | None = None
+) -> LiveSession:
     session = _sessions.get(session_id)
     if not session:
         raise KeyError(f"Session {session_id} not found")
@@ -274,100 +304,110 @@ async def update_session(session_id: str, *, permission_mode: Optional[str] = No
         session.permission_mode = permission_mode
 
     return session
+
+
 async def create_session(req: SessionCreateRequest) -> LiveSession:
-  normalized_cwd = None
-  if req.cwd:
-      normalized_cwd = str(Path(req.cwd).expanduser().resolve())
-      p = Path(normalized_cwd)
-      if not p.exists():
-          raise ValueError(f"cwd does not exist: {p}")
-      if not p.is_dir():
-          raise ValueError(f"cwd is not a directory: {p}")
+    normalized_cwd = None
+    if req.cwd:
+        normalized_cwd = str(Path(req.cwd).expanduser().resolve())
+        p = Path(normalized_cwd)
+        if not p.exists():
+            raise ValueError(f"cwd does not exist: {p}")
+        if not p.is_dir():
+            raise ValueError(f"cwd is not a directory: {p}")
 
-  if not _SDK_AVAILABLE:
-      raise RuntimeError(
-          "claude_agent_sdk is not installed. Install it with "
-          "'pip install claude-agent-sdk' and configure "
-          "ANTHROPIC_BASE_URL=http://localhost:11434 plus "
-          "ANTHROPIC_AUTH_TOKEN=ollama for local Ollama use."
-      )
+    if not _SDK_AVAILABLE:
+        raise RuntimeError(
+            "claude_agent_sdk is not installed. Install it with "
+            "'pip install claude-agent-sdk' and configure "
+            "ANTHROPIC_BASE_URL=http://localhost:11434 plus "
+            "ANTHROPIC_AUTH_TOKEN=ollama for local Ollama use."
+        )
 
-  session_id = str(uuid.uuid4())
-  session = LiveSession(
-      id=session_id,
-      model=req.model,
-      cwd=normalized_cwd,
-      provider=req.provider,
-      permission_mode=req.permission_mode,
-      resume_session_id=req.resume_session_id,
-      fork_session=req.fork_session,
-  )
-  _sessions[session_id] = session
+    session_id = str(uuid.uuid4())
+    session = LiveSession(
+        id=session_id,
+        model=req.model,
+        cwd=normalized_cwd,
+        provider=req.provider,
+        permission_mode=req.permission_mode,
+        resume_session_id=req.resume_session_id,
+        fork_session=req.fork_session,
+    )
+    _sessions[session_id] = session
 
-  # Conservative default system prompt to reduce over-aggressive tool use.
-  # If the frontend supplied a system_prompt, respect it; otherwise, use this.
-  default_system_prompt = (
-      "You are a coding assistant inside PlexClaw.\n"
-      "\n"
-      "Respond in plain natural language unless a real tool call is necessary. "
-      "Do not emit XML, pseudo-XML, tool tags, function-call markup, or schema markup as assistant text.\n"
-      "\n"
-      "Prefer answering directly in plain language when the user asks for "
-      "explanation, planning, review, summary, or small code snippets that do not "
-      "require modifying files or inspecting the filesystem.\n"
-      "\n"
-      "Use tools only when they are genuinely necessary to complete the "
-      "request accurately, such as reading project files, searching the "
-      "codebase, or writing requested changes.\n"
-      "\n"
-      "Before using a write or edit tool, briefly explain what you plan to "
-      "change unless the user explicitly asked for immediate file modification.\n"
-      "\n"
-      "Do not create files, reports, workflows, or analysis documents unless "
-      "the user explicitly asks for them.\n"
-      "\n"
-      "If you are not actually calling a tool through the runtime, never simulate "
-      "a tool call in text and never print tags like <tool_call>, <function>, "
-      "<parameter>, or similar markup.\n"
-      "\n"
-      "When a concise direct answer is sufficient, respond without calling tools."
-  )
-  effective_system_prompt = req.system_prompt or default_system_prompt
+    # Conservative default system prompt to reduce over-aggressive tool use.
+    # If the frontend supplied a system_prompt, respect it; otherwise, use this.
+    default_system_prompt = (
+        "You are a coding assistant inside PlexClaw.\n"
+        "\n"
+        "Respond in plain natural language unless a real tool call is necessary. "
+        "Do not emit XML, pseudo-XML, tool tags, function-call "
+        "markup, or schema markup as assistant text.\n"
+        "\n"
+        "Prefer answering directly in plain language when the user asks for "
+        "explanation, planning, review, summary, or small code snippets that do not "
+        "require modifying files or inspecting the filesystem.\n"
+        "\n"
+        "Use tools only when they are genuinely necessary to complete the "
+        "request accurately, such as reading project files, searching the "
+        "codebase, or writing requested changes.\n"
+        "\n"
+        "Before using a write or edit tool, briefly explain what you plan to "
+        "change unless the user explicitly asked for immediate file modification.\n"
+        "\n"
+        "Do not create files, reports, workflows, or analysis documents unless "
+        "the user explicitly asks for them.\n"
+        "\n"
+        "If you are not actually calling a tool through the runtime, never simulate "
+        "a tool call in text and never print tags like <tool_call>, <function>, "
+        "<parameter>, or similar markup.\n"
+        "\n"
+        "When a concise direct answer is sufficient, respond without calling tools."
+    )
+    effective_system_prompt = req.system_prompt or default_system_prompt
 
-  options = ClaudeAgentOptions(
-      model=req.model,
-      cwd=normalized_cwd,
-      permission_mode=req.permission_mode,
-      system_prompt=effective_system_prompt,
-      resume=req.resume_session_id,
-      fork_session=req.fork_session,
-      include_partial_messages=True,
-  )
-  session._client = ClaudeSDKClient(options)
+    options = ClaudeAgentOptions(
+        model=req.model,
+        cwd=normalized_cwd,
+        permission_mode=req.permission_mode,
+        system_prompt=effective_system_prompt,
+        resume=req.resume_session_id,
+        fork_session=req.fork_session,
+        include_partial_messages=True,
+    )
+    session._client = ClaudeSDKClient(options)
 
-  log.info("Session created: %s model=%s provider=%s cwd=%s", session_id, req.model, req.provider, normalized_cwd)
+    log.info(
+        "Session created: %s model=%s provider=%s cwd=%s",
+        session_id,
+        req.model,
+        req.provider,
+        normalized_cwd,
+    )
 
-  session.seq += 1
-  await _emit(
-      session,
-      WSEnvelope(
-          protocol_version=PROTOCOL_VERSION,
-          session_id=session.id,
-          seq=session.seq,
-          type="system.message",
-          payload={
-              "subtype": "session.created",
-              "message": "Session created.",
-              "model": session.model,
-              "provider": session.provider,
-              "cwd": session.cwd,
-              "permission_mode": session.permission_mode,
-              "resume_session_id": session.resume_session_id,
-              "fork_session": session.fork_session,
-          },
-      ),
-  )
-  return session
+    session.seq += 1
+    await _emit(
+        session,
+        WSEnvelope(
+            protocol_version=PROTOCOL_VERSION,
+            session_id=session.id,
+            seq=session.seq,
+            type="system.message",
+            payload={
+                "subtype": "session.created",
+                "message": "Session created.",
+                "model": session.model,
+                "provider": session.provider,
+                "cwd": session.cwd,
+                "permission_mode": session.permission_mode,
+                "resume_session_id": session.resume_session_id,
+                "fork_session": session.fork_session,
+            },
+        ),
+    )
+    return session
+
 
 async def _stream_sdk(session: LiveSession, prompt: str) -> None:
     """Real Claude Agent SDK streaming.
@@ -375,7 +415,8 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
     Message flow with include_partial_messages=True:
         StreamEvent(message_start)
         StreamEvent(content_block_start)   — type="text" or type="tool_use"
-        StreamEvent(content_block_delta)   — delta.type="text_delta" | "input_json_delta"
+        StreamEvent(content_block_delta)
+            — delta.type="text_delta" | "input_json_delta"
         StreamEvent(content_block_stop)
         StreamEvent(message_delta)         — stop_reason, usage
         StreamEvent(message_stop)
@@ -397,7 +438,6 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
         await client.query(prompt=prompt)
 
         async for message in client.receive_response():
-
             # ------------------------------------------------------------------
             # StreamEvent: token-level incremental updates
             # ------------------------------------------------------------------
@@ -416,7 +456,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                             session.next_seq(),
                             _current_tool_id,
                             _current_tool_name,
-                            {},  # input not yet available; streamed via input_json_delta
+                            {},  # input streamed later via input_json_delta
                         )
                         await _emit(session, env)
 
@@ -436,11 +476,17 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                         _current_tool_json += delta.get("partial_json", "")
 
                 elif etype == "content_block_stop":
-                    # Tool input fully assembled — emit completed tool_started with full input
+                    # Tool input fully assembled; emit tool_started again
+                    # with the completed input payload.
                     if _current_tool_id and _current_tool_name:
                         import json as _json
+
                         try:
-                            tool_input = _json.loads(_current_tool_json) if _current_tool_json else {}
+                            tool_input = (
+                                _json.loads(_current_tool_json)
+                                if _current_tool_json
+                                else {}
+                            )
                         except Exception:
                             tool_input = {"_raw": _current_tool_json}
                         # Re-emit with complete input by sending a delta payload
@@ -474,7 +520,9 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                                     try:
                                         await session._client.interrupt()
                                     except Exception as exc:
-                                        log.warning("Interrupt after reject failed: %s", exc)
+                                        log.warning(
+                                            "Interrupt after reject failed: %s", exc
+                                        )
 
                         _current_tool_id = None
                         _current_tool_name = None
@@ -504,12 +552,17 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                 usage = {}
                 raw_usage = getattr(message, "usage", None)
                 if raw_usage is not None:
-                    usage = vars(raw_usage) if hasattr(raw_usage, "__dict__") else dict(raw_usage)
+                    usage = (
+                        vars(raw_usage)
+                        if hasattr(raw_usage, "__dict__")
+                        else dict(raw_usage)
+                    )
                 env = normalize_assistant_completed(
                     session.id, session.next_seq(), stop_reason, usage
                 )
                 await _emit(session, env)
-                # ResultMessage is the final message in receive_response(); iteration ends here.
+                # ResultMessage is the final message in
+                # receive_response(); iteration ends here.
 
     except Exception as exc:
         log.error("SDK stream error session=%s: %s", session.id, exc)
@@ -520,35 +573,35 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
 
 
 async def submit_prompt(session_id: str, prompt: str) -> None:
-   session = _sessions.get(session_id)
-   if not session:
-       raise KeyError(f"Session {session_id} not found")
+    session = _sessions.get(session_id)
+    if not session:
+        raise KeyError(f"Session {session_id} not found")
 
-   async with session._lock:
-       if not _SDK_AVAILABLE:
-           raise RuntimeError(
-               "claude_agent_sdk is not installed. Install it with "
-               "'pip install claude-agent-sdk' and configure "
-               "ANTHROPIC_BASE_URL=http://localhost:11434 plus "
-               "ANTHROPIC_AUTH_TOKEN=ollama for local Ollama use."
-           )
-       if session._client is None:
-           raise RuntimeError("Session client is not initialized")
+    async with session._lock:
+        if not _SDK_AVAILABLE:
+            raise RuntimeError(
+                "claude_agent_sdk is not installed. Install it with "
+                "'pip install claude-agent-sdk' and configure "
+                "ANTHROPIC_BASE_URL=http://localhost:11434 plus "
+                "ANTHROPIC_AUTH_TOKEN=ollama for local Ollama use."
+            )
+        if session._client is None:
+            raise RuntimeError("Session client is not initialized")
 
-       session.status = "running"
-       sys_env = normalize_system_message(
-           session.id,
-           session.next_seq(),
-           f"Prompt received ({len(prompt)} chars)",
-       )
-       await _emit(session, sys_env)
+        session.status = "running"
+        sys_env = normalize_system_message(
+            session.id,
+            session.next_seq(),
+            f"Prompt received ({len(prompt)} chars)",
+        )
+        await _emit(session, sys_env)
 
-       try:
-           prompt_with_context = _inject_context_into_prompt(session, prompt)
-           await _stream_sdk(session, prompt_with_context)
-       finally:
-           if session.status != "failed":
-               session.status = "ready"
+        try:
+            prompt_with_context = _inject_context_into_prompt(session, prompt)
+            await _stream_sdk(session, prompt_with_context)
+        finally:
+            if session.status != "failed":
+                session.status = "ready"
 
 
 async def interrupt_session(session_id: str) -> None:
@@ -584,6 +637,7 @@ async def interrupt_session(session_id: str) -> None:
 # They read from local session storage files and return immediately.
 # Run them in an executor thread to avoid blocking the event loop.
 # ---------------------------------------------------------------------------
+
 
 def _sdksession_to_dict(info: Any) -> dict:
     """Convert SDKSessionInfo dataclass to a JSON-serialisable dict."""
@@ -623,7 +677,7 @@ async def list_archive_sessions() -> list[dict]:
     try:
         raw: list = await loop.run_in_executor(None, _sdk_list_sessions)
         sessions = [_sdksession_to_dict(s) for s in (raw or [])]
-        sessions.sort(key=lambda s: (s.get("last_modified") or 0), reverse=True)
+        sessions.sort(key=lambda s: s.get("last_modified") or 0, reverse=True)
         return sessions
     except Exception as exc:
         log.warning("list_sessions error: %s", exc)
