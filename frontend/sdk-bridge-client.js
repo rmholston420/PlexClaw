@@ -624,7 +624,7 @@ function renderProviderRuntimeMeta() {
     el.cwdModal.setAttribute('aria-hidden', 'false');
     if (el.cwdManualInput) el.cwdManualInput.value = state.cwdSelected || state.cwd || '';
     loadGitRoots().catch(console.error);
-    browseCwd(state.cwdSelected || null).catch(console.error);
+    browseCwd(state.cwdSelected || state.cwdBrowsing || null).catch(console.error);
   }
 
   function closeCwdModal() {
@@ -1728,7 +1728,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
   }
 
   async function init() {
-    setCwd('~');
+    setCwd('');
     renderPermissionMode();
     el.cwdPill?.addEventListener('click', openCwdModal);
     el.cwdBackdrop?.addEventListener('click', closeCwdModal);

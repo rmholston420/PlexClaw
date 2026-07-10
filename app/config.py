@@ -8,6 +8,7 @@ DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
     "http://localhost:5555",
+    "http://127.0.0.1:5555",
 ]
 
 DEFAULT_ALLOWED_HOSTS = [
