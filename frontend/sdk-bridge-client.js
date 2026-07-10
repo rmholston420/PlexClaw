@@ -158,6 +158,8 @@ const Bridge = (() => {
       replayMode: false,
       rawLogLines: [],
       terminalErrorsOnly: false,
+      terminalOpen: false,
+      terminalHeight: 220,
       cwdSelected: state.cwdSelected,
       model: state.model,
       provider: state.provider,
@@ -179,6 +181,8 @@ const Bridge = (() => {
     tab.replayMode = state.replayMode;
     tab.rawLogLines = [...state.rawLogLines];
     tab.terminalErrorsOnly = state.terminalErrorsOnly;
+    tab.terminalOpen = state.terminalOpen;
+    tab.terminalHeight = state.terminalHeight;
     tab.cwdSelected = state.cwdSelected;
     tab.model = state.model;
     tab.provider = state.provider;
@@ -194,6 +198,8 @@ const Bridge = (() => {
     state.replayMode = !!tab.replayMode;
     state.rawLogLines = [...(tab.rawLogLines || [])];
     state.terminalErrorsOnly = !!tab.terminalErrorsOnly;
+    state.terminalOpen = !!tab.terminalOpen;
+    state.terminalHeight = tab.terminalHeight || 220;
     state.cwdSelected = tab.cwdSelected || state.cwdSelected;
     state.model = tab.model || state.model;
     state.provider = tab.provider || state.provider;
@@ -1248,10 +1254,34 @@ const Bridge = (() => {
     });
 
     document.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === '`') {
+      if (!(e.metaKey || e.ctrlKey)) return;
+
+      if (e.key === '`') {
         e.preventDefault();
         setTerminalOpen(!state.terminalOpen);
         syncStateToActiveTab();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        openNewTab();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        closeTab(state.activeTabId);
+        return;
+      }
+
+      if (/^[1-9]$/.test(e.key)) {
+        const idx = Number(e.key) - 1;
+        const tab = state.tabs[idx];
+        if (tab) {
+          e.preventDefault();
+          switchTab(tab.id);
+        }
       }
     });
 
