@@ -19,6 +19,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app import fs_routes
@@ -72,6 +73,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+DEFAULT_ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "testserver",
+]
+
+raw_hosts = os.getenv("PLEXCLAW_ALLOWED_HOSTS", "")
+if raw_hosts.strip():
+    allowed_hosts = [h.strip() for h in raw_hosts.split(",") if h.strip()]
+else:
+    allowed_hosts = DEFAULT_ALLOWED_HOSTS
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=allowed_hosts,
+)
+
 
 
 # ---------------------------------------------------------------------------
