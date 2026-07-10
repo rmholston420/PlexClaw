@@ -26,6 +26,19 @@ def test_mock_mode_session_create_and_websocket_prompt_flow() -> None:
     assert data["status"] == "created"
     assert data["protocol_version"] == PROTOCOL_VERSION
 
+    replay = client.get(f"/api/sessions/{session_id}/replay")
+    assert replay.status_code == 200, replay.text
+    events = replay.json()
+    created = next(
+        evt
+        for evt in events
+        if evt["type"] == "system.message"
+        and evt["payload"].get("subtype") == "session.created"
+    )
+    assert "mock_mode" in created["payload"]
+    assert isinstance(created["payload"]["mock_mode"], bool)
+    assert created["payload"]["model"] == data["model"] if "model" in data else created["payload"]["model"]
+
     with client.websocket_connect(
         f"/ws/{session_id}?protocol_version={PROTOCOL_VERSION}"
     ) as websocket:
