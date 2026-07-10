@@ -41,8 +41,5 @@ class WebSocketManager:
         for ws in dead:
             self.remove(envelope.session_id, ws)
 
-    async def send_to(self, session_id: str, envelope: WSEnvelope) -> None:
-        await self.broadcast(envelope)
-
 
 ws_manager = WebSocketManager()
