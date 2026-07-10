@@ -868,6 +868,20 @@
     .system-msg.warn { color: var(--warn); }
     .system-msg.error { color: var(--error); }
 
+    .search-hit-flash {
+      animation: search-hit-flash 2s ease;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+    }
+
+    @keyframes search-hit-flash {
+      0% {
+        background: color-mix(in srgb, var(--primary) 18%, var(--surface));
+      }
+      100% {
+        background: inherit;
+      }
+    }
+
     /* Tool blocks */
     .tool-block {
       border: 1px solid var(--border);

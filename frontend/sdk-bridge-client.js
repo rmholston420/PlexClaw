@@ -22,6 +22,7 @@ const Bridge = (() => {
     terminalErrorsOnly: false,
     terminalHeight: 220,
     searchResults: [],
+    pendingSearchJump: '',
     tabs: [],
     activeTabId: null,
     nextTabNumber: 1,
@@ -535,7 +536,7 @@ const Bridge = (() => {
         <div class="search-group">
           <div class="search-group-title">${escapeHtml(title)} · ${items.length} match${items.length === 1 ? '' : 'es'}</div>
           ${items.map((item) => `
-            <button class="search-result" type="button" data-search-session="${escapeHtml(item.session_id || '')}">
+            <button class="search-result" type="button" data-search-session="${escapeHtml(item.session_id || '')}" data-search-snippet="${escapeHtml(item.snippet || '')}">
               <div class="search-result-meta">${escapeHtml(item.role || 'event')} · ${escapeHtml(item.created_at || '')}</div>
               <div>${escapeHtml(item.snippet || '')}</div>
             </button>
@@ -548,6 +549,7 @@ const Bridge = (() => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-search-session');
         if (!id) return;
+        state.pendingSearchJump = btn.getAttribute('data-search-snippet') || el.searchInputModal?.value || '';
         closeSearchModal();
         await replaySession(id);
       });
@@ -662,9 +664,11 @@ const Bridge = (() => {
     if (!currentAssistantEl) {
       currentAssistantEl = document.createElement('div');
       currentAssistantEl.className = 'msg assistant streaming';
+      tagSearchableNode(currentAssistantEl, '');
       el.transcript.appendChild(currentAssistantEl);
     }
     currentAssistantText += text;
+    tagSearchableNode(currentAssistantEl, currentAssistantText);
     // Simple incremental rendering — full re-render on each delta is expensive for large outputs;
     // use textContent streaming then do a final markdown pass on completion
     currentAssistantEl.textContent = currentAssistantText;
@@ -674,6 +678,7 @@ const Bridge = (() => {
   function finalizeAssistant() {
     if (currentAssistantEl) {
       currentAssistantEl.classList.remove('streaming');
+      tagSearchableNode(currentAssistantEl, currentAssistantText);
       // Final pass: render markdown
       currentAssistantEl.innerHTML = '';
       currentAssistantEl.appendChild(renderMarkdown(currentAssistantText));
@@ -688,6 +693,7 @@ const Bridge = (() => {
     const div = document.createElement('div');
     div.className = 'system-msg' + (level !== 'info' ? ` ${level}` : '');
     div.textContent = text;
+    tagSearchableNode(div, text);
     el.transcript.appendChild(div);
     scrollBottom();
   }
@@ -745,6 +751,32 @@ const Bridge = (() => {
 
   function escapeHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+
+  function normalizeSearchText(value) {
+    return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  function tagSearchableNode(node, text) {
+    if (!node) return;
+    node.dataset.searchText = normalizeSearchText(text);
+  }
+
+  function jumpToPendingSearchHit() {
+    const needle = normalizeSearchText(state.pendingSearchJump);
+    if (!needle || !el.transcript) return;
+
+    const nodes = Array.from(el.transcript.querySelectorAll('[data-search-text]'));
+    const match = nodes.find((node) => (node.dataset.searchText || '').includes(needle));
+    state.pendingSearchJump = '';
+
+    if (!match) return;
+    match.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    match.classList.remove('search-hit-flash');
+    void match.offsetWidth;
+    match.classList.add('search-hit-flash');
+    window.setTimeout(() => match.classList.remove('search-hit-flash'), 2200);
   }
 
   function renderEvent(evt) {
@@ -1041,6 +1073,7 @@ const Bridge = (() => {
     const userMsg = document.createElement('div');
     userMsg.className = 'msg user';
     userMsg.textContent = prompt;
+    tagSearchableNode(userMsg, prompt);
     el.transcript.appendChild(userMsg);
     scrollBottom();
 
@@ -1063,6 +1096,8 @@ const Bridge = (() => {
     clearTranscript();
     setReplayMode(true);
     for (const evt of events) renderEvent(evt);
+    finalizeAssistant();
+    jumpToPendingSearchHit();
   }
 
   // ---- Archive ----
