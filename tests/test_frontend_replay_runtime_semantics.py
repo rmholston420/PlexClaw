@@ -21,4 +21,7 @@ def test_frontend_replay_ui_keeps_runtime_and_replay_state_distinct() -> None:
     assert "setRuntimeMode(null);" in js
 
     # Live session creation still derives runtime state from authoritative mock_mode.
-    assert "if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);" in js
+    assert (
+        "if (typeof data.mock_mode === 'boolean') "
+        "setRuntimeMode(data.mock_mode);"
+    ) in js

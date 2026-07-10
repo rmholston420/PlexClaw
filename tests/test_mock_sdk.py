@@ -1,8 +1,9 @@
-"""Tests for MockSDKClient — verifies mock mode works end-to-end without the real SDK."""
+"""Tests for MockSDKClient.
+
+Verifies mock mode works end-to-end without the real SDK.
+"""
 
 from __future__ import annotations
-
-import asyncio
 
 import pytest
 

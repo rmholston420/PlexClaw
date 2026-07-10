@@ -11,7 +11,10 @@ def test_provider_runtime_meta_is_rendered():
 
 def test_provider_change_resets_live_session():
     text = Path("frontend/sdk-bridge-client.js").read_text()
-    assert "Provider changed from ${previousProvider} to ${name}. Start a new session to use the new route." in text
+    assert (
+        "Provider changed from ${previousProvider} to ${name}. "
+        "Start a new session to use the new route."
+    ) in text
     assert "tab.sessionId = null;" in text
     assert "state.sessionId = null;" in text
     assert "syncStateToActiveTab();" in text

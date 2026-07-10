@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from app.schemas import SessionCreateRequest
 from app import runtime_sdk as runtime
+from app.schemas import SessionCreateRequest
 
 
 class DummyClient:
@@ -38,7 +38,9 @@ async def test_create_session_cloud_has_no_base_url_env(monkeypatch, tmp_path: P
 
 
 @pytest.mark.asyncio
-async def test_create_session_ollama_sets_anthropic_base_url(monkeypatch, tmp_path: Path):
+async def test_create_session_ollama_sets_base_url(
+    monkeypatch, tmp_path: Path
+):
     monkeypatch.setattr(runtime, "_SDK_AVAILABLE", True)
     monkeypatch.setattr(runtime, "ClaudeSDKClient", DummyClient)
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434/")
@@ -72,7 +74,9 @@ async def test_create_session_vllm_sets_anthropic_base_url(monkeypatch, tmp_path
 
 
 @pytest.mark.asyncio
-async def test_create_session_ollama_uses_default_base_url_when_env_unset(monkeypatch, tmp_path: Path):
+async def test_create_session_ollama_uses_default_base_url_when_env_unset(
+    monkeypatch, tmp_path: Path
+):
     monkeypatch.setattr(runtime, "_SDK_AVAILABLE", True)
     monkeypatch.setattr(runtime, "ClaudeSDKClient", DummyClient)
     monkeypatch.delenv("OLLAMA_BASE_URL", raising=False)
@@ -88,7 +92,9 @@ async def test_create_session_ollama_uses_default_base_url_when_env_unset(monkey
 
 
 @pytest.mark.asyncio
-async def test_create_session_vllm_uses_default_base_url_when_env_unset(monkeypatch, tmp_path: Path):
+async def test_create_session_vllm_uses_default_base_url_when_env_unset(
+    monkeypatch, tmp_path: Path
+):
     monkeypatch.setattr(runtime, "_SDK_AVAILABLE", True)
     monkeypatch.setattr(runtime, "ClaudeSDKClient", DummyClient)
     monkeypatch.delenv("VLLM_BASE_URL", raising=False)

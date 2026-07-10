@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import urllib.request
 from contextlib import asynccontextmanager
 
@@ -24,13 +23,13 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app import fs_routes
 from app import runtime_sdk as runtime
+from app.archive_normalizer import normalize_session, normalize_session_list
 from app.config import (
     get_allowed_hosts,
     get_allowed_origins,
     get_ollama_base_url,
     get_vllm_base_url,
 )
-from app.archive_normalizer import normalize_session, normalize_session_list
 from app.event_store import init_db, query_events, search_events
 from app.schemas import (
     PROTOCOL_VERSION,
@@ -181,7 +180,9 @@ async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
     provider_env = runtime._provider_env(session.provider)
     provider_base_url = provider_env.get("ANTHROPIC_BASE_URL")
     tool_search_mode = req.tool_search_mode
-    tool_search_active = bool(tool_search_mode) if tool_search_mode is not None else None
+    tool_search_active = (
+        bool(tool_search_mode) if tool_search_mode is not None else None
+    )
 
     return SessionCreateResponse(
         session_id=session.id,

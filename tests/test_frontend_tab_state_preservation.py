@@ -39,4 +39,7 @@ def test_tab_switching_preserves_per_tab_connection_telemetry_contract() -> None
    assert "state.connections = tab.connections || 0;" in js
    assert "state.idleSeconds = tab.idleSeconds || 0;" in js
    assert "const isConnected = (tab.connections || 0) > 0;" in js
-   assert "btn.title = `Connections: ${tab.connections || 0} • Idle: ${idleLabel}s`;" in js
+   assert (
+      "btn.title = `Connections: ${tab.connections || 0} • Idle: "
+      "${idleLabel}s`;"
+  ) in js

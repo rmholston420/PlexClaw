@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import socket
-from typing import Iterable
-
+from collections.abc import Iterable
 
 DEFAULT_PORTS: tuple[tuple[int, str], ...] = (
     (8020, "backend"),

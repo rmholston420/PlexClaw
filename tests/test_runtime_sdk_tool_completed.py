@@ -76,7 +76,14 @@ async def test_emit_tool_completed_from_dict_style_block(monkeypatch) -> None:
     session = DummySession()
     pending_tools = {"tool-2": {"tool_name": "read"}}
     message = DummyAssistantMessage(
-        [{"type": "tool_result", "tool_use_id": "tool-2", "content": "file text", "is_error": False}]
+        [
+            {
+                "type": "tool_result",
+                "tool_use_id": "tool-2",
+                "content": "file text",
+                "is_error": False,
+            }
+        ]
     )
 
     await _emit_tool_completed_from_message(session, message, pending_tools)
@@ -103,7 +110,13 @@ async def test_emit_tool_completed_uses_parent_tool_id_fallback(monkeypatch) -> 
     session = DummySession()
     pending_tools = {"tool-3": {"tool_name": "search"}}
     message = DummyAssistantMessage(
-        [{"type": "tool_result", "content": [{"type": "text", "text": "done"}], "is_error": True}],
+        [
+            {
+                "type": "tool_result",
+                "content": [{"type": "text", "text": "done"}],
+                "is_error": True,
+            }
+        ],
         parent_tool_use_id="tool-3",
     )
 

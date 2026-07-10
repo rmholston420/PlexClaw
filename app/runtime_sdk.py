@@ -20,12 +20,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import time
 import os
+import time
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from app.config import get_provider_env, get_tool_search_env
 from app.event_store import append_event
@@ -238,7 +239,10 @@ async def reap_idle_sessions(now: float | None = None) -> list[str]:
             continue
 
         log.info(
-            "Reaping idle live session session_id=%s idle_for=%.3f status=%s connections=%s timeout=%s",
+            (
+                "Reaping idle live session session_id=%s idle_for=%.3f "
+                "status=%s connections=%s timeout=%s"
+            ),
             session.id,
             idle_for,
             session.status,
@@ -457,7 +461,10 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
             type="system.message",
             payload={
                 "subtype": "session.created",
-                "message": "Session created" + (" [MOCK MODE — SDK not installed]" if mock_mode else "."),
+                "message": (
+                    "Session created"
+                    + (" [MOCK MODE — SDK not installed]" if mock_mode else ".")
+                ),
                 "model": session.model,
                 "provider": session.provider,
                 "provider_base_url": provider_base_url,
@@ -542,7 +549,10 @@ async def _emit_tool_completed_from_message(
 
 
 def _is_mock_event(message: Any) -> bool:
-    """Return True if message is a MockStreamEvent (real StreamEvent check handles real SDK)."""
+    """Return True if message is a MockStreamEvent.
+
+    Real StreamEvent checks handle the real SDK path.
+    """
     return isinstance(message, MockStreamEvent)
 
 
@@ -693,7 +703,9 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
             # AssistantMessage: complete assembled message (no-op — already streamed)
             # ------------------------------------------------------------------
             if AssistantMessage is not None and isinstance(message, AssistantMessage):
-                await _emit_tool_completed_from_message(session, message, _pending_tools)
+                await _emit_tool_completed_from_message(
+                    session, message, _pending_tools
+                )
                 continue
 
             # ------------------------------------------------------------------

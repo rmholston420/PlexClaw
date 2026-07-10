@@ -3,6 +3,10 @@ from app.config import (
     DEFAULT_ALLOWED_ORIGINS,
     get_allowed_hosts,
     get_allowed_origins,
+    get_ollama_base_url,
+    get_provider_env,
+    get_tool_search_env,
+    get_vllm_base_url,
 )
 
 
@@ -38,7 +42,6 @@ def test_get_allowed_hosts_parses_csv(monkeypatch):
         "127.0.0.1",
     ]
 
-from app.config import get_ollama_base_url, get_provider_env, get_tool_search_env, get_vllm_base_url
 
 
 def test_get_ollama_base_url_defaults(monkeypatch):

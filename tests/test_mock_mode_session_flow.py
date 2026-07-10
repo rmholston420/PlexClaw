@@ -59,7 +59,10 @@ def test_mock_mode_session_create_and_websocket_prompt_flow() -> None:
         first = websocket.receive_json()
         assert first["type"] == "system.message"
         assert first["session_id"] == session_id
-        assert "Prompt received" in str(first["payload"].get("text", "")) or "Prompt received" in str(first["payload"].get("message", ""))
+        assert (
+            "Prompt received" in str(first["payload"].get("text", ""))
+            or "Prompt received" in str(first["payload"].get("message", ""))
+        )
 
         second = websocket.receive_json()
         assert second["type"] == "assistant.completed"
