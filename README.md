@@ -12,6 +12,16 @@ PlexClaw is a local browser-based coding workstation modeled after the PlexClaw 
 - `frontend/plexclaw-ui-canonical.html`: PlexClaw-style static browser UI.
 - `frontend/sdk-bridge-client.js`: Browser client, replay renderer, archive controls, and tool block rendering.
 
+## Git hooks
+
+After cloning, enable the repo-tracked pre-push hook once:
+
+```bash
+bash scripts/setup-git-hooks.sh
+```
+
+This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `pytest -q` locally before publishing.
+
 ## Quick start
 
 1. Install dependencies:
