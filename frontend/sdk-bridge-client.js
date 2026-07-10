@@ -1290,10 +1290,15 @@ const Bridge = (() => {
         const ts = item.updated_at
           ? new Date(item.updated_at).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
           : '';
+        const cwdLabel = item.cwd ? shortenPath(item.cwd) : '';
+        const summary = item.summary || '';
+        const title = item.title || summary || 'Untitled session';
 
         card.innerHTML = `
-          <div class="session-title" title="${escapeHtml(item.id)}">${escapeHtml(item.title || 'Untitled session')}</div>
-          <div class="session-meta">${escapeHtml(item.summary || '')}${ts ? ` · ${ts}` : ''}</div>
+          <div class="session-title" title="${escapeHtml(item.id)}">${escapeHtml(title)}</div>
+          ${summary ? `<div class="session-meta">${escapeHtml(summary)}</div>` : ''}
+          ${cwdLabel ? `<div class="session-submeta" title="${escapeHtml(item.cwd)}">CWD: ${escapeHtml(cwdLabel)}</div>` : ''}
+          ${ts ? `<div class="session-submeta">Last updated: ${escapeHtml(ts)}</div>` : ''}
           <div class="chips">${chips}</div>
           <div class="card-actions">
             <button class="card-btn primary" data-action="continue"><i data-lucide="play" style="width:11px;height:11px"></i>Continue</button>
