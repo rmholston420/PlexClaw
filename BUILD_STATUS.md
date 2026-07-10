@@ -27,6 +27,22 @@ All 10 slices from the build spec are implemented and committed.
 
 The app fully starts and is usable without `claude-agent-sdk`. Sessions are created, prompts are streamed back as echo responses with a prominent ⚠️ mock-mode banner. Set `ANTHROPIC_API_KEY` and `pip install claude-agent-sdk` to activate real Claude Code sessions.
 
+## Quality status
+
+- **53 tests passing**
+- Mock SDK fallback is implemented and covered by unit tests
+- WebSocket happy-path session flow is covered
+- WebSocket protocol mismatch rejection is covered
+- Launcher port preflight is extracted into `app/port_check.py` and covered
+- `run.sh` shell contract is covered by regression tests
+- Repo-tracked pre-push hook is versioned under `.githooks/pre-push`
+
+## Launcher behavior
+
+- `run.sh` auto-enables repo-tracked hooks for the current clone when needed
+- `run.sh` fails fast with a clear error if port 8020 or 5555 is already occupied
+- `scripts/setup-git-hooks.sh` can be run manually to configure `core.hooksPath` to `.githooks`
+
 ## Quick start
 
 ```bash
@@ -34,4 +50,5 @@ bash run.sh
 ```
 
 Backend: http://127.0.0.1:8020  
-Frontend: http://127.0.0.1:5555
+Frontend root: http://127.0.0.1:5555  
+Canonical UI: http://127.0.0.1:5555/plexclaw-ui-canonical.html

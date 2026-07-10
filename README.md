@@ -11,6 +11,9 @@ PlexClaw is a local browser-based coding workstation modeled after the PlexClaw 
 - `app/archive_normalizer.py`: Converts variable archive metadata into a stable canonical shape.
 - `frontend/plexclaw-ui-canonical.html`: PlexClaw-style static browser UI.
 - `frontend/sdk-bridge-client.js`: Browser client, replay renderer, archive controls, and tool block rendering.
+- `app/port_check.py`: Launcher port preflight helper used by `run.sh`.
+- `.githooks/pre-push`: Repo-tracked pre-push test gate.
+- `scripts/setup-git-hooks.sh`: One-time local hook bootstrap for fresh clones.
 
 ## Git hooks
 
@@ -52,3 +55,11 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 - The bridge exposes protocol version `0.2.0`.
 - The frontend consumes only normalized protocol events and canonical archive metadata.
 - If the Claude SDK is unavailable, the runtime uses a mock streaming mode so the UI remains runnable.
+- `run.sh` auto-configures repo-tracked Git hooks for the current clone when needed.
+- `run.sh` performs a fail-fast preflight check for ports 8020 and 5555 before launching.
+- The local test gate runs automatically on `git push` through `.githooks/pre-push`.
+
+## Current status
+
+- 53 tests passing locally.
+- Mock runtime fallback, WebSocket session flow, protocol mismatch handling, launcher port checks, and launcher shell contract are all covered by tests.
