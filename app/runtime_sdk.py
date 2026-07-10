@@ -225,6 +225,45 @@ class LiveSession:
         first = self.pending_tool_id
         return self.pending_approvals[first].tool_input if first else None
 
+    @property
+    def _pending_tool_id(self) -> str | None:
+        return self.pending_tool_id
+
+    @_pending_tool_id.setter
+    def _pending_tool_id(self, value: str | None) -> None:
+        if value is None:
+            self.pending_approvals.clear()
+            return
+        existing = self.pending_approvals.get(value)
+        if existing is None:
+            self.pending_approvals[value] = PendingApproval(
+                tool_id=value,
+                tool_name="unknown",
+                tool_input=None,
+            )
+
+    @property
+    def _pending_tool_name(self) -> str | None:
+        return self.pending_tool_name
+
+    @_pending_tool_name.setter
+    def _pending_tool_name(self, value: str | None) -> None:
+        tool_id = self.pending_tool_id
+        if not tool_id:
+            return
+        self.pending_approvals[tool_id].tool_name = value or "unknown"
+
+    @property
+    def _pending_tool_input(self) -> Any:
+        return self.pending_tool_input
+
+    @_pending_tool_input.setter
+    def _pending_tool_input(self, value: Any) -> None:
+        tool_id = self.pending_tool_id
+        if not tool_id:
+            return
+        self.pending_approvals[tool_id].tool_input = value
+
     def next_seq(self) -> int:
         self.seq += 1
         return self.seq
