@@ -7,14 +7,12 @@ host (e.g. /etc/passwd).  These tests ensure the fix holds.
 
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app import fs_routes
+from app.main import app
 
 client = TestClient(app, raise_server_exceptions=True)
 

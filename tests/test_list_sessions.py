@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import time
 
-import pytest
 from fastapi.testclient import TestClient
 
 import app.runtime_sdk as runtime

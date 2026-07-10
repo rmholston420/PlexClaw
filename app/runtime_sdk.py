@@ -106,16 +106,17 @@ def build_effective_system_prompt(base_prompt: str, cwd: str | None) -> str:
     parts = [base_prompt.strip()]
     if cwd:
         parts.append(
-            (
-                "Runtime grounding:\n"
-                f"- The active working directory for this session is: {cwd}\n"
-                "- Treat this directory as the default repo/project root.\n"
-                "- Do not invent other filesystem roots, home directories, or placeholder paths "
-                "such as /home/user unless they are explicitly shown by the environment or the user.\n"
-                "- Before giving filesystem-specific advice, prefer to inspect the actual repo/files "
-                "or clearly state that you have not inspected them yet.\n"
-                "- If you mention a path, prefer paths relative to the active working directory when possible."
-            )
+            "Runtime grounding:\n"
+            f"- The active working directory for this session is: {cwd}\n"
+            "- Treat this directory as the default repo/project root.\n"
+            "- Do not invent other filesystem roots, home directories,\n"
+            "  or placeholder paths such as /home/user unless they are\n"
+            "  explicitly shown by the environment or the user.\n"
+            "- Before giving filesystem-specific advice, prefer to inspect\n"
+            "  the actual repo/files or clearly state that you have not\n"
+            "  inspected them yet.\n"
+            "- If you mention a path, prefer paths relative to the active\n"
+            "  working directory when possible."
         )
     return "\n\n".join(part for part in parts if part.strip())
 
