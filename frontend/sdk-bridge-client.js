@@ -6,6 +6,9 @@ const Bridge = (() => {
     sessionId: null,
     socket: null,
     model: 'claude-sonnet-4-5',
+    cwd: '~',
+    cwdSelected: null,
+    cwdBrowsing: null,
     replayMode: false,
     archive: [],
     lineageOpen: new Map(),
@@ -24,6 +27,17 @@ const Bridge = (() => {
     statusDot: document.getElementById('status-dot'),
     connectionLabel: document.getElementById('connection-label'),
     sessionLabel: document.getElementById('session-label'),
+    cwdPill: document.getElementById('cwd-pill'),
+    cwdLabel: document.getElementById('cwd-label'),
+    cwdModal: document.getElementById('cwd-modal'),
+    cwdBackdrop: document.getElementById('cwd-backdrop'),
+    cwdClose: document.getElementById('cwd-close'),
+    cwdCancel: document.getElementById('cwd-cancel'),
+    cwdConfirm: document.getElementById('cwd-confirm'),
+    cwdCurrentPath: document.getElementById('cwd-current-path'),
+    cwdGitRoots: document.getElementById('cwd-git-roots'),
+    cwdManualInput: document.getElementById('cwd-manual-input'),
+    cwdBrowser: document.getElementById('cwd-browser'),
     archiveList: document.getElementById('archive-list'),
     archiveSearch: document.getElementById('archive-search'),
     archiveSort: document.getElementById('archive-sort'),
@@ -71,6 +85,86 @@ const Bridge = (() => {
     el.transcript.innerHTML = '';
     state.toolEls.clear();
     state.firstToolExpanded = false;
+  }
+
+
+  function shortenPath(path) {
+    if (!path) return '~';
+    const norm = String(path).replace(/\\/g, '/');
+    const parts = norm.split('/').filter(Boolean);
+    if (parts.length <= 2) return norm || '/';
+    return '…/' + parts.slice(-2).join('/');
+  }
+
+  function setCwd(path) {
+    state.cwd = path || '~';
+    state.cwdSelected = path || null;
+    if (el.cwdLabel) el.cwdLabel.textContent = shortenPath(state.cwd);
+    if (el.cwdCurrentPath) el.cwdCurrentPath.textContent = state.cwd;
+  }
+
+  async function browseCwd(path = null) {
+    const query = path ? `?path=${encodeURIComponent(path)}` : '';
+    const data = await api(`/api/fs/browse${query}`);
+    state.cwdBrowsing = data.path;
+    if (el.cwdCurrentPath) el.cwdCurrentPath.textContent = data.path;
+    if (!el.cwdBrowser) return;
+
+    el.cwdBrowser.innerHTML = '';
+    data.entries.forEach((entry) => {
+      const row = document.createElement('button');
+      row.className = 'cwd-entry';
+      row.type = 'button';
+      row.innerHTML = `
+        <span class="cwd-entry-main">
+          <i data-lucide="${entry.is_dir ? 'folder' : 'file-text'}"></i>
+          <span class="cwd-entry-name">${escapeHtml(entry.name)}</span>
+        </span>
+        <span class="cwd-entry-meta">${entry.is_dir ? 'dir' : (entry.size ?? 0) + ' bytes'}</span>
+      `;
+      row.addEventListener('click', async () => {
+        if (!entry.is_dir) return;
+        let nextPath = null;
+        if (entry.name === '..') {
+          const current = data.path.replace(/\/+$/, '');
+          nextPath = current.slice(0, current.lastIndexOf('/')) || '/';
+        } else {
+          nextPath = data.path.replace(/\/+$/, '') + '/' + entry.name;
+        }
+        await browseCwd(nextPath);
+      });
+      el.cwdBrowser.appendChild(row);
+    });
+    lucide.createIcons({ nodes: el.cwdBrowser.querySelectorAll('[data-lucide]') });
+  }
+
+  async function loadGitRoots() {
+    const data = await api('/api/fs/git-roots');
+    if (!el.cwdGitRoots) return;
+    el.cwdGitRoots.innerHTML = '';
+    (data.roots || []).forEach((root) => {
+      const chip = document.createElement('button');
+      chip.className = 'cwd-chip';
+      chip.type = 'button';
+      chip.textContent = root;
+      chip.addEventListener('click', async () => {
+        await browseCwd(root);
+      });
+      el.cwdGitRoots.appendChild(chip);
+    });
+  }
+
+  function openCwdModal() {
+    el.cwdModal.classList.remove('hidden');
+    el.cwdModal.setAttribute('aria-hidden', 'false');
+    if (el.cwdManualInput) el.cwdManualInput.value = state.cwdSelected || state.cwd || '';
+    loadGitRoots().catch(console.error);
+    browseCwd(state.cwdSelected || null).catch(console.error);
+  }
+
+  function closeCwdModal() {
+    el.cwdModal.classList.add('hidden');
+    el.cwdModal.setAttribute('aria-hidden', 'true');
   }
 
   // ---- Markdown-lite renderer ----
@@ -304,6 +398,7 @@ const Bridge = (() => {
     state.model = el.modelSelect?.value || state.model;
     const body = {
       model: state.model,
+      cwd: state.cwdSelected,
       cwd: null,
       provider: 'cloud',
       permission_mode: 'default',
@@ -604,6 +699,24 @@ const Bridge = (() => {
   }
 
   async function init() {
+    setCwd('~');
+    el.cwdPill?.addEventListener('click', openCwdModal);
+    el.cwdBackdrop?.addEventListener('click', closeCwdModal);
+    el.cwdClose?.addEventListener('click', closeCwdModal);
+    el.cwdCancel?.addEventListener('click', closeCwdModal);
+    el.cwdConfirm?.addEventListener('click', () => {
+      setCwd(state.cwdBrowsing || state.cwdSelected || state.cwd);
+      closeCwdModal();
+    });
+    el.cwdManualInput?.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const value = el.cwdManualInput.value.trim();
+        if (!value) return;
+        await browseCwd(value);
+      }
+    });
+
     bindEvents();
     bindTextareaResize();
     await loadArchive();

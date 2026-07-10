@@ -447,7 +447,135 @@
       cursor: pointer;
       transition: border-color var(--fast) var(--ease);
     }
-    .model-select:hover { border-color: var(--primary); color: var(--text); }
+  
+  .model-select:hover { border-color: var(--primary); color: var(--text); }
+
+  .cwd-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    max-width: 220px;
+  }
+  .cwd-pill i { width: 14px; height: 14px; flex-shrink: 0; }
+  .cwd-pill span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cwd-modal.hidden { display: none; }
+  .cwd-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+  }
+  .cwd-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 7, 15, 0.6);
+    backdrop-filter: blur(4px);
+  }
+  .cwd-dialog {
+    position: relative;
+    width: min(820px, calc(100vw - 2rem));
+    margin: 6vh auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .cwd-header, .cwd-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    padding: var(--s4);
+    border-bottom: 1px solid var(--divider);
+  }
+  .cwd-footer {
+    border-bottom: none;
+    border-top: 1px solid var(--divider);
+    justify-content: flex-end;
+  }
+  .cwd-body {
+    display: grid;
+    gap: var(--s4);
+    padding: var(--s4);
+  }
+  .cwd-group {
+    display: grid;
+    gap: var(--s2);
+  }
+  .cwd-group-label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .cwd-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  .cwd-chip {
+    padding: var(--s2) var(--s3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: var(--text-sm);
+  }
+  .cwd-chip:hover { border-color: var(--primary); color: var(--primary); }
+  .cwd-input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--s3);
+  }
+  .cwd-browser {
+    max-height: 320px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-2);
+  }
+  .cwd-entry {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+    border-bottom: 1px solid var(--divider);
+    text-align: left;
+  }
+  .cwd-entry:last-child { border-bottom: none; }
+  .cwd-entry:hover {
+    background: var(--surface-offset);
+  }
+  .cwd-entry-main {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+  }
+  .cwd-entry-name {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cwd-entry-meta {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
 
     /* Replay banner */
     .replay-banner {
@@ -834,6 +962,10 @@
           <span class="badge" id="connection-label">Disconnected</span>
         </div>
         <span class="badge" id="session-label">No session</span>
+      <button class="badge cwd-pill" id="cwd-pill" title="Change working directory" aria-label="Change working directory">
+        <i data-lucide="folder-open"></i>
+        <span id="cwd-label">~</span>
+      </button>
       </div>
       <div class="topbar-right">
         <select class="model-select" id="model-select" title="Model">
@@ -938,6 +1070,41 @@
   });
 </script>
 
-<script src="sdk-bridge-client.js"></script>
+
+  <div class="cwd-modal hidden" id="cwd-modal" aria-hidden="true">
+    <div class="cwd-backdrop" id="cwd-backdrop"></div>
+    <div class="cwd-dialog" role="dialog" aria-modal="true" aria-labelledby="cwd-title">
+      <div class="cwd-header">
+        <div>
+          <div class="section-title" id="cwd-title">Working directory</div>
+          <div class="section-subtitle" id="cwd-current-path">~</div>
+        </div>
+        <button class="icon-btn" id="cwd-close" aria-label="Close working directory picker">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="cwd-body">
+        <div class="cwd-group">
+          <label class="cwd-group-label">Git roots</label>
+          <div class="cwd-chip-row" id="cwd-git-roots"></div>
+        </div>
+        <div class="cwd-group">
+          <label class="cwd-group-label" for="cwd-manual-input">Manual path</label>
+          <input class="cwd-input" id="cwd-manual-input" type="text" placeholder="/home/rmholston/project" />
+        </div>
+        <div class="cwd-group">
+          <label class="cwd-group-label">Directory browser</label>
+          <div class="cwd-browser" id="cwd-browser"></div>
+        </div>
+      </div>
+      <div class="cwd-footer">
+        <button class="ghost-btn" id="cwd-cancel">Cancel</button>
+        <button class="new-session-btn" id="cwd-confirm" style="width:auto">Use this directory</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="sdk-bridge-client.js"></script>
 </body>
 </html>
