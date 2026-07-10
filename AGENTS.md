@@ -1,25 +1,19 @@
 # AGENTS.md
 
 ## Commands
-
-| Task | Command |
-|------|---------|
-| Activate env | `. .venv/bin/activate` |
-| Run app | `bash run.sh` |
-| Bootstrap hooks | `bash scripts/setup-git-hooks.sh` |
-| Lint | `ruff check .` |
-| Test all | `pytest -q` |
-| Validate shell entrypoints | `bash -n run.sh && bash -n scripts/setup-git-hooks.sh && bash -n .githooks/pre-push` |
+- Activate env: `. .venv/bin/activate`
+- Run app: `bash run.sh`
+- Bootstrap hooks: `bash scripts/setup-git-hooks.sh`
+- Lint: `ruff check .`
+- Test all: `pytest -q`
+- Validate shell entrypoints: `bash -n run.sh && bash -n scripts/setup-git-hooks.sh && bash -n .githooks/pre-push`
 
 ## External references
-
-| Need | File |
-|------|------|
-| Setup and run flow | `README.md` |
-| Release notes | `CHANGELOG.md` |
-| Python and tool config | `pyproject.toml` |
-| CI source of truth | `.github/workflows/ci.yml` |
-| Launcher behavior | `run.sh` |
+- Setup and run flow: `README.md`
+- Release notes: `CHANGELOG.md`
+- Python and tool config: `pyproject.toml`
+- CI source of truth: `.github/workflows/ci.yml`
+- Launcher behavior: `run.sh`
 
 ## Conventions
 - Keep diffs minimal and task-scoped.
