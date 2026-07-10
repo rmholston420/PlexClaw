@@ -97,3 +97,5 @@ def test_create_session_accepts_trimmed_model(client):
     body = response.json()
     assert body["status"] == "created"
     assert "session_id" in body
+    assert "mock_mode" in body
+    assert isinstance(body["mock_mode"], bool)
