@@ -7,4 +7,4 @@ chmod +x .githooks/pre-push
 
 echo "Configured local Git hooks:"
 git config --local --get core.hooksPath
-echo "Ready: pre-push will now run pytest -q"
+echo "Ready: pre-push will now run scripts/validate.sh"
