@@ -179,6 +179,15 @@ except ImportError:
 
 
 @dataclass
+class PendingApproval:
+    tool_id: str
+    tool_name: str
+    tool_input: Any
+    event: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
+    decision: str | None = None
+
+
+@dataclass
 class LiveSession:
     id: str
     model: str
@@ -194,14 +203,24 @@ class LiveSession:
     seq: int = 0
     _client: Any = field(default=None, repr=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, repr=False)
-    _approval_event: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
-    _pending_tool_id: str | None = field(default=None, repr=False)
-    _pending_tool_name: str | None = field(default=None, repr=False)
-    _pending_tool_input: Any = field(default=None, repr=False)
-    _approval_decision: str | None = field(default=None, repr=False)
+    pending_approvals: dict[str, PendingApproval] = field(default_factory=dict, repr=False)
     context_files: dict[str, str] = field(default_factory=dict, repr=False)
     _context_injected: bool = field(default=False, repr=False)
     mock_mode: bool = field(default=False, repr=False)
+
+    @property
+    def pending_tool_id(self) -> str | None:
+        return next(iter(self.pending_approvals), None)
+
+    @property
+    def pending_tool_name(self) -> str | None:
+        first = self.pending_tool_id
+        return self.pending_approvals[first].tool_name if first else None
+
+    @property
+    def pending_tool_input(self) -> Any:
+        first = self.pending_tool_id
+        return self.pending_approvals[first].tool_input if first else None
 
     def next_seq(self) -> int:
         self.seq += 1
@@ -291,11 +310,12 @@ async def _await_tool_approval(
     tool_name: str,
     tool_input: Any,
 ) -> bool:
-    session._pending_tool_id = tool_id
-    session._pending_tool_name = tool_name
-    session._pending_tool_input = tool_input
-    session._approval_decision = None
-    session._approval_event.clear()
+    pending = PendingApproval(
+        tool_id=tool_id,
+        tool_name=tool_name,
+        tool_input=tool_input,
+    )
+    session.pending_approvals[tool_id] = pending
 
     env = WSEnvelope(
         type="tool.permission_required",
@@ -310,13 +330,10 @@ async def _await_tool_approval(
         protocol_version=PROTOCOL_VERSION,
     )
     await _emit(session, env)
-    await session._approval_event.wait()
+    await pending.event.wait()
 
-    decision = session._approval_decision == "approve"
-    session._pending_tool_id = None
-    session._pending_tool_name = None
-    session._pending_tool_input = None
-    session._approval_decision = None
+    decision = pending.decision == "approve"
+    session.pending_approvals.pop(tool_id, None)
     return decision
 
 
@@ -324,38 +341,40 @@ async def approve_tool_call(session_id: str, tool_id: str) -> None:
     session = _sessions.get(session_id)
     if not session:
         raise KeyError(f"Session {session_id} not found")
-    if session._pending_tool_id != tool_id:
+    pending = session.pending_approvals.get(tool_id)
+    if not pending:
         raise KeyError(f"Tool {tool_id} is not pending for session {session_id}")
-    session._approval_decision = "approve"
+    pending.decision = "approve"
     env = normalize_tool_permission_decided(
         session.id,
         session.next_seq(),
         tool_id,
-        session._pending_tool_name or "unknown",
-        session._pending_tool_input,
+        pending.tool_name,
+        pending.tool_input,
         "approve",
     )
     await _emit(session, env)
-    session._approval_event.set()
+    pending.event.set()
 
 
 async def reject_tool_call(session_id: str, tool_id: str) -> None:
     session = _sessions.get(session_id)
     if not session:
         raise KeyError(f"Session {session_id} not found")
-    if session._pending_tool_id != tool_id:
+    pending = session.pending_approvals.get(tool_id)
+    if not pending:
         raise KeyError(f"Tool {tool_id} is not pending for session {session_id}")
-    session._approval_decision = "reject"
+    pending.decision = "reject"
     env = normalize_tool_permission_decided(
         session.id,
         session.next_seq(),
         tool_id,
-        session._pending_tool_name or "unknown",
-        session._pending_tool_input,
+        pending.tool_name,
+        pending.tool_input,
         "reject",
     )
     await _emit(session, env)
-    session._approval_event.set()
+    pending.event.set()
 
 
 def list_context_files(session_id: str) -> list[dict[str, str | int]]:
@@ -859,10 +878,7 @@ async def delete_session(session_id: str) -> None:
             log.warning("Session delete close failed: %s", exc)
 
     session.context_files.clear()
-    session._pending_tool_id = None
-    session._pending_tool_name = None
-    session._pending_tool_input = None
-    session._approval_decision = None
+    session.pending_approvals.clear()
     session._context_injected = False
     session.status = "deleted"
     session._client = None
