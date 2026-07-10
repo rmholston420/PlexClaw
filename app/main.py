@@ -410,7 +410,10 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
         type="session.ready",
         session_id=session_id,
         seq=session.next_seq(),
-        payload={"model": session.model},
+        payload={
+            "model": session.model,
+            "mock_mode": session.mock_mode,
+        },
     )
     await websocket.send_text(ready.model_dump_json())
 

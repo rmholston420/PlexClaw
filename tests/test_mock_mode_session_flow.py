@@ -31,6 +31,9 @@ def test_mock_mode_session_create_and_websocket_prompt_flow() -> None:
     ) as websocket:
         ready = websocket.receive_json()
         assert ready["type"] == "session.ready"
+        assert "mock_mode" in ready["payload"]
+        assert isinstance(ready["payload"]["mock_mode"], bool)
+        assert ready["payload"]["model"]
         assert ready["session_id"] == session_id
         assert ready["protocol_version"] == PROTOCOL_VERSION
 
