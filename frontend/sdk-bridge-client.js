@@ -8,6 +8,8 @@ const Bridge = (() => {
     model: '',
     provider: 'ollama',
    providerBaseUrl: null,
+  toolSearchMode: null,
+  toolSearchActive: null,
     providers: {},
     providerHealth: {},
     permissionMode: 'auto',
@@ -68,6 +70,7 @@ const Bridge = (() => {
     exitReplay: document.getElementById('exit-replay'),
     providerSwitcher: document.getElementById('provider-switcher'),
    providerRuntimeMeta: document.getElementById('provider-runtime-meta'),
+  toolRuntimeMeta: document.getElementById('tool-runtime-meta'),
     modelSelect: document.getElementById('model-select'),
     openSearchBtn: document.getElementById('open-search'),
     exportSessionBtn: document.getElementById('export-session'),
@@ -159,14 +162,30 @@ function setRuntimeMode(mockMode) {
   el.runtimeModeLabel.title = 'Runtime mode';
 }
 
- function renderProviderRuntimeMeta() {
-   if (!el.providerRuntimeMeta) return;
-   const provider = state.provider || 'cloud';
-   const base = state.providerBaseUrl;
-   el.providerRuntimeMeta.textContent = base
-     ? `Provider: ${provider} → ${base}`
-     : `Provider: ${provider}`;
- }
+function renderProviderRuntimeMeta() {
+  const provider = state.provider || 'cloud';
+  const base = state.providerBaseUrl;
+
+  if (el.providerRuntimeMeta) {
+    el.providerRuntimeMeta.textContent = base
+      ? `Provider: ${provider} → ${base}`
+      : `Provider: ${provider}`;
+  }
+
+  if (el.toolRuntimeMeta) {
+    const mode = state.toolSearchMode;
+    const active = state.toolSearchActive;
+    if (mode) {
+      el.toolRuntimeMeta.textContent = `Tools: ${mode}`;
+    } else if (active === false && base) {
+      el.toolRuntimeMeta.textContent = 'Tools: off (custom route)';
+    } else if (active === false) {
+      el.toolRuntimeMeta.textContent = 'Tools: off';
+    } else {
+      el.toolRuntimeMeta.textContent = 'Tools: default';
+    }
+  }
+}
 
   function setConnection(status) {
     // status: 'disconnected' | 'connecting' | 'connected' | 'error'
@@ -231,6 +250,9 @@ function setRuntimeMode(mockMode) {
     tab.cwdSelected = state.cwdSelected;
     tab.model = state.model;
     tab.provider = state.provider;
+   tab.providerBaseUrl = state.providerBaseUrl;
+   tab.toolSearchMode = state.toolSearchMode;
+   tab.toolSearchActive = state.toolSearchActive;
   }
 
   function syncActiveTabToState() {
@@ -249,6 +271,9 @@ function setRuntimeMode(mockMode) {
     if (state.cwdSelected) setCwd(state.cwdSelected);
     state.model = tab.model || state.model;
     state.provider = tab.provider || state.provider;
+   state.providerBaseUrl = Object.prototype.hasOwnProperty.call(tab, 'providerBaseUrl') ? tab.providerBaseUrl : state.providerBaseUrl;
+   state.toolSearchMode = Object.prototype.hasOwnProperty.call(tab, 'toolSearchMode') ? tab.toolSearchMode : state.toolSearchMode;
+   state.toolSearchActive = Object.prototype.hasOwnProperty.call(tab, 'toolSearchActive') ? tab.toolSearchActive : state.toolSearchActive;
 
     setSessionLabel(state.sessionId);
     setReplayMode(state.replayMode);
@@ -314,6 +339,9 @@ function setRuntimeMode(mockMode) {
     state.socket && state.socket.close();
     state.socket = null;
     state.sessionId = null;
+       state.providerBaseUrl = null;
+       state.toolSearchMode = null;
+       state.toolSearchActive = null;
     state.attachments = [];
     state.rawLogLines = [];
     state.replayMode = false;
@@ -856,6 +884,11 @@ function setRuntimeMode(mockMode) {
       case 'session.ready':
        if (evt.payload?.provider) state.provider = evt.payload.provider;
        state.providerBaseUrl = evt.payload?.provider_base_url || null;
+      state.toolSearchMode = evt.payload?.tool_search_mode ?? null;
+      state.toolSearchActive = Object.prototype.hasOwnProperty.call(evt.payload || {}, 'tool_search_active')
+        ? Boolean(evt.payload.tool_search_active)
+        : null;
+      renderProviderRuntimeMeta();
         const mockMode = Boolean(evt.payload?.mock_mode);
       appendSystemMessage(`${mockMode ? 'Mock session ready' : 'Live session ready'} (${evt.payload?.model || state.model})`);
       setRuntimeMode(mockMode);
@@ -1152,6 +1185,7 @@ function setRuntimeMode(mockMode) {
       cwd: effectiveCwd || null,
       provider: state.provider,
       permission_mode: state.permissionMode,
+      tool_search_mode: state.toolSearchMode,
       system_prompt: null,
       resume_session_id: resumeSessionId,
       fork_session: forkSession,
@@ -1163,6 +1197,8 @@ function setRuntimeMode(mockMode) {
   if (data.provider) state.provider = data.provider;
  if (data.provider_base_url) state.providerBaseUrl = data.provider_base_url;
  else state.providerBaseUrl = null;
+if (Object.prototype.hasOwnProperty.call(data, 'tool_search_mode')) state.toolSearchMode = data.tool_search_mode;
+if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.toolSearchActive = Boolean(data.tool_search_active);
   if (data.permission_mode) state.permissionMode = data.permission_mode;
   if (Object.prototype.hasOwnProperty.call(data, 'cwd')) setCwd(data.cwd);
   if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);
