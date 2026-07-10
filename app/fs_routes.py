@@ -9,6 +9,8 @@ router = APIRouter(prefix="/api/fs", tags=["fs"])
 
 FS_ROOT = Path.cwd().resolve()
 
+MAX_READ_BYTES = 512 * 1024  # 512 KB hard cap
+
 
 def _is_within_root(path: Path, root: Path) -> bool:
     try:
@@ -68,6 +70,41 @@ async def browse(
 
     entries.sort(key=lambda e: (not e["is_dir"], e["name"].lower()))
     return {"path": str(base), "root": str(FS_ROOT), "entries": entries}
+
+
+@router.get("/read")
+async def read_file(
+    path: str = Query(..., description="Absolute or relative path to read"),
+) -> dict:
+    """Return the text contents of a file within FS_ROOT.
+
+    Returns:
+        path     – resolved absolute path
+        content  – UTF-8 text content
+        size     – byte size of the file
+        truncated – True when the file was cut at MAX_READ_BYTES
+    """
+    p = _safe_path(path)
+    if p.is_dir():
+        raise HTTPException(status_code=400, detail=f"path is a directory: {p}")
+
+    size = p.stat().st_size
+    truncated = size > MAX_READ_BYTES
+
+    try:
+        raw = p.read_bytes()[:MAX_READ_BYTES]
+        content = raw.decode("utf-8", errors="replace")
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=f"permission denied: {p}") from exc
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"read error: {exc}") from exc
+
+    return {
+        "path": str(p),
+        "content": content,
+        "size": size,
+        "truncated": truncated,
+    }
 
 
 @router.get("/git-roots")

@@ -89,6 +89,29 @@ async def health() -> dict:
 # ---------------------------------------------------------------------------
 
 
+@app.get("/api/sessions")
+async def list_sessions() -> list:
+    """Return all currently live (in-memory) sessions.
+
+    Useful for the frontend to recover tab state after a page refresh
+    and to display session badges in the top bar.
+    """
+    return [
+        {
+            "session_id": s.id,
+            "model": s.model,
+            "provider": s.provider,
+            "status": s.status,
+            "mock_mode": s.mock_mode,
+            "permission_mode": s.permission_mode,
+            "cwd": s.cwd,
+            "tag": s.tag,
+            "title": s.title,
+        }
+        for s in runtime.list_live_sessions()
+    ]
+
+
 @app.post("/api/sessions", response_model=SessionCreateResponse)
 async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
     try:
