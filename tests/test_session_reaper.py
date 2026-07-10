@@ -65,3 +65,25 @@ async def test_touch_session_refreshes_last_activity():
     runtime.touch_session(session)
 
     assert session.last_activity_at > old
+
+
+@pytest.mark.asyncio
+async def test_reap_idle_sessions_logs_idle_reap(monkeypatch, caplog):
+    monkeypatch.setenv("PLEXCLAW_SESSION_IDLE_TIMEOUT_SECONDS", "60")
+    req = SessionCreateRequest(
+        model="claude-sonnet-4-5",
+        provider="cloud",
+        permission_mode="auto",
+    )
+    session = await runtime.create_session(req)
+    session.status = "ready"
+    session.last_activity_at = time.monotonic() - 120
+
+    with caplog.at_level("INFO"):
+        reaped = await runtime.reap_idle_sessions(now=time.monotonic())
+
+    assert session.id in reaped
+    assert any(
+        "Reaping idle live session" in record.message and session.id in record.message
+        for record in caplog.records
+    )

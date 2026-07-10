@@ -216,7 +216,15 @@ async def reap_idle_sessions(now: float | None = None) -> list[str]:
     reaped: list[str] = []
 
     for session in list(_sessions.values()):
+        conn_count = ws_manager.connection_count(session.id)
+
         if session.status == "deleted":
+            log.info(
+                "Reaping deleted live session session_id=%s status=%s connections=%s",
+                session.id,
+                session.status,
+                conn_count,
+            )
             reaped.append(session.id)
             await delete_session(session.id)
             continue
@@ -224,11 +232,19 @@ async def reap_idle_sessions(now: float | None = None) -> list[str]:
         idle_for = cutoff_now - session.last_activity_at
         if idle_for < idle_timeout:
             continue
-        if ws_manager.connection_count(session.id) > 0:
+        if conn_count > 0:
             continue
         if session.status == "running":
             continue
 
+        log.info(
+            "Reaping idle live session session_id=%s idle_for=%.3f status=%s connections=%s timeout=%s",
+            session.id,
+            idle_for,
+            session.status,
+            conn_count,
+            idle_timeout,
+        )
         reaped.append(session.id)
         await delete_session(session.id)
 
