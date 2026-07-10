@@ -1447,6 +1447,12 @@ const Bridge = (() => {
         return;
       }
 
+      if (e.shiftKey && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        exportCurrentSession('md');
+        return;
+      }
+
       if (e.key.toLowerCase() === 'w') {
         e.preventDefault();
         closeTab(state.activeTabId);
