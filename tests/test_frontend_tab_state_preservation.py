@@ -26,4 +26,17 @@ def test_tab_switching_preserves_per_tab_session_and_replay_state_contract() -> 
     assert "state.replayMode = !!tab.replayMode;" in js
 
     # Tab chrome reflects whether that tab has a session attached.
-    assert "status-dot ${tab.sessionId ? 'connected' : 'disconnected'}" in js
+    assert "status-dot ${isConnected ? 'connected' : 'disconnected'}" in js
+
+
+def test_tab_switching_preserves_per_tab_connection_telemetry_contract() -> None:
+   js = Path("frontend/sdk-bridge-client.js").read_text()
+
+   assert "connections: 0," in js
+   assert "idleSeconds: 0," in js
+   assert "tab.connections = state.connections || 0;" in js
+   assert "tab.idleSeconds = state.idleSeconds || 0;" in js
+   assert "state.connections = tab.connections || 0;" in js
+   assert "state.idleSeconds = tab.idleSeconds || 0;" in js
+   assert "const isConnected = (tab.connections || 0) > 0;" in js
+   assert "btn.title = `Connections: ${tab.connections || 0} • Idle: ${idleLabel}s`;" in js

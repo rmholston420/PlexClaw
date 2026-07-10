@@ -4,6 +4,8 @@ const Bridge = (() => {
     wsBase: 'ws://127.0.0.1:8020/ws',
     protocolVersion: '0.2.0',
     sessionId: null,
+   connections: 0,
+   idleSeconds: 0,
     socket: null,
     model: '',
     provider: 'ollama',
@@ -243,6 +245,8 @@ function renderProviderRuntimeMeta() {
       id,
       title: `Tab ${state.nextTabNumber - 1}`,
       sessionId: null,
+     connections: 0,
+     idleSeconds: 0,
       transcriptHtml: '',
       attachments: [],
       attachmentTokens: 0,
@@ -265,6 +269,8 @@ function renderProviderRuntimeMeta() {
     const tab = currentTab();
     if (!tab) return;
     tab.sessionId = state.sessionId;
+   tab.connections = state.connections || 0;
+   tab.idleSeconds = state.idleSeconds || 0;
     tab.transcriptHtml = el.transcript?.innerHTML || '';
     tab.attachments = [...state.attachments];
     tab.attachmentTokens = state.attachmentTokens;
@@ -286,6 +292,8 @@ function renderProviderRuntimeMeta() {
     const tab = currentTab();
     if (!tab) return;
     state.sessionId = tab.sessionId;
+   state.connections = tab.connections || 0;
+   state.idleSeconds = tab.idleSeconds || 0;
     state.attachments = [...(tab.attachments || [])];
     state.attachmentTokens = tab.attachmentTokens || 0;
     state.permissionMode = tab.permissionMode || 'auto';
@@ -328,11 +336,14 @@ function renderProviderRuntimeMeta() {
 
     state.tabs.forEach((tab) => {
       const btn = document.createElement('button');
+     const isConnected = (tab.connections || 0) > 0;
+     const idleLabel = Number.isFinite(tab.idleSeconds) ? Number(tab.idleSeconds).toFixed(1) : '0.0';
       btn.type = 'button';
       btn.className = 'session-tab' + (tab.id === state.activeTabId ? ' active' : '');
       btn.setAttribute('data-tab-id', tab.id);
+     btn.title = `Connections: ${tab.connections || 0} • Idle: ${idleLabel}s`;
       btn.innerHTML = `
-        <span class="status-dot ${tab.sessionId ? 'connected' : 'disconnected'}"></span>
+        <span class="status-dot ${isConnected ? 'connected' : 'disconnected'}"></span>
         <span class="session-tab-title">${escapeHtml(tab.title)}</span>
         <span class="session-tab-close" data-close-tab="${tab.id}">×</span>
       `;
@@ -1230,6 +1241,8 @@ function renderProviderRuntimeMeta() {
     console.log('Creating session with cwd:', body.cwd);
     const data = await api('/api/sessions', { method: 'POST', body: JSON.stringify(body) });
     state.sessionId = data.session_id;
+   state.connections = 0;
+   state.idleSeconds = 0;
   if (data.model) state.model = data.model;
   if (data.provider) state.provider = data.provider;
  if (data.provider_base_url) state.providerBaseUrl = data.provider_base_url;
