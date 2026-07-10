@@ -186,6 +186,21 @@ class PendingApproval:
     event: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
     decision: str | None = None
 
+class _LegacyApprovalEventProxy:
+    def __init__(self, session: "LiveSession") -> None:
+        self._session = session
+
+    def clear(self) -> None:
+        for pending in self._session.pending_approvals.values():
+            pending.event.clear()
+
+    def set(self) -> None:
+        for pending in self._session.pending_approvals.values():
+            pending.event.set()
+
+    def is_set(self) -> bool:
+        return any(pending.event.is_set() for pending in self._session.pending_approvals.values())
+
 
 @dataclass
 class LiveSession:
@@ -263,6 +278,27 @@ class LiveSession:
         if not tool_id:
             return
         self.pending_approvals[tool_id].tool_input = value
+
+    @property
+    def _approval_decision(self) -> str | None:
+        tool_id = self.pending_tool_id
+        if not tool_id:
+            return None
+        pending = self.pending_approvals.get(tool_id)
+        return pending.decision if pending else None
+
+    @_approval_decision.setter
+    def _approval_decision(self, value: str | None) -> None:
+        tool_id = self.pending_tool_id
+        if not tool_id:
+            return
+        pending = self.pending_approvals.get(tool_id)
+        if pending is not None:
+            pending.decision = value
+
+    @property
+    def _approval_event(self) -> _LegacyApprovalEventProxy:
+        return _LegacyApprovalEventProxy(self)
 
     def next_seq(self) -> int:
         self.seq += 1
