@@ -3,13 +3,5 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-if [ -x .venv/bin/python ]; then
-  PYTHON=.venv/bin/python
-elif command -v python3 >/dev/null 2>&1; then
-  PYTHON=python3
-else
-  PYTHON=python
-fi
-
-echo "[pre-push] Using: $PYTHON"
-$PYTHON -m pytest -q
+echo "[pre-push] Running scripts/validate.sh"
+./scripts/validate.sh
