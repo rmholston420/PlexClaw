@@ -32,6 +32,7 @@ from app.config import (
     get_vllm_base_url,
 )
 from app.event_store import init_db, query_events, search_events
+from app.provider_defaults import DEFAULT_CLOUD_MODELS
 from app.schemas import (
     PROTOCOL_VERSION,
     RenameRequest,
@@ -280,13 +281,6 @@ async def delete_context_file(session_id: str, filename: str) -> dict:
 # ---------------------------------------------------------------------------
 # Providers / models
 # ---------------------------------------------------------------------------
-
-
-DEFAULT_CLOUD_MODELS = [
-    "claude-sonnet-4-5",
-    "claude-opus-4-5",
-    "claude-haiku-4-5",
-]
 
 
 def get_cloud_models() -> list[str]:

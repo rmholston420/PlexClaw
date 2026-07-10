@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.provider_defaults import DEFAULT_CLOUD_MODELS
+
 PROTOCOL_VERSION = "0.2.0"
 
 ProviderName = Literal["cloud", "ollama", "vllm"]
@@ -23,7 +25,7 @@ class WSEnvelope(BaseModel):
 
 
 class SessionCreateRequest(BaseModel):
-    model: str = Field(default="claude-sonnet-4-5", min_length=1, max_length=200)
+    model: str = Field(default=DEFAULT_CLOUD_MODELS[0], min_length=1, max_length=200)
     cwd: str | None = None
     provider: ProviderName = "cloud"
     permission_mode: PermissionMode = "manual"
