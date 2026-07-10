@@ -7,6 +7,7 @@ const Bridge = (() => {
     socket: null,
     model: '',
     provider: 'ollama',
+   providerBaseUrl: null,
     providers: {},
     providerHealth: {},
     permissionMode: 'auto',
@@ -66,6 +67,7 @@ const Bridge = (() => {
     replayBanner: document.getElementById('replay-banner'),
     exitReplay: document.getElementById('exit-replay'),
     providerSwitcher: document.getElementById('provider-switcher'),
+   providerRuntimeMeta: document.getElementById('provider-runtime-meta'),
     modelSelect: document.getElementById('model-select'),
     openSearchBtn: document.getElementById('open-search'),
     exportSessionBtn: document.getElementById('export-session'),
@@ -156,6 +158,15 @@ function setRuntimeMode(mockMode) {
   el.runtimeModeLabel.className = 'badge';
   el.runtimeModeLabel.title = 'Runtime mode';
 }
+
+ function renderProviderRuntimeMeta() {
+   if (!el.providerRuntimeMeta) return;
+   const provider = state.provider || 'cloud';
+   const base = state.providerBaseUrl;
+   el.providerRuntimeMeta.textContent = base
+     ? `Provider: ${provider} → ${base}`
+     : `Provider: ${provider}`;
+ }
 
   function setConnection(status) {
     // status: 'disconnected' | 'connecting' | 'connected' | 'error'
@@ -251,6 +262,7 @@ function setRuntimeMode(mockMode) {
     renderRawLog();
     renderModelOptions();
     renderProviderSwitcher();
+ renderProviderRuntimeMeta();
     renderPermissionMode();
     updateTokenCounter();
     if (el.terminalErrorsOnly) el.terminalErrorsOnly.checked = state.terminalErrorsOnly;
@@ -828,6 +840,8 @@ function setRuntimeMode(mockMode) {
     switch (evt.type) {
       case 'session.created':
       case 'session.ready':
+       if (evt.payload?.provider) state.provider = evt.payload.provider;
+       state.providerBaseUrl = evt.payload?.provider_base_url || null;
         const mockMode = Boolean(evt.payload?.mock_mode);
       appendSystemMessage(`${mockMode ? 'Mock session ready' : 'Live session ready'} (${evt.payload?.model || state.model})`);
       setRuntimeMode(mockMode);
@@ -1133,6 +1147,8 @@ function setRuntimeMode(mockMode) {
     state.sessionId = data.session_id;
   if (data.model) state.model = data.model;
   if (data.provider) state.provider = data.provider;
+ if (data.provider_base_url) state.providerBaseUrl = data.provider_base_url;
+ else state.providerBaseUrl = null;
   if (data.permission_mode) state.permissionMode = data.permission_mode;
   if (Object.prototype.hasOwnProperty.call(data, 'cwd')) setCwd(data.cwd);
   if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);

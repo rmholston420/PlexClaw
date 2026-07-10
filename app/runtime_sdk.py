@@ -356,6 +356,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
 
     effective_system_prompt = req.system_prompt or DEFAULT_SYSTEM_PROMPT
     provider_env = _provider_env(req.provider)
+    provider_base_url = provider_env.get("ANTHROPIC_BASE_URL")
 
     if mock_mode:
         session._client = MockSDKClient(options=None)
@@ -394,6 +395,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
                 "message": "Session created" + (" [MOCK MODE — SDK not installed]" if mock_mode else "."),
                 "model": session.model,
                 "provider": session.provider,
+                "provider_base_url": provider_base_url,
                 "cwd": session.cwd,
                 "permission_mode": session.permission_mode,
                 "resume_session_id": session.resume_session_id,
