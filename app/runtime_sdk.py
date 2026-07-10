@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -120,6 +121,13 @@ async def _emit(session: LiveSession, envelope: WSEnvelope) -> None:
 
 
 async def create_session(req: SessionCreateRequest) -> LiveSession:
+    if req.cwd:
+        p = Path(req.cwd).expanduser()
+        if not p.exists():
+            raise ValueError(f"cwd does not exist: {p}")
+        if not p.is_dir():
+            raise ValueError(f"cwd is not a directory: {p}")
+
     session_id = str(uuid.uuid4())
     session = LiveSession(
         id=session_id,
@@ -133,20 +141,14 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
     _sessions[session_id] = session
 
     if _SDK_AVAILABLE:
-        # ClaudeAgentOptions field names confirmed from Anthropic Python SDK docs:
-        #   - system_prompt: valid constructor arg (str | SystemPromptPreset | None)
-        #   - permission_mode: valid constructor arg (PermissionMode | None)
-        #   - resume: str | None  — NOT resume_session_id
-        #   - fork_session: bool  — valid constructor arg
-        #   - include_partial_messages: bool — enables StreamEvent token-level streaming
         options = ClaudeAgentOptions(
             model=req.model,
             cwd=req.cwd,
             permission_mode=req.permission_mode,
             system_prompt=req.system_prompt,
-            resume=req.resume_session_id,       # correct field name is `resume`
+            resume=req.resume_session_id,
             fork_session=req.fork_session,
-            include_partial_messages=True,      # required for token-level streaming
+            include_partial_messages=True,
         )
         session._client = ClaudeSDKClient(options)
 

@@ -24,9 +24,12 @@ from app.schemas import (
     WSEnvelope,
 )
 from app.websocket_manager import ws_manager
+from app import fs_routes
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="PlexClaw Bridge", version="0.2.0")
+
+app.include_router(fs_routes.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -58,7 +61,10 @@ async def health() -> dict:
 
 @app.post("/api/sessions", response_model=SessionCreateResponse)
 async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
-    session = await runtime.create_session(req)
+    try:
+        session = await runtime.create_session(req)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return SessionCreateResponse(
         session_id=session.id,
         status="created",
