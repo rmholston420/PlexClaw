@@ -22,12 +22,15 @@ class SessionCreateRequest(BaseModel):
     model: str = "claude-sonnet-4-5"
     cwd: Optional[str] = None
     provider: str = "cloud"
-    permission_mode: str = "default"
+    permission_mode: str = "manual"
     system_prompt: Optional[str] = None
     resume_session_id: Optional[str] = None
     fork_session: bool = False
 
 
+
+class SessionUpdateRequest(BaseModel):
+    permission_mode: Optional[str] = None
 class SessionCreateResponse(BaseModel):
     session_id: str
     status: str = "created"

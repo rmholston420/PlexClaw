@@ -231,6 +231,18 @@ async def _emit(session: LiveSession, envelope: WSEnvelope) -> None:
     )
 
 
+
+async def update_session(session_id: str, *, permission_mode: Optional[str] = None) -> LiveSession:
+    session = _sessions.get(session_id)
+    if not session:
+        raise KeyError(f"Session {session_id} not found")
+
+    if permission_mode is not None:
+        if permission_mode not in {"auto", "manual"}:
+            raise ValueError(f"invalid permission_mode: {permission_mode}")
+        session.permission_mode = permission_mode
+
+    return session
 async def create_session(req: SessionCreateRequest) -> LiveSession:
     if req.cwd:
         p = Path(req.cwd).expanduser()

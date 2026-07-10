@@ -23,6 +23,7 @@ from app.schemas import (
     RenameRequest,
     SessionCreateRequest,
     SessionCreateResponse,
+    SessionUpdateRequest,
     TagRequest,
     WSEnvelope,
 )
@@ -75,6 +76,23 @@ async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
     )
 
 
+
+@app.patch("/api/sessions/{session_id}")
+async def update_session(session_id: str, req: SessionUpdateRequest) -> dict:
+    try:
+        session = await runtime.update_session(
+            session_id,
+            permission_mode=req.permission_mode,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "session_id": session.id,
+        "status": session.status,
+        "permission_mode": session.permission_mode,
+    }
 @app.post("/api/sessions/{session_id}/interrupt")
 async def interrupt_session(session_id: str) -> dict:
     try:

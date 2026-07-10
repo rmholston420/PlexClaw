@@ -437,6 +437,27 @@
     }
     .badge.accent { border-color: var(--primary); color: var(--primary); background: var(--primary-hl); }
 
+    .mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 2px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      background: var(--surface);
+    }
+    .mode-toggle-btn {
+      padding: var(--s1) var(--s3);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+    }
+    .mode-toggle-btn.active {
+      background: var(--primary-hl);
+      color: var(--primary);
+    }
+
     .model-select {
       padding: var(--s1) var(--s2);
       border-radius: var(--radius-full);
@@ -1093,6 +1114,10 @@
   <i data-lucide="terminal-square" style="width:16px;height:16px"></i>
 </button>
 <div class="provider-switcher" id="provider-switcher" aria-label="Providers"></div>
+        <div class="mode-toggle" id="mode-toggle" aria-label="Tool approval mode">
+          <button class="mode-toggle-btn" id="mode-manual-btn" type="button">Manual</button>
+          <button class="mode-toggle-btn" id="mode-auto-btn" type="button">Auto</button>
+        </div>
         <select class="model-select" id="model-select" title="Model"></select>
         <button class="icon-btn" id="refresh-archive" aria-label="Refresh archive" title="Refresh archive">
           <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>

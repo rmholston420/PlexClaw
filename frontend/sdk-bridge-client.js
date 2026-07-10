@@ -4,6 +4,7 @@ const Bridge = (() => {
     wsBase: 'ws://127.0.0.1:8020/ws',
     protocolVersion: '0.2.0',
     sessionId: null,
+      permissionMode: state.permissionMode,
     socket: null,
     model: 'claude-sonnet-4-5',
     provider: 'cloud',
@@ -61,6 +62,8 @@ const Bridge = (() => {
     providerSwitcher: document.getElementById('provider-switcher'),
     modelSelect: document.getElementById('model-select'),
     refreshArchive: document.getElementById('refresh-archive'),
+    modeManualBtn: document.getElementById('mode-manual-btn'),
+    modeAutoBtn: document.getElementById('mode-auto-btn'),
     terminalToggle: document.getElementById('terminal-toggle'),
     terminalDrawer: document.getElementById('terminal-drawer'),
     terminalResizeHandle: document.getElementById('terminal-resize-handle'),
@@ -163,6 +166,7 @@ const Bridge = (() => {
     tab.sessionId = state.sessionId;
     tab.transcriptHtml = el.transcript?.innerHTML || '';
     tab.attachments = [...state.attachments];
+    tab.permissionMode = state.permissionMode;
     tab.replayMode = state.replayMode;
     tab.rawLogLines = [...state.rawLogLines];
     tab.terminalErrorsOnly = state.terminalErrorsOnly;
@@ -176,6 +180,7 @@ const Bridge = (() => {
     if (!tab) return;
     state.sessionId = tab.sessionId;
     state.attachments = [...(tab.attachments || [])];
+    state.permissionMode = tab.permissionMode || 'manual';
     state.replayMode = !!tab.replayMode;
     state.rawLogLines = [...(tab.rawLogLines || [])];
     state.terminalErrorsOnly = !!tab.terminalErrorsOnly;
@@ -194,6 +199,7 @@ const Bridge = (() => {
     renderRawLog();
     renderModelOptions();
     renderProviderSwitcher();
+    renderPermissionMode();
     if (el.terminalErrorsOnly) el.terminalErrorsOnly.checked = state.terminalErrorsOnly;
     if (!tab.transcriptHtml && el.welcome) el.welcome.classList.remove('hidden');
   }
@@ -313,6 +319,31 @@ const Bridge = (() => {
     }
   }
 
+
+  function renderPermissionMode() {
+    if (el.modeManualBtn) el.modeManualBtn.classList.toggle('active', state.permissionMode === 'manual');
+    if (el.modeAutoBtn) el.modeAutoBtn.classList.toggle('active', state.permissionMode === 'auto');
+  }
+
+  async function setPermissionMode(mode) {
+    if (!['auto', 'manual'].includes(mode)) return;
+    if (state.permissionMode === mode) return;
+
+    state.permissionMode = mode;
+    syncStateToActiveTab();
+    renderPermissionMode();
+
+    if (state.sessionId) {
+      try {
+        await api(`/api/sessions/${state.sessionId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ permission_mode: mode }),
+        });
+      } catch (err) {
+        appendSystemMessage('Failed to update approval mode.', 'error');
+      }
+    }
+  }
   function renderProviderSwitcher() {
     if (!el.providerSwitcher) return;
     el.providerSwitcher.innerHTML = '';
@@ -1074,6 +1105,8 @@ const Bridge = (() => {
     el.modelSelect?.addEventListener('change', () => {
       state.model = el.modelSelect.value;
     });
+    el.modeManualBtn?.addEventListener('click', () => setPermissionMode('manual'));
+    el.modeAutoBtn?.addEventListener('click', () => setPermissionMode('auto'));
 
     // Prompt chips
     document.querySelectorAll('.prompt-chip').forEach(btn => {
@@ -1087,6 +1120,7 @@ const Bridge = (() => {
 
   async function init() {
     setCwd('~');
+    renderPermissionMode();
     el.cwdPill?.addEventListener('click', openCwdModal);
     el.cwdBackdrop?.addEventListener('click', closeCwdModal);
     el.cwdClose?.addEventListener('click', closeCwdModal);
