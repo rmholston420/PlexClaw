@@ -13,6 +13,8 @@ const Bridge = (() => {
   runtimeMode: null,
   toolSearchMode: null,
   toolSearchActive: null,
+  sessionStartedAt: null,
+  sessionElapsedTimer: null,
     providers: {},
     providerHealth: {},
     permissionMode: 'auto',
@@ -80,6 +82,7 @@ const Bridge = (() => {
   toolRuntimeMeta: document.getElementById('tool-runtime-meta'),
  sessionCwdMeta: document.getElementById('session-cwd-meta'),
  sessionRuntimeMeta: document.getElementById('session-runtime-meta'),
+sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
   toolSearchSelect: document.getElementById('tool-search-select'),
     modelSelect: document.getElementById('model-select'),
     openSearchBtn: document.getElementById('open-search'),
@@ -473,6 +476,7 @@ function renderProviderRuntimeMeta() {
     state.socket && state.socket.close();
     state.socket = null;
     state.sessionId = null;
+  stopSessionElapsedTimer();
        state.providerBaseUrl = null;
        state.toolSearchMode = null;
        state.toolSearchActive = null;
@@ -1069,6 +1073,49 @@ function renderProviderRuntimeMeta() {
     node.dataset.searchText = normalizeSearchText(text);
   }
 
+  function formatElapsed(ms) {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  function renderSessionElapsed() {
+    if (!el.sessionElapsedMeta) return;
+    if (!state.sessionStartedAt) {
+      el.sessionElapsedMeta.textContent = '--:--';
+      el.sessionElapsedMeta.title = 'Click to copy elapsed session time';
+      return;
+    }
+    const elapsed = formatElapsed(Date.now() - state.sessionStartedAt);
+    el.sessionElapsedMeta.textContent = elapsed;
+    el.sessionElapsedMeta.title = `Click to copy elapsed session time: ${elapsed}`;
+  }
+
+  function stopSessionElapsedTimer() {
+    if (state.sessionElapsedTimer) {
+      window.clearInterval(state.sessionElapsedTimer);
+      state.sessionElapsedTimer = null;
+    }
+    state.sessionStartedAt = null;
+    renderSessionElapsed();
+  }
+
+  function startSessionElapsedTimer(startValue = null) {
+    if (state.sessionElapsedTimer) {
+      window.clearInterval(state.sessionElapsedTimer);
+      state.sessionElapsedTimer = null;
+    }
+    const parsed = startValue ? Date.parse(startValue) : NaN;
+    state.sessionStartedAt = Number.isFinite(parsed) ? parsed : Date.now();
+    renderSessionElapsed();
+    state.sessionElapsedTimer = window.setInterval(renderSessionElapsed, 1000);
+  }
+
   function jumpToPendingSearchHit() {
     const needle = normalizeSearchText(state.pendingSearchJump);
     if (!needle || !el.transcript) return;
@@ -1100,6 +1147,7 @@ function renderProviderRuntimeMeta() {
         const mockMode = Boolean(evt.payload?.mock_mode);
       appendSystemMessage(`${mockMode ? 'Mock session ready' : 'Live session ready'} (${evt.payload?.model || state.model})`);
       setRuntimeMode(mockMode);
+    startSessionElapsedTimer(evt.payload?.created_at || null);
       state.assistantChunkBuffer = '';
       state.fakeToolWarningShown = false;
         break;
@@ -1737,6 +1785,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
       catch (e) { appendSystemMessage('Could not connect to bridge at ' + state.bridgeUrl + '.', 'error'); }
     });
     el.exitReplay.addEventListener('click', () => {
+  stopSessionElapsedTimer();
       setReplayMode(false);
       clearTranscript();
       if (el.welcome) el.welcome.classList.remove('hidden');
