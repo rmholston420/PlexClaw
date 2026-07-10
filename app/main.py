@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import urllib.request
 from contextlib import asynccontextmanager
 
@@ -281,11 +282,20 @@ async def delete_context_file(session_id: str, filename: str) -> dict:
 # ---------------------------------------------------------------------------
 
 
-CLOUD_MODELS = [
+DEFAULT_CLOUD_MODELS = [
     "claude-sonnet-4-5",
     "claude-opus-4-5",
     "claude-haiku-4-5",
 ]
+
+
+def get_cloud_models() -> list[str]:
+    raw = os.getenv("PLEXCLAW_CLOUD_MODELS", "").strip()
+    if not raw:
+        return DEFAULT_CLOUD_MODELS
+
+    models = [item.strip() for item in raw.split(",") if item.strip()]
+    return models or DEFAULT_CLOUD_MODELS
 
 
 async def _fetch_ollama_models() -> list[str]:
@@ -327,7 +337,7 @@ async def get_providers() -> dict:
     return {
         "default_provider": "cloud",
         "providers": {
-            "cloud": {"label": "Cloud", "models": CLOUD_MODELS},
+            "cloud": {"label": "Cloud", "models": get_cloud_models()},
             "ollama": {
                 "label": "Ollama",
                 "base_url": ollama_base,
