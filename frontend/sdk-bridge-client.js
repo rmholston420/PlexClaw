@@ -6,6 +6,9 @@ const Bridge = (() => {
     sessionId: null,
     socket: null,
     model: 'claude-sonnet-4-5',
+    provider: 'cloud',
+    providers: {},
+    providerHealth: {},
     cwd: '~',
     cwdSelected: null,
     cwdBrowsing: null,
@@ -96,11 +99,46 @@ const Bridge = (() => {
     return '…/' + parts.slice(-2).join('/');
   }
 
+
   function setCwd(path) {
     state.cwd = path || '~';
     state.cwdSelected = path || null;
     if (el.cwdLabel) el.cwdLabel.textContent = shortenPath(state.cwd);
     if (el.cwdCurrentPath) el.cwdCurrentPath.textContent = state.cwd;
+  }
+
+  function renderModelOptions() {
+    if (!el.modelSelect) return;
+    const active = state.providers[state.provider] || state.providers.cloud || { models: [] };
+    const models = active.models || [];
+    el.modelSelect.innerHTML = '';
+    models.forEach((model) => {
+      const opt = document.createElement('option');
+      opt.value = model;
+      opt.textContent = model;
+      if (model === state.model) opt.selected = true;
+      el.modelSelect.appendChild(opt);
+    });
+    if (!models.includes(state.model) && models.length) {
+      state.model = models[0];
+      el.modelSelect.value = state.model;
+    }
+  }
+
+  async function loadProviders() {
+    try {
+      const data = await api('/api/providers');
+      state.providers = data.providers || {};
+      state.provider = data.default_provider || state.provider || 'cloud';
+      renderModelOptions();
+    } catch (err) {
+      console.warn('Provider load error', err);
+      state.providers = {
+        cloud: { label: 'Cloud', models: ['claude-sonnet-4-5', 'claude-opus-4-5', 'claude-haiku-4-5'] },
+      };
+      state.provider = 'cloud';
+      renderModelOptions();
+    }
   }
 
   async function browseCwd(path = null) {
@@ -399,8 +437,7 @@ const Bridge = (() => {
     const body = {
       model: state.model,
       cwd: state.cwdSelected,
-      cwd: null,
-      provider: 'cloud',
+      provider: state.provider,
       permission_mode: 'default',
       system_prompt: null,
       resume_session_id: resumeSessionId,
@@ -687,6 +724,9 @@ const Bridge = (() => {
     el.archiveSearch.addEventListener('input', renderArchive);
     el.archiveSort.addEventListener('change', renderArchive);
     el.refreshArchive.addEventListener('click', loadArchive);
+    el.modelSelect?.addEventListener('change', () => {
+      state.model = el.modelSelect.value;
+    });
 
     // Prompt chips
     document.querySelectorAll('.prompt-chip').forEach(btn => {
@@ -717,6 +757,7 @@ const Bridge = (() => {
       }
     });
 
+    await loadProviders();
     bindEvents();
     bindTextareaResize();
     await loadArchive();

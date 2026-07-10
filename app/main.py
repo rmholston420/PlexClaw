@@ -4,7 +4,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import urllib.request
 from typing import Optional
+
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -88,6 +91,74 @@ async def change_model(session_id: str, model: str) -> dict:
         raise HTTPException(status_code=404, detail="Session not found")
     session.model = model
     return {"ok": True, "model": model}
+
+
+
+# ---------------------------------------------------------------------------
+# Providers / models
+# ---------------------------------------------------------------------------
+
+
+CLOUD_MODELS = [
+    "claude-sonnet-4-5",
+    "claude-opus-4-5",
+    "claude-haiku-4-5",
+]
+
+
+async def _fetch_ollama_models() -> list[str]:
+    base = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+    try:
+        def _load():
+            with urllib.request.urlopen(f"{base}/api/tags", timeout=2.0) as res:
+                return json.loads(res.read().decode("utf-8"))
+        data = await asyncio.to_thread(_load)
+        return [m.get("name") for m in data.get("models", []) if m.get("name")]
+    except Exception:
+        return []
+
+
+async def _fetch_vllm_models() -> list[str]:
+    base = os.getenv("VLLM_BASE_URL", "http://127.0.0.1:30000").rstrip("/")
+    try:
+        def _load():
+            with urllib.request.urlopen(f"{base}/v1/models", timeout=2.0) as res:
+                return json.loads(res.read().decode("utf-8"))
+        data = await asyncio.to_thread(_load)
+        return [m.get("id") for m in data.get("data", []) if m.get("id")]
+    except Exception:
+        return []
+
+
+@app.get("/api/providers")
+async def get_providers() -> dict:
+    ollama_base = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+    vllm_base = os.getenv("VLLM_BASE_URL", "http://127.0.0.1:30000").rstrip("/")
+    ollama_models, vllm_models = await asyncio.gather(
+        _fetch_ollama_models(),
+        _fetch_vllm_models(),
+    )
+    return {
+        "default_provider": "cloud",
+        "providers": {
+            "cloud": {"label": "Cloud", "models": CLOUD_MODELS},
+            "ollama": {"label": "Ollama", "base_url": ollama_base, "models": ollama_models},
+            "vllm": {"label": "vLLM", "base_url": vllm_base, "models": vllm_models},
+        },
+    }
+
+
+@app.get("/api/providers/health")
+async def get_provider_health() -> dict:
+    ollama_models, vllm_models = await asyncio.gather(
+        _fetch_ollama_models(),
+        _fetch_vllm_models(),
+    )
+    return {
+        "cloud": {"ok": True},
+        "ollama": {"ok": bool(ollama_models), "models": len(ollama_models)},
+        "vllm": {"ok": bool(vllm_models), "models": len(vllm_models)},
+    }
 
 
 # ---------------------------------------------------------------------------
