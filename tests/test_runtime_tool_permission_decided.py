@@ -46,13 +46,15 @@ async def test_approve_tool_call_emits_permission_decided(monkeypatch):
         )
     )
     emitted.clear()
-    session._pending_tool_id = "tool-1"
-    session._pending_tool_name = "bash"
-    session._pending_tool_input = {"cmd": "pwd"}
+    session.pending_approvals["tool-1"] = runtime.PendingApproval(
+        tool_id="tool-1",
+        tool_name="bash",
+        tool_input={"cmd": "pwd"},
+    )
 
     await runtime.approve_tool_call(session.id, "tool-1")
 
-    assert session._approval_decision == "approve"
+    assert session.pending_approvals["tool-1"].decision == "approve"
     assert session._approval_event.is_set()
     evt = emitted[-1]
     assert evt.type == "tool.permission_decided"
@@ -79,13 +81,15 @@ async def test_reject_tool_call_emits_permission_decided(monkeypatch):
         )
     )
     emitted.clear()
-    session._pending_tool_id = "tool-1"
-    session._pending_tool_name = "bash"
-    session._pending_tool_input = {"cmd": "pwd"}
+    session.pending_approvals["tool-1"] = runtime.PendingApproval(
+        tool_id="tool-1",
+        tool_name="bash",
+        tool_input={"cmd": "pwd"},
+    )
 
     await runtime.reject_tool_call(session.id, "tool-1")
 
-    assert session._approval_decision == "reject"
+    assert session.pending_approvals["tool-1"].decision == "reject"
     assert session._approval_event.is_set()
     evt = emitted[-1]
     assert evt.type == "tool.permission_decided"
@@ -118,9 +122,11 @@ def test_websocket_approval_messages_emit_permission_decided_events():
         session = runtime.get_session(session_id)
         assert session is not None
 
-        session._pending_tool_id = "tool-a"
-        session._pending_tool_name = "bash"
-        session._pending_tool_input = {"cmd": "pwd"}
+        session.pending_approvals["tool-a"] = runtime.PendingApproval(
+            tool_id="tool-a",
+            tool_name="bash",
+            tool_input={"cmd": "pwd"},
+        )
 
         websocket.send_json({"type": "approve", "tool_id": "tool-a"})
         msg = websocket.receive_json()
@@ -129,11 +135,13 @@ def test_websocket_approval_messages_emit_permission_decided_events():
         assert msg["payload"]["tool_id"] == "tool-a"
         assert msg["payload"]["decision"] == "approve"
 
-        session._approval_event.clear()
+        assert session.pending_approvals["tool-a"].event.is_set() is True
         session._approval_decision = None
-        session._pending_tool_id = "tool-b"
-        session._pending_tool_name = "read"
-        session._pending_tool_input = {"path": "README.md"}
+        session.pending_approvals["tool-b"] = runtime.PendingApproval(
+            tool_id="tool-b",
+            tool_name="read",
+            tool_input={"path": "README.md"},
+        )
 
         websocket.send_json({"type": "reject", "tool_id": "tool-b"})
         msg = websocket.receive_json()

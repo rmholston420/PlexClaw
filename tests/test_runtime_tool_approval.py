@@ -72,10 +72,10 @@ async def test_await_tool_approval_clears_state_after_approve(monkeypatch):
     approved = await task
 
     assert approved is True
-    assert session._pending_tool_id is None
-    assert session._pending_tool_name is None
-    assert session._pending_tool_input is None
-    assert session._approval_decision is None
+    assert session.pending_approvals == {}
+    assert session.pending_tool_name is None
+    assert session.pending_tool_input is None
+    assert all(p.decision is None for p in session.pending_approvals.values())
     evt = next(e for e in emitted if e.type == "tool.permission_required")
     assert evt.payload["tool_id"] == "tool-1"
     assert evt.payload["tool_name"] == "bash"
@@ -117,10 +117,10 @@ async def test_await_tool_approval_clears_state_after_reject(monkeypatch):
     approved = await task
 
     assert approved is False
-    assert session._pending_tool_id is None
-    assert session._pending_tool_name is None
-    assert session._pending_tool_input is None
-    assert session._approval_decision is None
+    assert session.pending_approvals == {}
+    assert session.pending_tool_name is None
+    assert session.pending_tool_input is None
+    assert all(p.decision is None for p in session.pending_approvals.values())
     evt = next(e for e in emitted if e.type == "tool.permission_required")
     assert evt.payload["tool_id"] == "tool-1"
     assert evt.payload["tool_name"] == "bash"
