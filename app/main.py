@@ -24,6 +24,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app import fs_routes
 from app import runtime_sdk as runtime
+from app.config import get_allowed_hosts, get_allowed_origins
 from app.archive_normalizer import normalize_session, normalize_session_list
 from app.event_store import init_db, query_events, search_events
 from app.schemas import (
@@ -55,43 +56,17 @@ app = FastAPI(
 app.include_router(fs_routes.router)
 
 
-DEFAULT_ALLOWED_ORIGINS = [
-    "http://localhost",
-    "http://127.0.0.1",
-    "http://localhost:5555",
-]
-
-raw_allowed = os.getenv("PLEXCLAW_ALLOWED_ORIGINS", "")
-if raw_allowed.strip():
-    allowed_origins = [o.strip() for o in raw_allowed.split(",") if o.strip()]
-else:
-    allowed_origins = DEFAULT_ALLOWED_ORIGINS
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=get_allowed_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-DEFAULT_ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "testserver",
-]
-
-raw_hosts = os.getenv("PLEXCLAW_ALLOWED_HOSTS", "")
-if raw_hosts.strip():
-    allowed_hosts = [h.strip() for h in raw_hosts.split(",") if h.strip()]
-else:
-    allowed_hosts = DEFAULT_ALLOWED_HOSTS
-
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=allowed_hosts,
+    allowed_hosts=get_allowed_hosts(),
 )
-
 
 
 # ---------------------------------------------------------------------------
