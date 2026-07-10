@@ -10,6 +10,7 @@ const Bridge = (() => {
     model: '',
     provider: 'ollama',
    providerBaseUrl: null,
+  runtimeMode: null,
   toolSearchMode: null,
   toolSearchActive: null,
     providers: {},
@@ -75,6 +76,8 @@ const Bridge = (() => {
     providerSwitcher: document.getElementById('provider-switcher'),
    providerRuntimeMeta: document.getElementById('provider-runtime-meta'),
   toolRuntimeMeta: document.getElementById('tool-runtime-meta'),
+ sessionCwdMeta: document.getElementById('session-cwd-meta'),
+ sessionRuntimeMeta: document.getElementById('session-runtime-meta'),
   toolSearchSelect: document.getElementById('tool-search-select'),
     modelSelect: document.getElementById('model-select'),
     openSearchBtn: document.getElementById('open-search'),
@@ -149,22 +152,28 @@ const Bridge = (() => {
 
   
 function setRuntimeMode(mockMode) {
-  if (!el.runtimeModeLabel) return;
-  if (mockMode === true) {
-    el.runtimeModeLabel.textContent = 'Mock runtime';
-    el.runtimeModeLabel.className = 'badge mock';
-    el.runtimeModeLabel.title = 'Using mock Claude runtime';
-    return;
-  }
-  if (mockMode === false) {
-    el.runtimeModeLabel.textContent = 'Live runtime';
-    el.runtimeModeLabel.className = 'badge live';
-    el.runtimeModeLabel.title = 'Using live Claude runtime';
-    return;
-  }
-  el.runtimeModeLabel.textContent = 'Unknown runtime';
-  el.runtimeModeLabel.className = 'badge';
-  el.runtimeModeLabel.title = 'Runtime mode';
+ if (!el.runtimeModeLabel) return;
+ if (mockMode === true) {
+   state.runtimeMode = 'mock';
+   el.runtimeModeLabel.textContent = 'Mock runtime';
+   el.runtimeModeLabel.className = 'badge mock';
+   el.runtimeModeLabel.title = 'Using mock Claude runtime';
+   renderProviderRuntimeMeta();
+   return;
+ }
+ if (mockMode === false) {
+   state.runtimeMode = 'live';
+   el.runtimeModeLabel.textContent = 'Live runtime';
+   el.runtimeModeLabel.className = 'badge live';
+   el.runtimeModeLabel.title = 'Using live Claude runtime';
+   renderProviderRuntimeMeta();
+   return;
+ }
+ state.runtimeMode = null;
+ el.runtimeModeLabel.textContent = 'Unknown runtime';
+ el.runtimeModeLabel.className = 'badge';
+ el.runtimeModeLabel.title = 'Runtime mode';
+ renderProviderRuntimeMeta();
 }
 
 function renderProviderRuntimeMeta() {
@@ -182,6 +191,22 @@ function renderProviderRuntimeMeta() {
      ? `Effective provider route: ${providerLabel} via ${base}`
      : `Effective provider route: ${providerLabel} using default backend routing`;
  }
+ if (el.sessionCwdMeta) {
+   const cwdText = state.cwd || state.cwdSelected || '~';
+   el.sessionCwdMeta.textContent = shortenPath(cwdText);
+   el.sessionCwdMeta.title = cwdText || 'Active session working directory';
+ }
+
+ if (el.sessionRuntimeMeta) {
+   const runtimeText = state.runtimeMode === 'mock'
+     ? 'Mock runtime'
+     : state.runtimeMode === 'live'
+       ? 'Live runtime'
+       : 'Unknown runtime';
+   el.sessionRuntimeMeta.textContent = runtimeText;
+   el.sessionRuntimeMeta.title = `Current runtime mode: ${runtimeText}`;
+ }
+
 
  if (el.toolRuntimeMeta) {
    const mode = state.toolSearchMode;
@@ -1014,9 +1039,7 @@ function renderProviderRuntimeMeta() {
         if (badge) badge.textContent = 'running';
         const inputSection = block.querySelector(`#tool-input-${evt.payload?.tool_id} pre`);
         if (inputSection) {
-          const input = evt.payload?.tool_input ?? {};
-          inputSection.textContent = JSON.stringify(input, null, 2);
-          tagSearchableNode(block, `${evt.payload?.tool_name || 'tool'} ${JSON.stringify(input)}`);
+          inputSection.textContent = '[hidden in transcript]';
         }
         break;
       }
@@ -1026,11 +1049,7 @@ function renderProviderRuntimeMeta() {
         if (evt.payload?.tool_input !== undefined) {
           const inputSection = block.querySelector(`#tool-input-${evt.payload?.tool_id} pre`);
           if (inputSection) {
-            inputSection.textContent = JSON.stringify(evt.payload.tool_input ?? {}, null, 2);
-            tagSearchableNode(
-              block,
-              `${evt.payload?.tool_name || 'tool'} ${JSON.stringify(evt.payload.tool_input ?? {})}`
-            );
+            inputSection.textContent = '[hidden in transcript]';
           }
         }
 
