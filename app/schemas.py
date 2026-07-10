@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 PROTOCOL_VERSION = "0.2.0"
+
+ProviderName = Literal["cloud", "ollama", "vllm"]
+PermissionMode = Literal["auto", "manual"]
 
 
 class WSEnvelope(BaseModel):
@@ -20,17 +23,25 @@ class WSEnvelope(BaseModel):
 
 
 class SessionCreateRequest(BaseModel):
-    model: str = "claude-sonnet-4-5"
+    model: str = Field(default="claude-sonnet-4-5", min_length=1, max_length=200)
     cwd: str | None = None
-    provider: str = "cloud"
-    permission_mode: str = "manual"
+    provider: ProviderName = "cloud"
+    permission_mode: PermissionMode = "manual"
     system_prompt: str | None = None
     resume_session_id: str | None = None
     fork_session: bool = False
 
+    @field_validator("model")
+    @classmethod
+    def normalize_model(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("model must not be empty")
+        return value
+
 
 class SessionUpdateRequest(BaseModel):
-    permission_mode: str | None = None
+    permission_mode: PermissionMode | None = None
 
 
 class SessionCreateResponse(BaseModel):
