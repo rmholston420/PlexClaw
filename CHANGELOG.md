@@ -11,6 +11,8 @@
 - Launcher shell contract and port-preflight regression tests.
 
 ### Changed
+- Session create responses now return `mock_mode` and `model` so the frontend can show accurate runtime and mock-mode status.
+- Replayed session lifecycle events now include `mock_mode` and `model`, keeping the archived stream consistent with live session metadata.
 - `run.sh` now auto-enables repo-tracked hooks for the current clone when needed.
 - `run.sh` now fails fast with clear messages when ports 8020 or 5555 are already occupied.
 - CI now validates shell entrypoints and hook bootstrap in addition to Ruff and pytest.
