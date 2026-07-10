@@ -9,6 +9,11 @@ Anthropic-compatible providers like Ollama.
 
 Package: pip install claude-agent-sdk
 Docs:    https://code.claude.com/docs/en/agent-sdk/python
+
+Mock mode:
+  When claude-agent-sdk is not installed the app runs in mock mode.
+  Sessions are created normally, prompts are echoed back token-by-token,
+  and all UI streaming paths are exercised.
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ from typing import Any
 
 from app.event_store import append_event
 from app.hooks import HookContext, run_hooks
+from app.mock_sdk import MockSDKClient, MockStreamEvent
 from app.normalizer import (
     normalize_assistant_completed,
     normalize_session_failed,
@@ -122,10 +128,9 @@ except ImportError:
     _sdk_tag_session = None  # type: ignore
     _SDK_AVAILABLE = False
     log.warning(
-        "claude_agent_sdk not installed. "
+        "claude_agent_sdk not installed — running in MOCK MODE. "
         "Install with: pip install claude-agent-sdk and configure "
-        "local routing with ANTHROPIC_BASE_URL and "
-        "ANTHROPIC_AUTH_TOKEN as needed."
+        "ANTHROPIC_API_KEY for real Claude Code sessions."
     )
 
 
@@ -151,6 +156,7 @@ class LiveSession:
     _approval_decision: str | None = field(default=None, repr=False)
     context_files: dict[str, str] = field(default_factory=dict, repr=False)
     _context_injected: bool = field(default=False, repr=False)
+    mock_mode: bool = field(default=False, repr=False)
 
     def next_seq(self) -> int:
         self.seq += 1
@@ -317,15 +323,9 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
         if not p.is_dir():
             raise ValueError(f"cwd is not a directory: {p}")
 
-    if not _SDK_AVAILABLE:
-        raise RuntimeError(
-            "claude_agent_sdk is not installed. Install it with "
-            "'pip install claude-agent-sdk' and configure "
-            "ANTHROPIC_BASE_URL=http://localhost:11434 plus "
-            "ANTHROPIC_AUTH_TOKEN=ollama for local Ollama use."
-        )
-
     session_id = str(uuid.uuid4())
+    mock_mode = not _SDK_AVAILABLE
+
     session = LiveSession(
         id=session_id,
         model=req.model,
@@ -334,11 +334,10 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
         permission_mode=req.permission_mode,
         resume_session_id=req.resume_session_id,
         fork_session=req.fork_session,
+        mock_mode=mock_mode,
     )
     _sessions[session_id] = session
 
-    # Conservative default system prompt to reduce over-aggressive tool use.
-    # If the frontend supplied a system_prompt, respect it; otherwise, use this.
     default_system_prompt = (
         "You are a coding assistant inside PlexClaw.\n"
         "\n"
@@ -368,23 +367,27 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
     )
     effective_system_prompt = req.system_prompt or default_system_prompt
 
-    options = ClaudeAgentOptions(
-        model=req.model,
-        cwd=normalized_cwd,
-        permission_mode=req.permission_mode,
-        system_prompt=effective_system_prompt,
-        resume=req.resume_session_id,
-        fork_session=req.fork_session,
-        include_partial_messages=True,
-    )
-    session._client = ClaudeSDKClient(options)
+    if mock_mode:
+        session._client = MockSDKClient(options=None)
+    else:
+        options = ClaudeAgentOptions(
+            model=req.model,
+            cwd=normalized_cwd,
+            permission_mode=req.permission_mode,
+            system_prompt=effective_system_prompt,
+            resume=req.resume_session_id,
+            fork_session=req.fork_session,
+            include_partial_messages=True,
+        )
+        session._client = ClaudeSDKClient(options)
 
     log.info(
-        "Session created: %s model=%s provider=%s cwd=%s",
+        "Session created: %s model=%s provider=%s cwd=%s mock=%s",
         session_id,
         req.model,
         req.provider,
         normalized_cwd,
+        mock_mode,
     )
 
     session.seq += 1
@@ -397,21 +400,27 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
             type="system.message",
             payload={
                 "subtype": "session.created",
-                "message": "Session created.",
+                "message": "Session created" + (" [MOCK MODE — SDK not installed]" if mock_mode else "."),
                 "model": session.model,
                 "provider": session.provider,
                 "cwd": session.cwd,
                 "permission_mode": session.permission_mode,
                 "resume_session_id": session.resume_session_id,
                 "fork_session": session.fork_session,
+                "mock_mode": mock_mode,
             },
         ),
     )
     return session
 
 
+def _is_mock_event(message: Any) -> bool:
+    """Return True if message is a MockStreamEvent (real StreamEvent check handles real SDK)."""
+    return isinstance(message, MockStreamEvent)
+
+
 async def _stream_sdk(session: LiveSession, prompt: str) -> None:
-    """Real Claude Agent SDK streaming.
+    """Real Claude Agent SDK streaming (also handles MockSDKClient transparently).
 
     Message flow with include_partial_messages=True:
         StreamEvent(message_start)
@@ -434,15 +443,19 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
     _current_tool_json: str = ""
 
     try:
-        # ClaudeSDKClient must be connected before querying
+        # ClaudeSDKClient (and MockSDKClient) must be connected before querying
         await client.connect()
         await client.query(prompt=prompt)
 
         async for message in client.receive_response():
             # ------------------------------------------------------------------
-            # StreamEvent: token-level incremental updates
+            # StreamEvent / MockStreamEvent: token-level incremental updates
             # ------------------------------------------------------------------
-            if StreamEvent is not None and isinstance(message, StreamEvent):
+            is_stream = (
+                _is_mock_event(message)
+                or (StreamEvent is not None and isinstance(message, StreamEvent))
+            )
+            if is_stream:
                 event: dict = message.event
                 etype = event.get("type")
 
@@ -515,7 +528,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                                     is_error=True,
                                 )
                                 await _emit(session, reject_env)
-                                if _SDK_AVAILABLE and session._client:
+                                if session._client:
                                     try:
                                         await session._client.interrupt()
                                     except Exception as exc:
@@ -528,7 +541,6 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                         _current_tool_json = ""
 
                 elif etype == "message_delta":
-                    # stop_reason and usage arrive here
                     delta = event.get("delta", {})
                     usage = event.get("usage", {})
                     stop_reason = delta.get("stop_reason", "end_turn")
@@ -537,16 +549,20 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                     )
                     await _emit(session, env)
 
+                # message_start / message_stop / content_block_stop (text) are no-ops
+                continue
+
             # ------------------------------------------------------------------
             # AssistantMessage: complete assembled message (no-op — already streamed)
             # ------------------------------------------------------------------
-            elif AssistantMessage is not None and isinstance(message, AssistantMessage):
+            if AssistantMessage is not None and isinstance(message, AssistantMessage):
                 pass  # content already emitted token-by-token via StreamEvents
+                continue
 
             # ------------------------------------------------------------------
             # ResultMessage: final result — signals end of turn
             # ------------------------------------------------------------------
-            elif ResultMessage is not None and isinstance(message, ResultMessage):
+            if ResultMessage is not None and isinstance(message, ResultMessage):
                 stop_reason = getattr(message, "subtype", "end_turn")
                 usage = {}
                 raw_usage = getattr(message, "usage", None)
@@ -560,8 +576,6 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                     session.id, session.next_seq(), stop_reason, usage
                 )
                 await _emit(session, env)
-                # ResultMessage is the final message in
-                # receive_response(); iteration ends here.
 
     except Exception as exc:
         log.error("SDK stream error session=%s: %s", session.id, exc)
@@ -577,13 +591,6 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
         raise KeyError(f"Session {session_id} not found")
 
     async with session._lock:
-        if not _SDK_AVAILABLE:
-            raise RuntimeError(
-                "claude_agent_sdk is not installed. Install it with "
-                "'pip install claude-agent-sdk' and configure "
-                "ANTHROPIC_BASE_URL=http://localhost:11434 plus "
-                "ANTHROPIC_AUTH_TOKEN=ollama for local Ollama use."
-            )
         if session._client is None:
             raise RuntimeError("Session client is not initialized")
 
@@ -607,14 +614,13 @@ async def interrupt_session(session_id: str) -> None:
     session = _sessions.get(session_id)
     if not session:
         raise KeyError(f"Session {session_id} not found")
-    if _SDK_AVAILABLE and session._client:
+    if session._client:
         try:
-            # interrupt() is async per SDK docs
             await session._client.interrupt()
-            # Drain the interrupted task's messages (including its ResultMessage)
-            # before the client can accept a new query.
-            async for _ in session._client.receive_response():
-                pass
+            if not session.mock_mode:
+                # Only drain the real SDK response queue
+                async for _ in session._client.receive_response():
+                    pass
         except Exception as exc:
             log.warning("Interrupt drain error: %s", exc)
     session.status = "interrupted"
@@ -633,7 +639,7 @@ async def delete_session(session_id: str) -> None:
     if not session:
         raise KeyError(f"Session {session_id} not found")
 
-    if _SDK_AVAILABLE and session._client:
+    if session._client:
         try:
             interrupt = getattr(session._client, "interrupt", None)
             if interrupt is not None:
