@@ -33,6 +33,8 @@ const Bridge = (() => {
     transcript: document.getElementById('transcript'),
     welcome: document.getElementById('welcome'),
     attachmentRow: document.getElementById('attachment-row'),
+    attachmentError: document.getElementById('attachment-error'),
+    composer: document.getElementById('composer'),
     attachFileBtn: document.getElementById('attach-file-btn'),
     attachFileInput: document.getElementById('attach-file-input'),
     promptInput: document.getElementById('prompt-input'),
@@ -808,10 +810,25 @@ const Bridge = (() => {
     }
   }
 
+  function setAttachmentError(message = '') {
+    if (!el.attachmentError) return;
+    el.attachmentError.textContent = message;
+    el.attachmentError.style.display = message ? 'block' : 'none';
+  }
+
   async function uploadAttachment(file) {
+    if (!file) return;
+    setAttachmentError('');
+
+    if (file.size > 204800) {
+      setAttachmentError(`"${file.name}" exceeds the 200KB limit.`);
+      return;
+    }
+
     if (!state.sessionId) {
       await createSession();
     }
+
     const form = new FormData();
     form.append('file', file);
 
@@ -819,14 +836,23 @@ const Bridge = (() => {
       method: 'POST',
       body: form,
     });
+
     if (!res.ok) {
       let detail = `Upload failed (${res.status})`;
       try {
         const data = await res.json();
         if (data?.detail) detail = data.detail;
       } catch (_) {}
+
+      if (String(detail).includes('file exceeds 200KB limit')) {
+        setAttachmentError(`"${file.name}" exceeds the 200KB limit.`);
+        return;
+      }
+
       throw new Error(detail);
     }
+
+    setAttachmentError('');
     await loadAttachments();
   }
 
@@ -1107,6 +1133,36 @@ const Bridge = (() => {
   // ---- Events ----
   function bindEvents() {
     el.sendBtn.addEventListener('click', sendPrompt);
+    el.attachFileBtn?.addEventListener('click', () => el.attachFileInput?.click());
+    el.attachFileInput?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        await uploadAttachment(file);
+      } catch (err) {
+        appendSystemMessage(err.message || 'Attachment upload failed.', 'error');
+      } finally {
+        e.target.value = '';
+      }
+    });
+    el.composer?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      el.composer.classList.add('dragover');
+    });
+    el.composer?.addEventListener('dragleave', () => {
+      el.composer.classList.remove('dragover');
+    });
+    el.composer?.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      el.composer.classList.remove('dragover');
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      try {
+        await uploadAttachment(file);
+      } catch (err) {
+        appendSystemMessage(err.message || 'Attachment upload failed.', 'error');
+      }
+    });
     el.promptInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();

@@ -936,6 +936,7 @@
       box-shadow: 0 0 0 3px var(--primary-hl);
     }
     .composer-textarea::placeholder { color: var(--text-faint); }
+  .composer.dragover { outline: 2px dashed var(--primary); outline-offset: -6px; }
 
     .send-btn {
       display: flex;
@@ -1158,7 +1159,7 @@
     </section>
 
     <!-- COMPOSER -->
-    <footer class="composer">
+    <footer class="composer" id="composer">
       <div class="composer-toolbar">
         <button class="icon-btn" id="attach-file-btn" aria-label="Attach file" title="Attach file">
   <i data-lucide="paperclip" style="width:16px;height:16px"></i>
@@ -1176,6 +1177,7 @@
       </div>
       <div class="composer-input-row">
       <div id="attachment-row" class="chips" style="margin-bottom:8px;"></div>
+      <div id="attachment-error" class="tiny" style="margin-bottom:8px;color:var(--danger);display:none;"></div>
         <textarea
           id="prompt-input"
           class="composer-textarea"
