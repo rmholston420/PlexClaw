@@ -16,6 +16,9 @@
 - `run.sh` now auto-enables repo-tracked hooks for the current clone when needed.
 - `run.sh` now fails fast with clear messages when ports 8020 or 5555 are already occupied.
 - CI now validates shell entrypoints and hook bootstrap in addition to Ruff and pytest.
+- Runtime configuration is now centralized for provider routing, tool-search defaults, allowed origins, and allowed hosts.
+- The frontend top bar now shows grouped runtime routing metadata, including provider route and tool-search state.
+- The tool mode selector now exposes Default, Off, Auto, Auto 5%, and On states with immediate runtime metadata refresh.
 
 ### Quality
-- 71 tests passing locally as of July 2026.
+- 86 tests passing locally as of July 2026.

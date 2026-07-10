@@ -63,5 +63,36 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 
 ## Current status
 
-- 71 tests passing locally as of July 2026.
-- Mock runtime fallback, WebSocket session flow, protocol mismatch handling, launcher port checks, and launcher shell contract are all covered by tests.
+- 86 tests passing locally as of July 2026.
+- Mock runtime fallback, WebSocket session flow, protocol mismatch handling, launcher port checks, launcher shell contract, runtime routing metadata, and tool-search UI semantics are all covered by tests.
+
+## Runtime routing & tool search
+
+PlexClaw’s top bar exposes the effective runtime routing and tool-search state, so you can see how your session is executed at a glance.
+
+Runtime UI elements:
+
+- Provider switcher — choose the active provider (cloud, Ollama, vLLM, etc.).
+- Provider route card — shows the effective route for the current provider, for example:
+  - Cloud (default route) when using the built-in cloud backend.
+  - Ollama via http://127.0.0.1:11434 when routed to a local Ollama instance.
+- Tool search card — summarizes tool-search behavior for the session:
+  - Default tools — use backend defaults for this provider.
+  - Auto tools / Auto tools 5% — enable experimental tool search in auto modes.
+  - Tools enabled — tools are explicitly enabled for the session.
+  - Tools disabled — tools are explicitly or implicitly disabled.
+
+Tool mode selector:
+
+- The Tool mode dropdown controls how aggressively PlexClaw uses tools:
+  - Default — defer to backend defaults for the active provider.
+  - Off — disable tool search for the session.
+  - Auto — allow the runtime to use tool search automatically.
+  - Auto 5% — enable tool search in a small fraction of turns for testing.
+  - On — force tools to be considered on every turn.
+- Changes take effect immediately and are reflected in the Tool search card.
+
+Backend configuration:
+
+- Provider base URLs, CORS, allowed hosts, and tool-search defaults are centralized in the backend.
+- The frontend runtime section renders directly from this centralized state, so the UI stays in sync with environment configuration.
