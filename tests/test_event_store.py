@@ -62,3 +62,14 @@ def test_search_events_empty_query(tmp_path, monkeypatch):
 
     hits = search_events("  ")
     assert hits == []
+
+
+def test_append_event_lazy_init(tmp_path, monkeypatch):
+    _reset_conn(tmp_path / "events.db", monkeypatch)
+    monkeypatch.setattr(es, "_db_initialized", False)
+
+    append_event("lazy", 1, "assistant.delta", {"text": "bootstrapped"})
+
+    rows = query_events("lazy")
+    assert len(rows) == 1
+    assert rows[0]["payload"]["text"] == "bootstrapped"

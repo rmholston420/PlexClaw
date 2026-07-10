@@ -17,6 +17,7 @@ _conn: sqlite3.Connection | None = None
 _conn_path: Path | None = None
 _db_lock = Lock()
 _fts_available: bool | None = None
+_db_initialized = False
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -53,6 +54,7 @@ def _check_fts5() -> bool:
 
 
 def init_db() -> None:
+    global _db_initialized
     with _db_lock:
         c = _get_conn()
         c.execute(
@@ -110,6 +112,13 @@ def init_db() -> None:
                     )
 
         c.commit()
+        _db_initialized = True
+
+
+def _ensure_initialized() -> None:
+    if _db_initialized:
+        return
+    init_db()
 
 
 def append_event(
@@ -118,6 +127,7 @@ def append_event(
     event_type: str,
     payload: dict[str, Any],
 ) -> None:
+    _ensure_initialized()
     payload_json = json.dumps(payload)
     with _db_lock:
         c = _get_conn()
@@ -143,6 +153,7 @@ def query_events(
     event_type: str | None = None,
     since_seq: int | None = None,
 ) -> list[dict[str, Any]]:
+    _ensure_initialized()
     sql = "SELECT * FROM events WHERE session_id = ?"
     params: list[Any] = [session_id]
     if event_type:
@@ -185,6 +196,7 @@ _event_search_text = _event_search_parts
 
 
 def search_events(query: str) -> list[dict[str, Any]]:
+    _ensure_initialized()
     needle = query.strip()
     if not needle:
         return []
