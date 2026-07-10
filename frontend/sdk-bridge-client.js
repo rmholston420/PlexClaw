@@ -837,14 +837,28 @@ const Bridge = (() => {
       }
       case 'tool.delta': {
         const block = getOrCreateTool(evt.payload?.tool_id, 'tool');
-        let outputSection = block.querySelector('.tool-output-section');
-        if (!outputSection) {
-          outputSection = document.createElement('div');
-          outputSection.className = 'tool-body-section tool-output-section';
-          outputSection.innerHTML = '<div class="tool-label">Output</div><pre></pre>';
-          block.querySelector('.tool-body').appendChild(outputSection);
+
+        if (evt.payload?.tool_input !== undefined) {
+          const inputSection = block.querySelector(`#tool-input-${evt.payload?.tool_id} pre`);
+          if (inputSection) {
+            inputSection.textContent = JSON.stringify(evt.payload.tool_input ?? {}, null, 2);
+            tagSearchableNode(
+              block,
+              `${evt.payload?.tool_name || 'tool'} ${JSON.stringify(evt.payload.tool_input ?? {})}`
+            );
+          }
         }
-        outputSection.querySelector('pre').textContent += evt.payload?.partial || '';
+
+        if (evt.payload?.partial) {
+          let outputSection = block.querySelector('.tool-output-section');
+          if (!outputSection) {
+            outputSection = document.createElement('div');
+            outputSection.className = 'tool-body-section tool-output-section';
+            outputSection.innerHTML = '<div class="tool-label">Output</div><pre></pre>';
+            block.querySelector('.tool-body').appendChild(outputSection);
+          }
+          outputSection.querySelector('pre').textContent += evt.payload.partial;
+        }
         break;
       }
       case 'tool.completed': {

@@ -476,8 +476,6 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                         _current_tool_json += delta.get("partial_json", "")
 
                 elif etype == "content_block_stop":
-                    # Tool input fully assembled; emit tool_started again
-                    # with the completed input payload.
                     if _current_tool_id and _current_tool_name:
                         import json as _json
 
@@ -489,14 +487,14 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                             )
                         except Exception:
                             tool_input = {"_raw": _current_tool_json}
-                        # Re-emit with complete input by sending a delta payload
-                        env = normalize_tool_started(
+
+                        env = normalize_tool_delta(
                             session.id,
                             session.next_seq(),
                             _current_tool_id,
-                            _current_tool_name,
-                            tool_input,
+                            "",
                         )
+                        env.payload["tool_input"] = tool_input
                         await _emit(session, env)
 
                         if session.permission_mode == "manual":
