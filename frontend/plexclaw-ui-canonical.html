@@ -737,6 +737,19 @@
   padding-inline: var(--s1);
   max-width: 68ch;
 }
+.runtime-meta-copy {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: copy;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.runtime-meta-copy:hover,
+.runtime-meta-copy.copied {
+  color: var(--primary);
+}
 .runtime-select-row {
     display: flex;
     align-items: center;
@@ -1525,21 +1538,21 @@
 <div class="runtime-meta-grid">
   <div class="runtime-meta-card">
     <span class="runtime-meta-label">Provider route</span>
-    <span class="runtime-meta-value" id="provider-runtime-meta" title="Effective provider routing">Cloud</span>
+    <button class="runtime-meta-value runtime-meta-copy" id="provider-runtime-meta" type="button" title="Click to copy provider route" aria-label="Copy provider route">Cloud</button>
   </div>
   <div class="runtime-meta-card">
     <span class="runtime-meta-label">Tool search</span>
-    <span class="runtime-meta-value" id="tool-runtime-meta" title="Tool search state">Default tools</span>
+    <button class="runtime-meta-value runtime-meta-copy" id="tool-runtime-meta" type="button" title="Click to copy tool search state" aria-label="Copy tool search state">Default tools</button>
   </div>
 </div>
 <div class="runtime-meta-grid session-info-grid" aria-label="Current session info">
  <div class="runtime-meta-card">
    <span class="runtime-meta-label">Working directory</span>
-   <span class="runtime-meta-value" id="session-cwd-meta" title="Active session working directory">~</span>
+   <button class="runtime-meta-value runtime-meta-copy" id="session-cwd-meta" type="button" title="Click to copy working directory" aria-label="Copy working directory">~</button>
  </div>
  <div class="runtime-meta-card">
    <span class="runtime-meta-label">Runtime mode</span>
-   <span class="runtime-meta-value" id="session-runtime-meta" title="Current runtime mode">Unknown runtime</span>
+   <button class="runtime-meta-value runtime-meta-copy" id="session-runtime-meta" type="button" title="Click to copy runtime mode" aria-label="Copy runtime mode">Unknown runtime</button>
  </div>
 </div>
 <div class="runtime-meta-help" id="runtime-meta-help">
