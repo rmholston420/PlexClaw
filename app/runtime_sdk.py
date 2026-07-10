@@ -3,8 +3,9 @@
 Each browser live session owns exactly one ClaudeSDKClient instance
 plus one async lock so only one active task runs per session at a time.
 
-Falls back to a mock streaming mode when the claude_agent_sdk package is
-not installed so the UI can be developed / demoed without real API keys.
+Requires the Claude Agent SDK for live sessions. Endpoint routing may be
+configured via environment variables such as ANTHROPIC_BASE_URL for local
+Anthropic-compatible providers like Ollama.
 
 Package: pip install claude-agent-sdk
 Docs:    https://code.claude.com/docs/en/agent-sdk/python
@@ -65,8 +66,8 @@ except ImportError:
     _sdk_tag_session = None  # type: ignore
     _SDK_AVAILABLE = False
     log.warning(
-        "claude_agent_sdk not installed – running in MOCK mode. "
-        "Install with: pip install claude-agent-sdk  and set ANTHROPIC_API_KEY."
+        "claude_agent_sdk not installed. "
+        "Install with: pip install claude-agent-sdk and configure local routing with ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN as needed."
     )
 
 
@@ -244,53 +245,48 @@ async def update_session(session_id: str, *, permission_mode: Optional[str] = No
 
     return session
 async def create_session(req: SessionCreateRequest) -> LiveSession:
-    if req.cwd:
-        p = Path(req.cwd).expanduser()
-        if not p.exists():
-            raise ValueError(f"cwd does not exist: {p}")
-        if not p.is_dir():
-            raise ValueError(f"cwd is not a directory: {p}")
+  normalized_cwd = None
+  if req.cwd:
+      normalized_cwd = str(Path(req.cwd).expanduser().resolve())
+      p = Path(normalized_cwd)
+      if not p.exists():
+          raise ValueError(f"cwd does not exist: {p}")
+      if not p.is_dir():
+          raise ValueError(f"cwd is not a directory: {p}")
 
-    session_id = str(uuid.uuid4())
-    session = LiveSession(
-        id=session_id,
-        model=req.model,
-        cwd=req.cwd,
-        provider=req.provider,
-        permission_mode=req.permission_mode,
-        resume_session_id=req.resume_session_id,
-        fork_session=req.fork_session,
-    )
-    _sessions[session_id] = session
+  if not _SDK_AVAILABLE:
+      raise RuntimeError(
+          "claude_agent_sdk is not installed. Install it with "
+          "'pip install claude-agent-sdk' and configure "
+          "ANTHROPIC_BASE_URL=http://localhost:11434 plus "
+          "ANTHROPIC_AUTH_TOKEN=ollama for local Ollama use."
+      )
 
-    if _SDK_AVAILABLE:
-        options = ClaudeAgentOptions(
-            model=req.model,
-            cwd=req.cwd,
-            permission_mode=req.permission_mode,
-            system_prompt=req.system_prompt,
-            resume=req.resume_session_id,
-            fork_session=req.fork_session,
-            include_partial_messages=True,
-        )
-        session._client = ClaudeSDKClient(options)
+  session_id = str(uuid.uuid4())
+  session = LiveSession(
+      id=session_id,
+      model=req.model,
+      cwd=normalized_cwd,
+      provider=req.provider,
+      permission_mode=req.permission_mode,
+      resume_session_id=req.resume_session_id,
+      fork_session=req.fork_session,
+  )
+  _sessions[session_id] = session
 
-    log.info("Session created: %s (sdk=%s)", session_id, _SDK_AVAILABLE)
-    return session
+  options = ClaudeAgentOptions(
+      model=req.model,
+      cwd=normalized_cwd,
+      permission_mode=req.permission_mode,
+      system_prompt=req.system_prompt,
+      resume=req.resume_session_id,
+      fork_session=req.fork_session,
+      include_partial_messages=True,
+  )
+  session._client = ClaudeSDKClient(options)
 
-
-async def _stream_mock(session: LiveSession, prompt: str) -> None:
-    """Fake streaming for dev/demo without real SDK."""
-    words = f"[MOCK] Echo: {prompt}".split()
-    for word in words:
-        await asyncio.sleep(0.05)
-        env = normalize_text_delta(session.id, session.next_seq(), word + " ")
-        await _emit(session, env)
-    completed = normalize_assistant_completed(
-        session.id, session.next_seq(), "end_turn"
-    )
-    await _emit(session, completed)
-
+  log.info("Session created: %s model=%s provider=%s cwd=%s", session_id, req.model, req.provider, normalized_cwd)
+  return session
 
 async def _stream_sdk(session: LiveSession, prompt: str) -> None:
     """Real Claude Agent SDK streaming.
@@ -443,27 +439,35 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
 
 
 async def submit_prompt(session_id: str, prompt: str) -> None:
-    session = _sessions.get(session_id)
-    if not session:
-        raise KeyError(f"Session {session_id} not found")
+   session = _sessions.get(session_id)
+   if not session:
+       raise KeyError(f"Session {session_id} not found")
 
-    async with session._lock:
-        session.status = "running"
-        sys_env = normalize_system_message(
-            session.id,
-            session.next_seq(),
-            f"Prompt received ({len(prompt)} chars)",
-        )
-        await _emit(session, sys_env)
+   async with session._lock:
+       if not _SDK_AVAILABLE:
+           raise RuntimeError(
+               "claude_agent_sdk is not installed. Install it with "
+               "'pip install claude-agent-sdk' and configure "
+               "ANTHROPIC_BASE_URL=http://localhost:11434 plus "
+               "ANTHROPIC_AUTH_TOKEN=ollama for local Ollama use."
+           )
+       if session._client is None:
+           raise RuntimeError("Session client is not initialized")
 
-        try:
-            prompt_with_context = _inject_context_into_prompt(session, prompt)
-            if _SDK_AVAILABLE and session._client is not None:
-                await _stream_sdk(session, prompt_with_context)
-            else:
-                await _stream_mock(session, prompt_with_context)
-        finally:
-            session.status = "ready"
+       session.status = "running"
+       sys_env = normalize_system_message(
+           session.id,
+           session.next_seq(),
+           f"Prompt received ({len(prompt)} chars)",
+       )
+       await _emit(session, sys_env)
+
+       try:
+           prompt_with_context = _inject_context_into_prompt(session, prompt)
+           await _stream_sdk(session, prompt_with_context)
+       finally:
+           if session.status != "failed":
+               session.status = "ready"
 
 
 async def interrupt_session(session_id: str) -> None:

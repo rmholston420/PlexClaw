@@ -5,13 +5,13 @@ const Bridge = (() => {
     protocolVersion: '0.2.0',
     sessionId: null,
     socket: null,
-    model: 'claude-sonnet-4-5',
-    provider: 'cloud',
+    model: '',
+    provider: 'ollama',
     providers: {},
     providerHealth: {},
-    permissionMode: 'manual',
-    cwd: '~',
-    cwdSelected: null,
+    permissionMode: 'auto',
+    cwd: '',
+    cwdSelected: '',
     cwdBrowsing: null,
     replayMode: false,
     archive: [],
@@ -207,7 +207,7 @@ const Bridge = (() => {
     state.sessionId = tab.sessionId;
     state.attachments = [...(tab.attachments || [])];
     state.attachmentTokens = tab.attachmentTokens || 0;
-    state.permissionMode = tab.permissionMode || 'manual';
+    state.permissionMode = tab.permissionMode || 'auto';
     state.replayMode = !!tab.replayMode;
     state.rawLogLines = [...(tab.rawLogLines || [])];
     state.terminalErrorsOnly = !!tab.terminalErrorsOnly;
@@ -924,15 +924,25 @@ const Bridge = (() => {
   }
 
   function updateTokenCounter() {
-    if (!el.tokenCounter) return;
     const promptText = (el.promptInput?.value || '').trim();
-    const promptTokens = promptText ? Math.ceil(promptText.length / 4) : 0;
+    const chars = promptText.length;
+    const words = promptText ? (promptText.match(/\S+/g) || []).length : 0;
+    const promptTokens = promptText ? Math.ceil(chars / 4) : 0;
     const attachmentTokens = estimateAttachmentTokens(state.attachments);
     state.attachmentTokens = attachmentTokens;
     const total = promptTokens + attachmentTokens;
-    el.tokenCounter.textContent = attachmentTokens > 0
-      ? `~${total} tokens (${promptTokens} prompt + ${attachmentTokens} files)`
-      : `~${promptTokens} tokens`;
+
+    if (el.promptStats) {
+      el.promptStats.textContent = attachmentTokens > 0
+        ? `~${total} tok · ${chars} ch · ${words} wd · +${attachmentTokens} file`
+        : `~${promptTokens} tok · ${chars} ch · ${words} wd`;
+    }
+
+    if (el.tokenCounter) {
+      el.tokenCounter.textContent = attachmentTokens > 0
+        ? `~${total} tokens (${promptTokens} prompt + ${attachmentTokens} files)`
+        : `~${promptTokens} tokens`;
+    }
   }
 
   function renderAttachments() {
@@ -1024,10 +1034,12 @@ const Bridge = (() => {
 
   async function createSession({ resumeSessionId = null, forkSession = false } = {}) {
     state.model = el.modelSelect?.value || state.model;
+    state.provider = el.providerSelect?.value || state.provider;
+    state.cwdSelected = (el.cwdInput?.value || state.cwdSelected || '').trim();
     syncStateToActiveTab();
     const body = {
       model: state.model,
-      cwd: state.cwdSelected,
+      cwd: state.cwdSelected || null,
       provider: state.provider,
       permission_mode: state.permissionMode,
       system_prompt: null,
@@ -1290,21 +1302,16 @@ const Bridge = (() => {
     renderArchive();
   }
 
-  // ---- Auto-resize textarea ----
-  function bindTextareaResize() {
-    function updatePromptStats() {
-    if (!el.promptInput || !el.promptStats) return;
-    const text = el.promptInput.value || '';
-    const chars = text.length;
-    const words = (text.trim().match(/\S+/g) || []).length;
-    const approxTokens = chars === 0 ? 0 : Math.max(1, Math.round(chars / 4));
-    el.promptStats.textContent = `~${approxTokens} tok · ${chars} ch · ${words} wd`;
+  function updatePromptStats() {
+    updateTokenCounter();
   }
 
-  el.promptInput.addEventListener('input', () => {
+  // ---- Auto-resize textarea ----
+  function bindTextareaResize() {
+    el.promptInput.addEventListener('input', () => {
       el.promptInput.style.height = 'auto';
       el.promptInput.style.height = Math.min(el.promptInput.scrollHeight, 240) + 'px';
-      updateTokenCounter();
+      updatePromptStats();
     });
   }
 
