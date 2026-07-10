@@ -11,7 +11,6 @@ Mock responses are token-by-token so the streaming UI path is exercised.
 from __future__ import annotations
 
 import asyncio
-import textwrap
 import uuid
 from typing import TYPE_CHECKING, Any
 
@@ -96,7 +95,10 @@ class MockSDKClient:
             )
         )
 
-        chunks = textwrap.wrap(full_text, _CHUNK_SIZE, break_long_words=True, break_on_hyphens=False)
+        chunks = [
+            full_text[i : i + _CHUNK_SIZE]
+            for i in range(0, len(full_text), _CHUNK_SIZE)
+        ]
         if not chunks and full_text:
             chunks = [full_text]
 
