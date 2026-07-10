@@ -73,3 +73,24 @@ def test_append_event_lazy_init(tmp_path, monkeypatch):
     rows = query_events("lazy")
     assert len(rows) == 1
     assert rows[0]["payload"]["text"] == "bootstrapped"
+
+
+def test_search_events_matches_final_tool_delta_input(tmp_path, monkeypatch):
+    _reset_conn(tmp_path / "events.db", monkeypatch)
+    init_db()
+    append_event(
+        "s5",
+        1,
+        "tool.started",
+        {"tool_id": "t1", "tool_name": "bash", "tool_input": {}},
+    )
+    append_event(
+        "s5",
+        2,
+        "tool.delta",
+        {"tool_id": "t1", "tool_input": {"cmd": "ls -la /tmp"}},
+    )
+
+    hits = search_events("ls -la /tmp")
+    assert len(hits) >= 1
+    assert hits[0]["session_id"] == "s5"

@@ -189,6 +189,8 @@ def _event_search_parts(event_type: str, payload: dict[str, Any]) -> tuple[str, 
             f"{payload.get('tool_name', '')} "
             f"{json.dumps(payload.get('tool_input', {}), ensure_ascii=False)}"
         )
+    if event_type == "tool.delta" and "tool_input" in payload:
+        return "tool", json.dumps(payload.get("tool_input", {}), ensure_ascii=False)
     return "", ""
 
 
