@@ -9,14 +9,14 @@ import urllib.request
 from typing import Optional
 
 
-from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import runtime_sdk as runtime
 from app.archive_normalizer import normalize_session, normalize_session_list
-from app.event_store import init_db, query_events
+from app.event_store import init_db, query_events, search_events
 from app.schemas import (
     PROTOCOL_VERSION,
     InterruptRequest,
@@ -201,9 +201,80 @@ async def get_provider_health() -> dict:
     }
 
 
+def _render_session_markdown(session_id: str, events: list[dict]) -> str:
+    lines = [f"# Session {session_id}", ""]
+    assistant_buf: list[str] = []
+
+    def flush_assistant() -> None:
+        nonlocal assistant_buf
+        text = "".join(assistant_buf).strip()
+        if text:
+            lines.append("## Assistant")
+            lines.append("")
+            lines.append(text)
+            lines.append("")
+        assistant_buf = []
+
+    for evt in events:
+        etype = evt.get("type")
+        payload = evt.get("payload", {})
+
+        if etype == "system.message":
+            flush_assistant()
+            lines.append("## System")
+            lines.append("")
+            lines.append(str(payload.get("text", "")))
+            lines.append("")
+        elif etype == "assistant.delta":
+            assistant_buf.append(str(payload.get("text", "")))
+        elif etype == "tool.started":
+            flush_assistant()
+            lines.append(f"## Tool: {payload.get('tool_name', 'tool')}")
+            lines.append("")
+            lines.append("```json")
+            lines.append(json.dumps(payload.get("tool_input", {}), indent=2, ensure_ascii=False))
+            lines.append("```")
+            lines.append("")
+        elif etype == "tool.completed":
+            flush_assistant()
+            lines.append(f"## Tool Output: {payload.get('tool_name', 'tool')}")
+            lines.append("")
+            lines.append("```")
+            lines.append(str(payload.get("output", "")))
+            lines.append("```")
+            lines.append("")
+        elif etype == "session.failed":
+            flush_assistant()
+            lines.append("## Error")
+            lines.append("")
+            lines.append(str(payload.get("error", "")))
+            lines.append("")
+
+    flush_assistant()
+    return "\n".join(lines).strip() + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Event store / replay
 # ---------------------------------------------------------------------------
+
+
+@app.get("/api/search")
+async def search_api(q: str = Query(..., min_length=1)) -> list:
+    return search_events(q)
+
+
+@app.get("/api/sessions/{session_id}/export")
+async def export_session(session_id: str, format: str = "json"):
+    events = query_events(session_id)
+    if format == "json":
+        return JSONResponse(content={"session_id": session_id, "events": events})
+    if format == "md":
+        return PlainTextResponse(
+            _render_session_markdown(session_id, events),
+            media_type="text/markdown; charset=utf-8",
+        )
+    raise HTTPException(status_code=400, detail="format must be 'json' or 'md'")
 
 
 @app.get("/api/sessions/{session_id}/events")

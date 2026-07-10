@@ -74,3 +74,60 @@ def query_events(
         }
         for r in rows
     ]
+
+
+def _event_search_text(event_type: str, payload: dict[str, Any]) -> tuple[str, str]:
+    if event_type == "assistant.delta":
+        return "assistant", str(payload.get("text", ""))
+    if event_type == "system.message":
+        return "system", str(payload.get("text", ""))
+    if event_type == "tool.completed":
+        return "tool", str(payload.get("output", ""))
+    if event_type == "tool.started":
+        return "tool", f"{payload.get('tool_name', '')} {json.dumps(payload.get('tool_input', {}), ensure_ascii=False)}"
+    return "", ""
+
+
+def search_events(query: str) -> list[dict[str, Any]]:
+    needle = query.strip().lower()
+    if not needle:
+        return []
+
+    with _conn() as conn:
+        rows = conn.execute("SELECT * FROM events ORDER BY created_at DESC, id DESC").fetchall()
+
+    results: list[dict[str, Any]] = []
+    seen: set[tuple[str, int]] = set()
+
+    for r in rows:
+        payload = json.loads(r["payload"])
+        role, haystack = _event_search_text(r["type"], payload)
+        if not haystack:
+            continue
+
+        low = haystack.lower()
+        idx = low.find(needle)
+        if idx == -1:
+            continue
+
+        key = (r["session_id"], r["seq"])
+        if key in seen:
+            continue
+        seen.add(key)
+
+        start = max(0, idx - 60)
+        end = min(len(haystack), idx + len(query) + 60)
+        snippet = haystack[start:end].replace("\n", " ").strip()
+
+        results.append(
+            {
+                "session_id": r["session_id"],
+                "session_title": r["session_id"][:8],
+                "message_id": r["seq"],
+                "snippet": snippet,
+                "role": role,
+                "created_at": r["created_at"],
+            }
+        )
+
+    return results
