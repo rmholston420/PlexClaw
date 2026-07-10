@@ -80,7 +80,7 @@ def _event_search_text(event_type: str, payload: dict[str, Any]) -> tuple[str, s
     if event_type == "assistant.delta":
         return "assistant", str(payload.get("text", ""))
     if event_type == "system.message":
-        return "system", str(payload.get("text", ""))
+        return "system", str(payload.get("text") or payload.get("message", ""))
     if event_type == "tool.completed":
         return "tool", str(payload.get("output", ""))
     if event_type == "tool.started":

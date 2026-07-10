@@ -622,7 +622,9 @@ async def list_archive_sessions() -> list[dict]:
     loop = asyncio.get_event_loop()
     try:
         raw: list = await loop.run_in_executor(None, _sdk_list_sessions)
-        return [_sdksession_to_dict(s) for s in (raw or [])]
+        sessions = [_sdksession_to_dict(s) for s in (raw or [])]
+        sessions.sort(key=lambda s: (s.get("last_modified") or 0), reverse=True)
+        return sessions
     except Exception as exc:
         log.warning("list_sessions error: %s", exc)
         return []
