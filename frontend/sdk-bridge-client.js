@@ -40,6 +40,7 @@ const Bridge = (() => {
     attachFileBtn: document.getElementById('attach-file-btn'),
     attachFileInput: document.getElementById('attach-file-input'),
     promptInput: document.getElementById('prompt-input'),
+    promptStats: document.getElementById('prompt-stats'),
     sendBtn: document.getElementById('send-btn'),
     interruptBtn: document.getElementById('interrupt-btn'),
     replayCurrentBtn: document.getElementById('replay-current-btn'),
@@ -1291,7 +1292,16 @@ const Bridge = (() => {
 
   // ---- Auto-resize textarea ----
   function bindTextareaResize() {
-    el.promptInput.addEventListener('input', () => {
+    function updatePromptStats() {
+    if (!el.promptInput || !el.promptStats) return;
+    const text = el.promptInput.value || '';
+    const chars = text.length;
+    const words = (text.trim().match(/\S+/g) || []).length;
+    const approxTokens = chars === 0 ? 0 : Math.max(1, Math.round(chars / 4));
+    el.promptStats.textContent = `~${approxTokens} tok · ${chars} ch · ${words} wd`;
+  }
+
+  el.promptInput.addEventListener('input', () => {
       el.promptInput.style.height = 'auto';
       el.promptInput.style.height = Math.min(el.promptInput.scrollHeight, 240) + 'px';
       updateTokenCounter();
@@ -1331,7 +1341,9 @@ const Bridge = (() => {
         appendSystemMessage(err.message || 'Attachment upload failed.', 'error');
       }
     });
-    el.promptInput.addEventListener('keydown', (e) => {
+    updatePromptStats();
+
+  el.promptInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendPrompt();
