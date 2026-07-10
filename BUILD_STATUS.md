@@ -1,6 +1,6 @@
 # PlexClaw Build Progress
 
-All 10 slices from the build spec are implemented and committed.
+All 10 slices from the build spec are implemented and committed, with additional post-slice hardening and cleanup landed afterward.
 
 ## Completed
 
@@ -33,13 +33,19 @@ All 10 slices from the build spec are implemented and committed.
 
 ## Post-slice: Docs alignment (July 2026)
 
-- `README.md` now documents the runtime routing and tool-search UI and reflects the current 86-test state.
+- `README.md` documents the runtime routing and tool-search UI; the repo now validates at 109 passing tests.
 - `CHANGELOG.md` version `0.2.0` now records centralized runtime configuration, grouped runtime metadata, and explicit tool mode selector states.
 - `AGENTS.md` now documents how runtime routing interacts with agent sessions, providers, hooks, tool-search behavior, and archive/replay semantics.
 
+## Recent hardening
+
+- Filesystem routes now support a per-session jail root derived from the active session `cwd` while preserving legacy `FS_ROOT` and `_safe_path()` compatibility for tests and existing helpers.
+- Cloud provider models now support a `PLEXCLAW_CLOUD_MODELS` environment override, with test coverage for default behavior, explicit override, and empty-entry normalization.
+- Unused `WebSocketManager.send_to()` alias was removed after repo-wide verification confirmed no call sites.
+
 ## Quality status
 
-- **86 tests passing**
+- **109 tests passing**
 - Mock SDK fallback is implemented and covered by unit tests
 - WebSocket happy-path session flow is covered
 - WebSocket protocol mismatch rejection is covered
