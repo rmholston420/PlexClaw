@@ -96,3 +96,6 @@ Backend configuration:
 
 - Provider base URLs, CORS, allowed hosts, and tool-search defaults are centralized in the backend.
 - The frontend runtime section renders directly from this centralized state, so the UI stays in sync with environment configuration.
+- The top bar now also shows the session working directory and runtime mode, and the helper text under that panel explicitly marks it as the source of truth when model replies speculate about environment details.
+- Raw tool input is hidden in the transcript UI and omitted from normalized `tool.started` events, reducing accidental leakage of prompt or filesystem details into replay, search, and copy flows.
+- Runtime diagnostics are available at both `/api/diag/runtime` and `/api/runtime/diag`.

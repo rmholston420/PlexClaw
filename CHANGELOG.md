@@ -18,7 +18,11 @@
 - CI now validates shell entrypoints and hook bootstrap in addition to Ruff and pytest.
 - Runtime configuration is now centralized for provider routing, tool-search defaults, allowed origins, and allowed hosts.
 - The frontend top bar now shows grouped runtime routing metadata, including provider route and tool-search state.
+- The frontend runtime panel now also shows the active session working directory and runtime mode, with helper text that marks the panel as the authoritative source for environment state.
+- The transcript UI now hides raw tool input, and normalized `tool.started` events no longer retain `tool_input` payloads.
+- Runtime diagnostics are now reachable at both `/api/diag/runtime` and `/api/runtime/diag`.
+- The runtime system prompt now includes grounding rules that explicitly forbid inventing placeholder paths or unobserved environment details.
 - The tool mode selector now exposes Default, Off, Auto, Auto 5%, and On states with immediate runtime metadata refresh.
 
 ### Quality
-- 86 tests passing locally as of July 2026.
+- 106 tests passing locally as of July 2026.
