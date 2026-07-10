@@ -164,32 +164,54 @@ function setRuntimeMode(mockMode) {
 }
 
 function renderProviderRuntimeMeta() {
-  const provider = state.provider || 'cloud';
-  const base = state.providerBaseUrl;
+ const provider = state.provider || 'cloud';
+ const providerInfo = state.providers?.[provider] || {};
+ const providerLabel = providerInfo.label || provider;
+ const base = state.providerBaseUrl;
 
-  if (el.providerRuntimeMeta) {
-    el.providerRuntimeMeta.textContent = base
-      ? `Provider: ${provider} → ${base}`
-      : `Provider: ${provider}`;
-  }
+ if (el.providerRuntimeMeta) {
+   const providerText = base
+     ? `${providerLabel} via ${base}`
+     : `${providerLabel} (default route)`;
+   el.providerRuntimeMeta.textContent = providerText;
+   el.providerRuntimeMeta.title = base
+     ? `Effective provider route: ${providerLabel} via ${base}`
+     : `Effective provider route: ${providerLabel} using default backend routing`;
+ }
 
-  if (el.toolRuntimeMeta) {
-    const mode = state.toolSearchMode;
-    const active = state.toolSearchActive;
-    if (mode) {
-      el.toolRuntimeMeta.textContent = `Tools: ${mode}`;
-    } else if (active === false && base) {
-      el.toolRuntimeMeta.textContent = 'Tools: off (custom route)';
-    } else if (active === false) {
-      el.toolRuntimeMeta.textContent = 'Tools: off';
-    } else {
-      el.toolRuntimeMeta.textContent = 'Tools: default';
-    }
-  }
+ if (el.toolRuntimeMeta) {
+   const mode = state.toolSearchMode;
+   const active = state.toolSearchActive;
+   let toolText = 'Default tools';
+   let toolTitle = 'Tools: default';
+   if (mode === 'auto') {
+     toolText = 'Auto tools';
+     toolTitle = 'Tool search is explicitly enabled in auto mode';
+   } else if (mode === 'auto:5') {
+     toolText = 'Auto tools 5%';
+     toolTitle = 'Tool search is explicitly enabled in auto 5% mode';
+   } else if (mode === 'true') {
+     toolText = 'Tools enabled';
+     toolTitle = 'Tool search is explicitly enabled for this session';
+   } else if (mode === 'false') {
+     toolText = 'Tools disabled';
+     toolTitle = 'Tool search is explicitly disabled for this session';
+   } else if (active === false && base) {
+     toolText = 'Tools disabled';
+     toolTitle = 'Tools: off (custom route)';
+   } else if (active === false) {
+     toolText = 'Tools disabled';
+     toolTitle = 'Tool search is disabled by backend configuration';
+   }
+   el.toolRuntimeMeta.textContent = toolText;
+   el.toolRuntimeMeta.title = toolTitle;
+ }
 
-  if (el.toolSearchSelect) {
-    el.toolSearchSelect.value = state.toolSearchMode || '';
-  }
+ if (el.toolSearchSelect) {
+   el.toolSearchSelect.value = state.toolSearchMode || '';
+   const selected = el.toolSearchSelect.options[el.toolSearchSelect.selectedIndex];
+   el.toolSearchSelect.title = `Tool search mode: ${selected ? selected.textContent : 'Tool search: Default'}`;
+ }
 }
 
   function setConnection(status) {
@@ -514,23 +536,26 @@ function renderProviderRuntimeMeta() {
     renderProviderSwitcher();
   }
 
-  async function loadProviders() {
-    try {
-      const data = await api('/api/providers');
-      state.providers = data.providers || {};
-      state.provider = data.default_provider || state.provider || 'cloud';
-      renderModelOptions();
-    } catch (err) {
-      console.warn('Provider load error', err);
-      state.providers = {
-        cloud: { label: 'Cloud', models: ['claude-sonnet-4-5', 'claude-opus-4-5', 'claude-haiku-4-5'] },
-      };
-      state.provider = 'cloud';
-      renderModelOptions();
-    }
-    await loadProviderHealth();
-    renderProviderSwitcher();
-  }
+ async function loadProviders() {
+   try {
+     const data = await api('/api/providers');
+     state.providers = data.providers || {};
+     state.provider = data.default_provider || state.provider || 'cloud';
+     renderModelOptions();
+     renderProviderRuntimeMeta();
+   } catch (err) {
+     console.warn('Provider load error', err);
+     state.providers = {
+       cloud: { label: 'Cloud', models: ['claude-sonnet-4-5', 'claude-opus-4-5', 'claude-haiku-4-5'] },
+     };
+     state.provider = 'cloud';
+     renderModelOptions();
+     renderProviderRuntimeMeta();
+   }
+   await loadProviderHealth();
+   renderProviderSwitcher();
+   renderProviderRuntimeMeta();
+ }
 
   async function browseCwd(path = null) {
     const query = path ? `?path=${encodeURIComponent(path)}` : '';

@@ -680,6 +680,74 @@
   
   .model-select:hover { border-color: var(--primary); color: var(--text); }
 
+  .runtime-meta-group {
+    display: grid;
+    gap: var(--s2);
+    padding: var(--s3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-offset);
+  }
+  .runtime-meta-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    flex-wrap: wrap;
+  }
+  .runtime-meta-title {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .runtime-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s2);
+  }
+  .runtime-meta-card {
+    min-width: 0;
+    padding: var(--s2) var(--s3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .runtime-meta-label {
+    display: block;
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  .runtime-meta-value {
+    display: block;
+    min-width: 0;
+    font-size: var(--text-sm);
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .runtime-select-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    flex-wrap: wrap;
+  }
+  .runtime-select-label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  @media (max-width: 860px) {
+    .runtime-meta-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .cwd-pill {
     display: inline-flex;
     align-items: center;
@@ -1442,16 +1510,32 @@
         <button class="icon-btn terminal-toggle" id="terminal-toggle" aria-label="Toggle terminal drawer" title="Toggle terminal drawer">
   <i data-lucide="terminal-square" style="width:16px;height:16px"></i>
 </button>
-<div class="provider-switcher" id="provider-switcher" aria-label="Providers"></div>
-      <div class="badge" id="provider-runtime-meta" title="Effective provider routing">Provider: cloud</div>
-     <div class="badge" id="tool-runtime-meta" title="Tool search state">Tools: default</div>
-     <select class="model-select" id="tool-search-select" title="Tool search mode" aria-label="Tool search mode">
-       <option value="">Tool search: Default</option>
-       <option value="false">Tool search: Off</option>
-       <option value="auto">Tool search: Auto</option>
-       <option value="auto:5">Tool search: Auto 5%</option>
-       <option value="true">Tool search: On</option>
-     </select>
+<div class="runtime-meta-group" aria-label="Provider and tool runtime">
+<div class="runtime-meta-header">
+  <div class="runtime-meta-title">Runtime routing</div>
+  <div class="provider-switcher" id="provider-switcher" aria-label="Providers"></div>
+</div>
+<div class="runtime-meta-grid">
+  <div class="runtime-meta-card">
+    <span class="runtime-meta-label">Provider route</span>
+    <span class="runtime-meta-value" id="provider-runtime-meta" title="Effective provider routing">Cloud</span>
+  </div>
+  <div class="runtime-meta-card">
+    <span class="runtime-meta-label">Tool search</span>
+    <span class="runtime-meta-value" id="tool-runtime-meta" title="Tool search state">Default tools</span>
+  </div>
+</div>
+<div class="runtime-select-row">
+  <label class="runtime-select-label" for="tool-search-select">Tool mode</label>
+  <select class="model-select" id="tool-search-select" title="Tool search mode" aria-label="Tool search mode">
+    <option value="">Tool search: Default</option>
+    <option value="false">Tool search: Off</option>
+    <option value="auto">Tool search: Auto</option>
+    <option value="auto:5">Tool search: Auto 5%</option>
+    <option value="true">Tool search: On</option>
+  </select>
+</div>
+</div>
         <div class="mode-toggle" id="mode-toggle" aria-label="Tool approval mode">
           <button class="mode-toggle-btn" id="mode-manual-btn" type="button">Manual</button>
           <button class="mode-toggle-btn" id="mode-auto-btn" type="button">Auto</button>
