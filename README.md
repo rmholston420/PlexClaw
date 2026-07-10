@@ -1,5 +1,7 @@
 # PlexClaw
 
+Current release: `0.2.0`
+
 PlexClaw is a local browser-based coding workstation modeled after the PlexClaw interaction style and backed by a FastAPI + WebSocket bridge for Claude Code sessions.
 
 ## Architecture
