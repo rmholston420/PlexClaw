@@ -46,6 +46,7 @@ const Bridge = (() => {
     archiveSort: document.getElementById('archive-sort'),
     replayBanner: document.getElementById('replay-banner'),
     exitReplay: document.getElementById('exit-replay'),
+    providerSwitcher: document.getElementById('provider-switcher'),
     modelSelect: document.getElementById('model-select'),
     refreshArchive: document.getElementById('refresh-archive'),
   };
@@ -125,6 +126,44 @@ const Bridge = (() => {
     }
   }
 
+  function renderProviderSwitcher() {
+    if (!el.providerSwitcher) return;
+    el.providerSwitcher.innerHTML = '';
+    ['cloud', 'ollama', 'vllm'].forEach((name) => {
+      const info = state.providers[name] || { label: name };
+      const health = state.providerHealth[name] || {};
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'badge' + (state.provider === name ? ' accent' : '');
+      btn.title = health.ok === false ? `${info.label || name} offline` : `${info.label || name} online`;
+      btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:999px;background:${health.ok === false ? '#6b7280' : '#22c55e'}"></span>
+        <span>${info.label || name}</span>
+      </span>`;
+      btn.disabled = (name !== 'cloud' && health.ok === false);
+      btn.addEventListener('click', () => {
+        state.provider = name;
+        renderProviderSwitcher();
+        renderModelOptions();
+      });
+      el.providerSwitcher.appendChild(btn);
+    });
+  }
+
+  async function loadProviderHealth() {
+    try {
+      state.providerHealth = await api('/api/providers/health');
+    } catch (err) {
+      console.warn('Provider health load error', err);
+      state.providerHealth = {
+        cloud: { ok: true },
+        ollama: { ok: false },
+        vllm: { ok: false },
+      };
+    }
+    renderProviderSwitcher();
+  }
+
   async function loadProviders() {
     try {
       const data = await api('/api/providers');
@@ -139,6 +178,8 @@ const Bridge = (() => {
       state.provider = 'cloud';
       renderModelOptions();
     }
+    await loadProviderHealth();
+    renderProviderSwitcher();
   }
 
   async function browseCwd(path = null) {
