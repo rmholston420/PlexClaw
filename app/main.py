@@ -49,7 +49,33 @@ logging.basicConfig(level=logging.INFO)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    yield
+
+    stop_reaper = asyncio.Event()
+
+    async def _session_reaper_loop() -> None:
+        try:
+            while not stop_reaper.is_set():
+                await runtime.reap_idle_sessions()
+                try:
+                    await asyncio.wait_for(
+                        stop_reaper.wait(),
+                        timeout=runtime.get_reap_interval_seconds(),
+                    )
+                except asyncio.TimeoutError:
+                    continue
+        except asyncio.CancelledError:
+            raise
+
+    reaper_task = asyncio.create_task(_session_reaper_loop())
+    try:
+        yield
+    finally:
+        stop_reaper.set()
+        reaper_task.cancel()
+        try:
+            await reaper_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(
@@ -453,6 +479,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
 
     await websocket.accept()
     ws_manager.add(session_id, websocket)
+    runtime.touch_session(session)
 
     # Emit session.ready
     ready = WSEnvelope(

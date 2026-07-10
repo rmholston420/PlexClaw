@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 import os
 import uuid
 from dataclasses import dataclass, field
@@ -156,6 +157,7 @@ class LiveSession:
     resume_session_id: str | None
     fork_session: bool
     status: str = "created"  # created | ready | running | interrupted | failed
+    last_activity_at: float = field(default_factory=time.monotonic)
     title: str = ""
     tag: str | None = None
     seq: int = 0
@@ -184,6 +186,53 @@ def get_session(session_id: str) -> LiveSession | None:
 
 def list_live_sessions() -> list[LiveSession]:
     return list(_sessions.values())
+
+
+def touch_session(session: LiveSession) -> None:
+    session.last_activity_at = time.monotonic()
+
+
+def get_idle_timeout_seconds() -> float:
+    raw = os.getenv("PLEXCLAW_SESSION_IDLE_TIMEOUT_SECONDS", "1800").strip()
+    try:
+        value = float(raw)
+    except ValueError:
+        return 1800.0
+    return max(60.0, value)
+
+
+def get_reap_interval_seconds() -> float:
+    raw = os.getenv("PLEXCLAW_SESSION_REAP_INTERVAL_SECONDS", "60").strip()
+    try:
+        value = float(raw)
+    except ValueError:
+        return 60.0
+    return max(5.0, value)
+
+
+async def reap_idle_sessions(now: float | None = None) -> list[str]:
+    cutoff_now = time.monotonic() if now is None else now
+    idle_timeout = get_idle_timeout_seconds()
+    reaped: list[str] = []
+
+    for session in list(_sessions.values()):
+        if session.status == "deleted":
+            reaped.append(session.id)
+            await delete_session(session.id)
+            continue
+
+        idle_for = cutoff_now - session.last_activity_at
+        if idle_for < idle_timeout:
+            continue
+        if ws_manager.connection_count(session.id) > 0:
+            continue
+        if session.status == "running":
+            continue
+
+        reaped.append(session.id)
+        await delete_session(session.id)
+
+    return reaped
 
 
 async def _await_tool_approval(
@@ -294,6 +343,7 @@ def _inject_context_into_prompt(session: LiveSession, prompt: str) -> str:
 
 async def _emit(session: LiveSession, envelope: WSEnvelope) -> None:
     """Broadcast, persist to event store, and run hooks."""
+    touch_session(session)
     await ws_manager.broadcast(envelope)
     append_event(
         session.id,
@@ -349,6 +399,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
         mock_mode=mock_mode,
     )
     _sessions[session_id] = session
+    touch_session(session)
 
     effective_system_prompt = req.system_prompt or DEFAULT_SYSTEM_PROMPT
     provider_env = get_provider_env(req.provider)
@@ -659,6 +710,8 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
     session = _sessions.get(session_id)
     if not session:
         raise KeyError(f"Session {session_id} not found")
+
+    touch_session(session)
 
     async with session._lock:
         if session._client is None:
