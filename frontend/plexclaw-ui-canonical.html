@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlexClaw</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-soft: #121936;
+      --panel: #151d3b;
+      --panel-2: #0f1731;
+      --text: #ecf1ff;
+      --muted: #97a4d1;
+      --accent: #7aa2ff;
+      --accent-2: #8ef0c7;
+      --border: #25305f;
+      --danger: #ff7a90;
+      --warn: #ffd479;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    body.light {
+      --bg: #eef2ff;
+      --bg-soft: #ffffff;
+      --panel: #ffffff;
+      --panel-2: #f5f7ff;
+      --text: #11162b;
+      --muted: #56627f;
+      --accent: #345dff;
+      --accent-2: #007f5f;
+      --border: #d9e0ff;
+      --shadow: 0 10px 30px rgba(43, 61, 132, .1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: linear-gradient(180deg, var(--bg) 0%, #060913 100%);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+    body.light { background: linear-gradient(180deg, #f3f6ff 0%, #e8eeff 100%); }
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      height: 100vh;
+    }
+    .sidebar {
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      min-width: 220px;
+      resize: horizontal;
+      overflow: auto;
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      padding: 18px 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand h1 { margin: 0; font-size: 22px; letter-spacing: .3px; }
+    .brand p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    .sidebar-tools {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      gap: 10px;
+    }
+    .sidebar input, .sidebar select, .rename-input, .tag-input,
+    .composer textarea {
+      width: 100%;
+      background: var(--bg-soft);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+    }
+    .session-list {
+      overflow: auto;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .lineage-group {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,.02);
+    }
+    .lineage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      cursor: pointer;
+      background: rgba(122,162,255,.08);
+      font-size: 13px;
+    }
+    .group-body { padding: 8px; display: grid; gap: 8px; }
+    .session-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px;
+      background: rgba(255,255,255,.03);
+    }
+    .session-card.active { outline: 2px solid var(--accent); }
+    .session-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .session-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(122,162,255,.13);
+      color: var(--accent);
+      font-size: 11px;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-width: 0;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: rgba(6,9,19,.72);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    body.light .topbar { background: rgba(255,255,255,.85); }
+    .status-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%; background: var(--warn);
+      box-shadow: 0 0 0 4px rgba(255,212,121,.12);
+    }
+    .status-dot.connected { background: var(--accent-2); box-shadow: 0 0 0 4px rgba(142,240,199,.12); }
+    .model-badge, .connection-badge, .replay-badge {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      background: var(--panel);
+    }
+    .replay-banner {
+      display: none;
+      margin: 12px 18px 0;
+      border: 1px solid var(--warn);
+      background: rgba(255,212,121,.08);
+      border-radius: 14px;
+      padding: 12px 14px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .replay-banner.visible { display: flex; }
+    .transcript {
+      overflow: auto;
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .welcome {
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      background: rgba(122,162,255,.05);
+    }
+    .welcome h2 { margin-top: 0; }
+    .prompt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .msg, .tool-block, .system-msg {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+    .msg.assistant { border-left: 4px solid var(--accent); }
+    .system-msg { border-left: 4px solid var(--accent-2); color: var(--muted); }
+    .tool-block.running { border-left: 4px solid var(--warn); }
+    .tool-block.done { border-left: 4px solid var(--accent-2); }
+    .tool-block.error { border-left: 4px solid var(--danger); }
+    .tool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      gap: 12px;
+    }
+    .tool-title { font-weight: 700; }
+    .tool-body {
+      display: none;
+      margin-top: 12px;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      background: rgba(0,0,0,.18);
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .tool-block.expanded .tool-body { display: block; }
+    .composer {
+      padding: 14px 18px 20px;
+      border-top: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(21,29,59,.55) 0%, rgba(11,16,32,.95) 100%);
+    }
+    body.light .composer { background: linear-gradient(180deg, rgba(255,255,255,.6) 0%, rgba(244,247,255,.95) 100%); }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button.primary { background: linear-gradient(180deg, var(--accent) 0%, #4e78ff 100%); color: white; border: none; }
+    button.warn { border-color: rgba(255,212,121,.45); }
+    button.subtle { background: transparent; }
+    .composer-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .composer textarea {
+      min-height: 84px;
+      max-height: 260px;
+      resize: vertical;
+    }
+    .muted { color: var(--muted); }
+    .hidden { display: none !important; }
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>PlexClaw</h1>
+        <p>PlexClaw-style Claude Code workstation</p>
+      </div>
+      <div class="sidebar-tools">
+        <button id="new-session" class="primary">New live session</button>
+        <input id="archive-search" type="text" placeholder="Search archive by title, tag, ID, cwd..." />
+        <select id="archive-sort">
+          <option value="recent">Sort: Recent</option>
+          <option value="title">Sort: Title</option>
+          <option value="tag">Sort: Tag</option>
+          <option value="root">Sort: Root</option>
+        </select>
+      </div>
+      <div class="session-list" id="archive-list"></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="status-row">
+          <div id="status-dot" class="status-dot"></div>
+          <div class="connection-badge" id="connection-label">Disconnected</div>
+          <div class="model-badge" id="model-label">claude-sonnet-4-5</div>
+          <div class="replay-badge" id="session-label">No session</div>
+        </div>
+        <div class="status-row">
+          <button id="theme-toggle" class="subtle">Toggle theme</button>
+          <button id="refresh-archive" class="subtle">Refresh archive</button>
+        </div>
+      </div>
+
+      <div id="replay-banner" class="replay-banner">
+        <div>
+          <strong>Replay mode</strong>
+          <div class="muted">You are viewing stored normalized events, not a live Claude run.</div>
+        </div>
+        <button id="exit-replay">Exit replay</button>
+      </div>
+
+      <section class="transcript" id="transcript">
+        <div class="welcome" id="welcome">
+          <h2>Build, inspect, replay.</h2>
+          <p class="muted">Start a live Claude Code session, resume an archived one, or replay a completed run through the exact same renderer.</p>
+          <div class="prompt-chips">
+            <button class="chip prompt-chip">Create a FastAPI app skeleton with tests</button>
+            <button class="chip prompt-chip">Refactor this project into vertical slices</button>
+            <button class="chip prompt-chip">Find the bug in my async websocket runtime</button>
+            <button class="chip prompt-chip">Add a replayable event log and archive browser</button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="composer">
+        <div class="toolbar">
+          <button id="interrupt-btn" class="warn">Interrupt</button>
+          <button id="replay-current-btn">Replay current session</button>
+          <span class="muted">Enter to send · Shift+Enter for newline</span>
+        </div>
+        <div class="composer-row">
+          <textarea id="prompt-input" placeholder="Ask Claude Code to inspect, build, refactor, or debug..."></textarea>
+          <button id="send-btn" class="primary">Send</button>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="sdk-bridge-client.js"></script>
+</body>
+</html>
