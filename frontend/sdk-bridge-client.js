@@ -21,6 +21,7 @@ const Bridge = (() => {
     terminalOpen: false,
     terminalErrorsOnly: false,
     terminalHeight: 220,
+    searchResults: [],
     tabs: [],
     activeTabId: null,
     nextTabNumber: 1,
@@ -63,6 +64,12 @@ const Bridge = (() => {
     exitReplay: document.getElementById('exit-replay'),
     providerSwitcher: document.getElementById('provider-switcher'),
     modelSelect: document.getElementById('model-select'),
+    openSearchBtn: document.getElementById('open-search'),
+    searchModal: document.getElementById('search-modal'),
+    searchBackdrop: document.getElementById('search-backdrop'),
+    searchClose: document.getElementById('search-close'),
+    searchInputModal: document.getElementById('search-input-modal'),
+    searchResults: document.getElementById('search-results'),
     refreshArchive: document.getElementById('refresh-archive'),
     modeManualBtn: document.getElementById('mode-manual-btn'),
     modeAutoBtn: document.getElementById('mode-auto-btn'),
@@ -493,6 +500,76 @@ const Bridge = (() => {
     el.cwdModal.classList.add('hidden');
     el.cwdModal.setAttribute('aria-hidden', 'true');
   }
+
+  function openSearchModal() {
+    el.searchModal?.classList.remove('hidden');
+    el.searchModal?.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => el.searchInputModal?.focus());
+    renderSearchResults();
+  }
+
+  function closeSearchModal() {
+    el.searchModal?.classList.add('hidden');
+    el.searchModal?.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderSearchResults() {
+    if (!el.searchResults) return;
+    const query = el.searchInputModal?.value?.trim() || '';
+    if (!state.searchResults?.length) {
+      el.searchResults.innerHTML = `<div class="search-empty">${query ? 'No matching sessions found.' : 'Type to search across sessions.'}</div>`;
+      return;
+    }
+
+    const groups = new Map();
+    state.searchResults.forEach((item) => {
+      const key = item.session_id || 'unknown';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    });
+
+    el.searchResults.innerHTML = Array.from(groups.entries()).map(([sessionId, items]) => {
+      const title = items[0]?.session_title || `Session ${sessionId.slice(0, 8)}`;
+      return `
+        <div class="search-group">
+          <div class="search-group-title">${escapeHtml(title)} · ${items.length} match${items.length === 1 ? '' : 'es'}</div>
+          ${items.map((item) => `
+            <button class="search-result" type="button" data-search-session="${escapeHtml(item.session_id || '')}">
+              <div class="search-result-meta">${escapeHtml(item.role || 'event')} · ${escapeHtml(item.created_at || '')}</div>
+              <div>${escapeHtml(item.snippet || '')}</div>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }).join('');
+
+    el.searchResults.querySelectorAll('[data-search-session]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-search-session');
+        if (!id) return;
+        closeSearchModal();
+        await replaySession(id);
+      });
+    });
+  }
+
+  async function runSessionSearch() {
+    const query = el.searchInputModal?.value?.trim() || '';
+    if (!query) {
+      state.searchResults = [];
+      renderSearchResults();
+      return;
+    }
+
+    try {
+      state.searchResults = await api(`/api/search?q=${encodeURIComponent(query)}`);
+    } catch (err) {
+      appendSystemMessage(`Search failed: ${err.message || err}`, 'error');
+      state.searchResults = [];
+    }
+    renderSearchResults();
+  }
+
 
   // ---- Markdown-lite renderer ----
   function renderMarkdown(text) {
@@ -1210,6 +1287,10 @@ const Bridge = (() => {
     el.archiveSearch.addEventListener('input', renderArchive);
     el.archiveSort.addEventListener('change', renderArchive);
     el.refreshArchive.addEventListener('click', loadArchive);
+    el.openSearchBtn?.addEventListener('click', openSearchModal);
+    el.searchBackdrop?.addEventListener('click', closeSearchModal);
+    el.searchClose?.addEventListener('click', closeSearchModal);
+    el.searchInputModal?.addEventListener('input', runSessionSearch);
     el.modelSelect?.addEventListener('change', () => {
       state.model = el.modelSelect.value;
     });
@@ -1287,6 +1368,12 @@ const Bridge = (() => {
       if (e.key.toLowerCase() === 't') {
         e.preventDefault();
         openNewTab();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        openSearchModal();
         return;
       }
 

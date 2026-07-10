@@ -484,11 +484,87 @@
     white-space: nowrap;
   }
 
-  .cwd-modal.hidden { display: none; }
+  .search-modal.hidden, .cwd-modal.hidden { display: none; }
+  .search-modal,
   .cwd-modal {
     position: fixed;
     inset: 0;
     z-index: 200;
+  }
+  .search-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 7, 15, 0.6);
+    backdrop-filter: blur(4px);
+  }
+  .search-dialog {
+    position: relative;
+    width: min(960px, calc(100vw - 2rem));
+    margin: 5vh auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 88vh;
+  }
+  .search-header {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    padding: var(--s4);
+    border-bottom: 1px solid var(--divider);
+  }
+  .search-input-lg {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface-offset);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1rem;
+    font-size: var(--text-base);
+  }
+  .search-results {
+    padding: var(--s4);
+    overflow: auto;
+    display: grid;
+    gap: var(--s4);
+  }
+  .search-group {
+    display: grid;
+    gap: var(--s2);
+  }
+  .search-group-title {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .search-result {
+    text-align: left;
+    border: 1px solid var(--border);
+    background: var(--surface-offset);
+    color: var(--text);
+    border-radius: var(--radius-md);
+    padding: var(--s3);
+    display: grid;
+    gap: 6px;
+  }
+  .search-result:hover {
+    border-color: var(--primary);
+    background: var(--primary-hl);
+  }
+  .search-result-meta {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+  .search-empty {
+    padding: var(--s6);
+    text-align: center;
+    color: var(--text-muted);
   }
   .cwd-backdrop {
     position: absolute;
@@ -1129,6 +1205,9 @@
           <button class="mode-toggle-btn" id="mode-auto-btn" type="button">Auto</button>
         </div>
         <select class="model-select" id="model-select" title="Model"></select>
+        <button class="icon-btn" id="open-search" aria-label="Search sessions" title="Search sessions">
+          <i data-lucide="search" style="width:16px;height:16px"></i>
+        </button>
         <button class="icon-btn" id="refresh-archive" aria-label="Refresh archive" title="Refresh archive">
           <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>
         </button>
@@ -1239,6 +1318,25 @@
   });
 </script>
 
+
+  <div class="search-modal hidden" id="search-modal" aria-hidden="true">
+    <div class="search-backdrop" id="search-backdrop"></div>
+    <div class="search-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
+      <div class="search-header">
+        <div style="min-width:0; flex:1;">
+          <div class="section-title" id="search-title">Search sessions</div>
+          <div class="section-subtitle">Find text across saved session events</div>
+        </div>
+        <input id="search-input-modal" class="search-input-lg" type="search" placeholder="Search across sessions…" autocomplete="off" />
+        <button class="icon-btn" id="search-close" aria-label="Close search">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="search-results" id="search-results">
+        <div class="search-empty">Type to search across sessions.</div>
+      </div>
+    </div>
+  </div>
 
   <div class="cwd-modal hidden" id="cwd-modal" aria-hidden="true">
   <div class="terminal-drawer" id="terminal-drawer" aria-label="Raw terminal panel">
