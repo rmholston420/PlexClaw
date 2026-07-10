@@ -5,6 +5,8 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app import runtime_sdk
+
 router = APIRouter(prefix="/api/fs", tags=["fs"])
 
 FS_ROOT = Path.cwd().resolve()
@@ -20,30 +22,48 @@ def _is_within_root(path: Path, root: Path) -> bool:
         return False
 
 
-def _safe_path(path: str | None) -> Path:
-    if not path:
-        return FS_ROOT
+def _get_fs_root(session_id: str | None) -> Path:
+    if session_id:
+        session = runtime_sdk.get_session(session_id)
+        if session and session.cwd:
+            return Path(session.cwd).expanduser().resolve()
+    return FS_ROOT.resolve()
 
-    p = Path(path).expanduser().resolve()
-    if not p.exists():
-        raise HTTPException(status_code=400, detail=f"path does not exist: {p}")
-    if not _is_within_root(p, FS_ROOT):
-        raise HTTPException(status_code=403, detail=f"path escapes allowed root: {p}")
-    return p
+
+def _resolve_safe_path(path: str | None, session_id: str | None = None) -> tuple[Path, Path]:
+    root = _get_fs_root(session_id)
+
+    if not path:
+        return root, root
+
+    candidate = Path(path).expanduser()
+    resolved = (root / candidate).resolve() if not candidate.is_absolute() else candidate.resolve()
+
+    if not resolved.exists():
+        raise HTTPException(status_code=400, detail=f"path does not exist: {resolved}")
+    if not _is_within_root(resolved, root):
+        raise HTTPException(status_code=403, detail=f"path escapes allowed root: {resolved}")
+    return resolved, root
+
+
+def _safe_path(path: str | None) -> Path:
+    resolved, _root = _resolve_safe_path(path, session_id=None)
+    return resolved
 
 
 @router.get("/browse")
 async def browse(
     path: str | None = Query(default=None, description="Path to browse"),
+    session_id: str | None = Query(default=None, description="Optional live session id"),
 ) -> dict:
-    base = _safe_path(path)
+    base, root = _resolve_safe_path(path, session_id=session_id)
     if not base.is_dir():
         raise HTTPException(status_code=400, detail=f"not a directory: {base}")
 
     entries: list[dict] = []
 
     parent = base.parent
-    if parent != base and _is_within_root(parent, FS_ROOT):
+    if parent != base and _is_within_root(parent, root):
         stat = parent.stat()
         entries.append(
             {
@@ -69,22 +89,23 @@ async def browse(
         )
 
     entries.sort(key=lambda e: (not e["is_dir"], e["name"].lower()))
-    return {"path": str(base), "root": str(FS_ROOT), "entries": entries}
+    return {"path": str(base), "root": str(root), "entries": entries}
 
 
 @router.get("/read")
 async def read_file(
     path: str = Query(..., description="Absolute or relative path to read"),
+    session_id: str | None = Query(default=None, description="Optional live session id"),
 ) -> dict:
-    """Return the text contents of a file within FS_ROOT.
+    """Return the text contents of a file within the active filesystem root.
 
     Returns:
-        path     – resolved absolute path
-        content  – UTF-8 text content
-        size     – byte size of the file
+        path      – resolved absolute path
+        content   – UTF-8 text content
+        size      – byte size of the file
         truncated – True when the file was cut at MAX_READ_BYTES
     """
-    p = _safe_path(path)
+    p, _root = _resolve_safe_path(path, session_id=session_id)
     if p.is_dir():
         raise HTTPException(status_code=400, detail=f"path is a directory: {p}")
 
@@ -111,15 +132,16 @@ async def read_file(
 async def git_roots(
     start: str | None = Query(default=None),
     max_depth: int = Query(default=3, ge=1, le=6),
+    session_id: str | None = Query(default=None, description="Optional live session id"),
 ) -> dict:
-    current = _safe_path(start)
+    current, root = _resolve_safe_path(start, session_id=session_id)
     roots: list[str] = []
     depth = 0
 
     while True:
         if depth > max_depth:
             break
-        if not _is_within_root(current, FS_ROOT):
+        if not _is_within_root(current, root):
             break
 
         git_dir = current / ".git"
@@ -127,9 +149,9 @@ async def git_roots(
             roots.append(str(current))
 
         parent = current.parent
-        if parent == current or not _is_within_root(parent, FS_ROOT):
+        if parent == current or not _is_within_root(parent, root):
             break
         current = parent
         depth += 1
 
-    return {"root": str(FS_ROOT), "roots": sorted(set(roots))}
+    return {"root": str(root), "roots": sorted(set(roots))}
