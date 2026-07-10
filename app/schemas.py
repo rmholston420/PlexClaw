@@ -51,6 +51,8 @@ class SessionCreateResponse(BaseModel):
     mock_mode: bool = False
     model: str
     provider: str
+    permission_mode: str | None = None
+    cwd: str | None = None
 
 
 class PromptRequest(BaseModel):

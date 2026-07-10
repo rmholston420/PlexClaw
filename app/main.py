@@ -89,6 +89,8 @@ async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
         mock_mode=session.mock_mode,
         model=session.model,
         provider=session.provider,
+        permission_mode=session.permission_mode,
+        cwd=session.cwd,
     )
 
 

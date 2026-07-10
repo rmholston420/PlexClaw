@@ -29,6 +29,8 @@ def test_session_create_response_matches_frontend_bootstrap_expectations() -> No
     assert data["protocol_version"] == PROTOCOL_VERSION
     assert data["model"] == "claude-sonnet-4-5"
     assert data["provider"] == "cloud"
+    assert data["permission_mode"] == "manual"
+    assert data["cwd"] is None
     assert isinstance(data["mock_mode"], bool)
 
     html = Path("frontend/plexclaw-ui-canonical.html").read_text()
