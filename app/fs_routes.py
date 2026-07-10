@@ -7,13 +7,26 @@ from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter(prefix="/api/fs", tags=["fs"])
 
+FS_ROOT = Path.cwd().resolve()
+
+
+def _is_within_root(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
 
 def _safe_path(path: str | None) -> Path:
     if not path:
-        return Path.cwd()
+        return FS_ROOT
+
     p = Path(path).expanduser().resolve()
     if not p.exists():
         raise HTTPException(status_code=400, detail=f"path does not exist: {p}")
+    if not _is_within_root(p, FS_ROOT):
+        raise HTTPException(status_code=403, detail=f"path escapes allowed root: {p}")
     return p
 
 
@@ -28,7 +41,7 @@ async def browse(
     entries: list[dict] = []
 
     parent = base.parent
-    if parent != base:
+    if parent != base and _is_within_root(parent, FS_ROOT):
         stat = parent.stat()
         entries.append(
             {
@@ -54,7 +67,7 @@ async def browse(
         )
 
     entries.sort(key=lambda e: (not e["is_dir"], e["name"].lower()))
-    return {"path": str(base), "entries": entries}
+    return {"path": str(base), "root": str(FS_ROOT), "entries": entries}
 
 
 @router.get("/git-roots")
@@ -69,14 +82,17 @@ async def git_roots(
     while True:
         if depth > max_depth:
             break
+        if not _is_within_root(current, FS_ROOT):
+            break
+
         git_dir = current / ".git"
         if git_dir.exists() and git_dir.is_dir():
             roots.append(str(current))
 
         parent = current.parent
-        if parent == current:
+        if parent == current or not _is_within_root(parent, FS_ROOT):
             break
         current = parent
         depth += 1
 
-    return {"roots": sorted(set(roots))}
+    return {"root": str(FS_ROOT), "roots": sorted(set(roots))}
