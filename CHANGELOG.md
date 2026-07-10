@@ -18,4 +18,4 @@
 - CI now validates shell entrypoints and hook bootstrap in addition to Ruff and pytest.
 
 ### Quality
-- 69 tests passing locally as of July 2026.
+- 71 tests passing locally as of July 2026.

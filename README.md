@@ -63,5 +63,5 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 
 ## Current status
 
-- 69 tests passing locally as of July 2026.
+- 71 tests passing locally as of July 2026.
 - Mock runtime fallback, WebSocket session flow, protocol mismatch handling, launcher port checks, and launcher shell contract are all covered by tests.
