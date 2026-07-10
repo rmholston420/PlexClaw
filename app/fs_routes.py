@@ -30,19 +30,29 @@ def _get_fs_root(session_id: str | None) -> Path:
     return FS_ROOT.resolve()
 
 
-def _resolve_safe_path(path: str | None, session_id: str | None = None) -> tuple[Path, Path]:
+def _resolve_safe_path(
+    path: str | None, session_id: str | None = None
+) -> tuple[Path, Path]:
     root = _get_fs_root(session_id)
 
     if not path:
         return root, root
 
     candidate = Path(path).expanduser()
-    resolved = (root / candidate).resolve() if not candidate.is_absolute() else candidate.resolve()
+
+    # Resolve relative to root; absolute paths are still resolved but then
+    # MUST be validated against root to prevent jail bypass.
+    if candidate.is_absolute():
+        resolved = candidate.resolve()
+    else:
+        resolved = (root / candidate).resolve()
 
     if not resolved.exists():
         raise HTTPException(status_code=400, detail=f"path does not exist: {resolved}")
     if not _is_within_root(resolved, root):
-        raise HTTPException(status_code=403, detail=f"path escapes allowed root: {resolved}")
+        raise HTTPException(
+            status_code=403, detail=f"path escapes allowed root: {resolved}"
+        )
     return resolved, root
 
 
@@ -54,7 +64,9 @@ def _safe_path(path: str | None) -> Path:
 @router.get("/browse")
 async def browse(
     path: str | None = Query(default=None, description="Path to browse"),
-    session_id: str | None = Query(default=None, description="Optional live session id"),
+    session_id: str | None = Query(
+        default=None, description="Optional live session id"
+    ),
 ) -> dict:
     base, root = _resolve_safe_path(path, session_id=session_id)
     if not base.is_dir():
@@ -95,7 +107,9 @@ async def browse(
 @router.get("/read")
 async def read_file(
     path: str = Query(..., description="Absolute or relative path to read"),
-    session_id: str | None = Query(default=None, description="Optional live session id"),
+    session_id: str | None = Query(
+        default=None, description="Optional live session id"
+    ),
 ) -> dict:
     """Return the text contents of a file within the active filesystem root.
 
@@ -132,7 +146,9 @@ async def read_file(
 async def git_roots(
     start: str | None = Query(default=None),
     max_depth: int = Query(default=3, ge=1, le=6),
-    session_id: str | None = Query(default=None, description="Optional live session id"),
+    session_id: str | None = Query(
+        default=None, description="Optional live session id"
+    ),
 ) -> dict:
     current, root = _resolve_safe_path(start, session_id=session_id)
     roots: list[str] = []
