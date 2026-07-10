@@ -27,6 +27,7 @@ class SessionCreateRequest(BaseModel):
     cwd: str | None = None
     provider: ProviderName = "cloud"
     permission_mode: PermissionMode = "manual"
+    tool_search_mode: str | None = None
     system_prompt: str | None = None
     resume_session_id: str | None = None
     fork_session: bool = False

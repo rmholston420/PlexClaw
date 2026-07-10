@@ -101,6 +101,14 @@ def _provider_env(provider: str) -> dict[str, str]:
     return env
 
 
+def _tool_search_env(mode: str | None) -> dict[str, str]:
+    env: dict[str, str] = {}
+    if not mode:
+        return env
+    env["ENABLE_TOOL_SEARCH"] = mode
+    return env
+
+
 # ---------------------------------------------------------------------------
 # SDK import — real package is `claude-agent-sdk` (pip install claude-agent-sdk)
 # ---------------------------------------------------------------------------
@@ -356,6 +364,8 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
 
     effective_system_prompt = req.system_prompt or DEFAULT_SYSTEM_PROMPT
     provider_env = _provider_env(req.provider)
+    tool_search_env = _tool_search_env(req.tool_search_mode)
+    session_env = {**provider_env, **tool_search_env}
     provider_base_url = provider_env.get("ANTHROPIC_BASE_URL")
 
     if mock_mode:
@@ -369,7 +379,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
             resume=req.resume_session_id,
             fork_session=req.fork_session,
             include_partial_messages=True,
-            env=provider_env,
+            env=session_env,
         )
         session._client = ClaudeSDKClient(options)
 
@@ -396,6 +406,8 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
                 "model": session.model,
                 "provider": session.provider,
                 "provider_base_url": provider_base_url,
+                "tool_search_mode": req.tool_search_mode,
+                "tool_search_active": bool(req.tool_search_mode),
                 "cwd": session.cwd,
                 "permission_mode": session.permission_mode,
                 "resume_session_id": session.resume_session_id,
