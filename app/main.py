@@ -53,9 +53,22 @@ app = FastAPI(
 
 app.include_router(fs_routes.router)
 
+
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://localhost:5555",
+]
+
+raw_allowed = os.getenv("PLEXCLAW_ALLOWED_ORIGINS", "")
+if raw_allowed.strip():
+    allowed_origins = [o.strip() for o in raw_allowed.split(",") if o.strip()]
+else:
+    allowed_origins = DEFAULT_ALLOWED_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
