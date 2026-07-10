@@ -21,6 +21,7 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import fs_routes
 from app import runtime_sdk as runtime
@@ -86,6 +87,8 @@ app = FastAPI(
 )
 
 app.include_router(fs_routes.router)
+
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
 
 app.add_middleware(
