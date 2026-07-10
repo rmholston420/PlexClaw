@@ -8,4 +8,4 @@ TITLE PlexClaw Build Progress - Session metadata & tab state
 - A frontend contract test now proves that `syncStateToActiveTab()` snapshots current session, replay mode, model, provider, attachments, and terminal state into the active tab object.
 - A complementary frontend contract test verifies that `syncActiveTabToState()` restores `state.sessionId` and `state.replayMode` from the selected tab, preserving each tab’s own live or replay identity.
 - The tab chrome status dot is covered by test, ensuring it reflects whether a tab has a bound session via `tab.sessionId` (`connected` vs `disconnected`).
-- Local quality gate remains green at 57 passing tests, including backend session metadata parity, frontend bootstrap behavior, replay semantics, and tab-state preservation, with enforcement on `git push` via the repo pre-push hook.
+- Local quality gate remains green at 64 passing tests, including backend session metadata parity, frontend bootstrap behavior, replay semantics, and tab-state preservation, with enforcement on `git push` via the repo pre-push hook.

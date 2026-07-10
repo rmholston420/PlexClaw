@@ -27,9 +27,17 @@ All 10 slices from the build spec are implemented and committed.
 
 The app fully starts and is usable without `claude-agent-sdk`. Sessions are created, prompts are streamed back as echo responses with a prominent ⚠️ mock-mode banner. Set `ANTHROPIC_API_KEY` and `pip install claude-agent-sdk` to activate real Claude Code sessions.
 
+## Post-slice: Provider routing & UI semantics (July 2026)
+
+- Provider selection in the frontend now routes sessions through Anthropic-compatible backends (cloud, Ollama, vLLM) via `ANTHROPIC_BASE_URL`, matching Claude Code's environment-variable model.
+- The PlexClaw UI shows the effective provider base URL for each session in the header, so users can see exactly where requests are being sent.
+- Switching providers with an active live session now clears that session context, updates tab state, and emits a system message prompting the user to start a new session on the new route.
+- Frontend guardrail tests ensure that provider runtime metadata is rendered, `provider_base_url` is captured from session events and API responses, and live-session reset semantics are preserved.
+- The Python test suite has grown from 53 to 64 tests, covering provider routing, frontend semantics, and package structure, while keeping all original slice tests passing.
+
 ## Quality status
 
-- **53 tests passing**
+- **64 tests passing**
 - Mock SDK fallback is implemented and covered by unit tests
 - WebSocket happy-path session flow is covered
 - WebSocket protocol mismatch rejection is covered
