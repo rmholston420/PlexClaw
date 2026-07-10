@@ -763,6 +763,19 @@ const Bridge = (() => {
     return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
   }
 
+  function looksLikeFakeToolMarkup(text) {
+    const value = String(text || '');
+    if (!value) return false;
+    return (
+      value.includes('<tool_call>') ||
+      value.includes('</tool_call>') ||
+      value.includes('<function') ||
+      value.includes('</function>') ||
+      value.includes('<parameter>') ||
+      value.includes('</parameter>')
+    );
+  }
+
   function tagSearchableNode(node, text) {
     if (!node) return;
     node.dataset.searchText = normalizeSearchText(text);
@@ -794,17 +807,30 @@ const Bridge = (() => {
       case 'session.updated':
         appendSystemMessage('Session updated');
         break;
-      case 'assistant.delta':
-        appendAssistantDelta(evt.payload?.text || '');
+      case 'assistant.delta': {
+        const chunk = evt.payload?.text || '';
+        if (looksLikeFakeToolMarkup(chunk)) {
+          finalizeAssistant();
+          appendSystemMessage('Suppressed fake tool-call markup emitted as assistant text', 'warn');
+          break;
+        }
+        appendAssistantDelta(chunk);
         break;
+      }
       case 'assistant.completed':
         finalizeAssistant();
         break;
       case 'tool.started': {
         const block = getOrCreateTool(evt.payload?.tool_id, evt.payload?.tool_name || 'tool');
+        block.classList.remove('pending', 'done', 'error');
+        block.classList.add('running');
+        const badge = block.querySelector('.tool-status-badge');
+        if (badge) badge.textContent = 'running';
         const inputSection = block.querySelector(`#tool-input-${evt.payload?.tool_id} pre`);
         if (inputSection) {
-          inputSection.textContent = JSON.stringify(evt.payload?.tool_input, null, 2);
+          const input = evt.payload?.tool_input ?? {};
+          inputSection.textContent = JSON.stringify(input, null, 2);
+          tagSearchableNode(block, `${evt.payload?.tool_name || 'tool'} ${JSON.stringify(input)}`);
         }
         break;
       }
@@ -822,10 +848,10 @@ const Bridge = (() => {
       }
       case 'tool.completed': {
         const block = getOrCreateTool(evt.payload?.tool_id, evt.payload?.tool_name || 'tool');
-        block.classList.remove('running');
+        block.classList.remove('running', 'pending');
         block.classList.add(evt.payload?.is_error ? 'error' : 'done');
-        block.querySelector('.tool-status-badge').textContent = evt.payload?.is_error ? 'error' : 'done';
-        // Add/update output
+        const badge = block.querySelector('.tool-status-badge');
+        if (badge) badge.textContent = evt.payload?.is_error ? 'error' : 'done';
         let outputSection = block.querySelector('.tool-output-section');
         if (!outputSection && evt.payload?.output != null) {
           outputSection = document.createElement('div');
@@ -834,8 +860,11 @@ const Bridge = (() => {
           block.querySelector('.tool-body').appendChild(outputSection);
         }
         if (outputSection && evt.payload?.output != null) {
-          const out = typeof evt.payload.output === 'string' ? evt.payload.output : JSON.stringify(evt.payload.output, null, 2);
+          const out = typeof evt.payload.output === 'string'
+            ? evt.payload.output
+            : JSON.stringify(evt.payload.output, null, 2);
           outputSection.querySelector('pre').textContent = out;
+          tagSearchableNode(block, `${evt.payload?.tool_name || 'tool'} ${out}`);
         }
         scrollBottom();
         break;
