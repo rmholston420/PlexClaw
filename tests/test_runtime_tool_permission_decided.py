@@ -134,9 +134,9 @@ def test_websocket_approval_messages_emit_permission_decided_events():
             msg = websocket.receive_json()
         assert msg["payload"]["tool_id"] == "tool-a"
         assert msg["payload"]["decision"] == "approve"
-
         assert session.pending_approvals["tool-a"].event.is_set() is True
-                session.pending_approvals["tool-b"] = runtime.PendingApproval(
+
+        session.pending_approvals["tool-b"] = runtime.PendingApproval(
             tool_id="tool-b",
             tool_name="read",
             tool_input={"path": "README.md"},
@@ -148,3 +148,4 @@ def test_websocket_approval_messages_emit_permission_decided_events():
             msg = websocket.receive_json()
         assert msg["payload"]["tool_id"] == "tool-b"
         assert msg["payload"]["decision"] == "reject"
+        assert session.pending_approvals["tool-b"].event.is_set() is True
