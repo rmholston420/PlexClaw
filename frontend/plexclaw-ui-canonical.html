@@ -730,7 +730,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .runtime-select-row {
+  .runtime-meta-help {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.45;
+  padding-inline: var(--s1);
+  max-width: 68ch;
+}
+.runtime-select-row {
     display: flex;
     align-items: center;
     gap: var(--s2);
@@ -1524,6 +1531,19 @@
     <span class="runtime-meta-label">Tool search</span>
     <span class="runtime-meta-value" id="tool-runtime-meta" title="Tool search state">Default tools</span>
   </div>
+</div>
+<div class="runtime-meta-grid session-info-grid" aria-label="Current session info">
+ <div class="runtime-meta-card">
+   <span class="runtime-meta-label">Working directory</span>
+   <span class="runtime-meta-value" id="session-cwd-meta" title="Active session working directory">~</span>
+ </div>
+ <div class="runtime-meta-card">
+   <span class="runtime-meta-label">Runtime mode</span>
+   <span class="runtime-meta-value" id="session-runtime-meta" title="Current runtime mode">Unknown runtime</span>
+ </div>
+</div>
+<div class="runtime-meta-help" id="runtime-meta-help">
+  Use this panel for the true working directory and runtime state; model replies may be approximate.
 </div>
 <div class="runtime-select-row">
   <label class="runtime-select-label" for="tool-search-select">Tool mode</label>
