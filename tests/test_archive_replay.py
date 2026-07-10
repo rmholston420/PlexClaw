@@ -92,3 +92,82 @@ def test_archive_replay_tool_use_events_export_with_finalized_input():
     assert events[1]["payload"]["tool_input"] == {"cmd": "ls -la"}
     assert "## Tool: bash" in md
     assert '"cmd": "ls -la"' in md
+
+
+def test_render_session_markdown_includes_tool_permission_required_event():
+    events = [
+        {
+            "type": "tool.permission_required",
+            "payload": {
+                "tool_id": "tool-1",
+                "tool_name": "bash",
+                "tool_input": {"cmd": "pwd"},
+            },
+        }
+    ]
+
+    md = _render_session_markdown("s1", events)
+
+    assert "bash" in md
+    assert "tool approval required" in md.lower()
+
+
+def test_render_session_markdown_includes_tool_permission_decision_event():
+    events = [
+        {
+            "type": "tool.permission_decided",
+            "payload": {
+                "tool_id": "tool-1",
+                "tool_name": "bash",
+                "decision": "reject",
+            },
+        }
+    ]
+
+    md = _render_session_markdown("s1", events)
+
+    assert "bash" in md
+    assert "reject" in md.lower()
+
+
+def test_archive_replay_permission_events_can_coexist_with_tool_events():
+    events = [
+        {
+            "type": "tool.started",
+            "payload": {
+                "tool_id": "tool-1",
+                "tool_name": "bash",
+            },
+        },
+        {
+            "type": "tool.permission_required",
+            "payload": {
+                "tool_id": "tool-1",
+                "tool_name": "bash",
+                "tool_input": {"cmd": "pwd"},
+            },
+        },
+        {
+            "type": "tool.permission_decided",
+            "payload": {
+                "tool_id": "tool-1",
+                "tool_name": "bash",
+                "decision": "approve",
+            },
+        },
+        {
+            "type": "tool.completed",
+            "payload": {
+                "tool_id": "tool-1",
+                "tool_name": "bash",
+                "output": "/tmp",
+                "is_error": False,
+            },
+        },
+    ]
+
+    md = _render_session_markdown("s1", events)
+
+    assert "## Tool: bash" in md
+    assert "approve" in md.lower()
+    assert "/tmp" in md

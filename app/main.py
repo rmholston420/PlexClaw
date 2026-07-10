@@ -419,6 +419,27 @@ def _render_session_markdown(session_id: str, events: list[dict]) -> str:
             lines.append(str(payload.get("output", "")))
             lines.append("```")
             lines.append("")
+
+        elif etype == "tool.permission_required":
+            flush_assistant()
+            tool_name = payload.get("tool_name", "tool")
+            tool_input = payload.get("tool_input", {})
+            lines.append(f"## Tool Approval Required: {tool_name}")
+            lines.append("")
+            lines.append("```json")
+            lines.append(json.dumps(tool_input, indent=2, ensure_ascii=False))
+            lines.append("```")
+            lines.append("")
+
+        elif etype == "tool.permission_decided":
+            flush_assistant()
+            tool_name = payload.get("tool_name", "tool")
+            decision = str(payload.get("decision", "unknown"))
+            lines.append(f"## Tool Approval Decision: {tool_name}")
+            lines.append("")
+            lines.append(decision)
+            lines.append("")
+
         elif etype == "session.failed":
             flush_assistant()
             lines.append("## Error")
