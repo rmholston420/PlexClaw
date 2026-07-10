@@ -18,6 +18,8 @@ const Bridge = (() => {
     cwd: '',
     cwdSelected: '',
     cwdBrowsing: null,
+    assistantChunkBuffer: '',
+    fakeToolWarningShown: false,
     replayMode: false,
     archive: [],
     attachments: [],
@@ -619,12 +621,27 @@ function renderProviderRuntimeMeta() {
     });
   }
 
+  async function initCwd() {
+    try {
+      const fsData = await api('/api/fs/browse');
+      const gitData = await api('/api/fs/git-roots');
+      const roots = gitData.roots || [];
+      const initial = roots[0] || fsData.root || fsData.path || '';
+      setCwd(initial);
+      state.cwdSelected = initial;
+      state.cwdBrowsing = initial;
+      if (el.cwdCurrentPath) el.cwdCurrentPath.textContent = initial;
+    } catch (err) {
+      console.warn('CWD init error', err);
+    }
+  }
+
   function openCwdModal() {
     el.cwdModal.classList.remove('hidden');
     el.cwdModal.setAttribute('aria-hidden', 'false');
     if (el.cwdManualInput) el.cwdManualInput.value = state.cwdSelected || state.cwd || '';
     loadGitRoots().catch(console.error);
-    browseCwd(state.cwdSelected || state.cwdBrowsing || null).catch(console.error);
+    browseCwd(state.cwdSelected || state.cwd || state.cwdBrowsing || null).catch(console.error);
   }
 
   function closeCwdModal() {
@@ -899,9 +916,42 @@ function renderProviderRuntimeMeta() {
       value.includes('<function') ||
       value.includes('</function>') ||
       value.includes('<parameter>') ||
-      value.includes('</parameter>')
+      value.includes('</parameter>') ||
+      value.includes('<parameter=') ||
+      value.includes('</parameter') ||
+      value.includes('=Write>') ||
+      value.includes('=Read>') ||
+      value.includes('=Edit>') ||
+      value.includes('=Bash>') ||
+      value.includes('=Grep>') ||
+      value.includes('=Glob>') ||
+      value.includes('=LS>')
     );
   }
+
+  function flushAssistantChunkBuffer(force = false) {
+    const value = state.assistantChunkBuffer || '';
+    if (!value) return;
+
+    if (looksLikeFakeToolMarkup(value)) {
+      state.assistantChunkBuffer = '';
+      finalizeAssistant();
+      if (!state.fakeToolWarningShown) {
+        appendSystemMessage('Suppressed fake tool-call markup emitted as assistant text', 'warn');
+        state.fakeToolWarningShown = true;
+      }
+      return;
+    }
+
+    const holdBack = force ? 0 : 24;
+    if (!force && value.length <= holdBack) return;
+
+    const safeText = force ? value : value.slice(0, -holdBack);
+    state.assistantChunkBuffer = force ? '' : value.slice(-holdBack);
+
+    if (safeText) appendAssistantDelta(safeText);
+  }
+
 
   function tagSearchableNode(node, text) {
     if (!node) return;
@@ -939,22 +989,22 @@ function renderProviderRuntimeMeta() {
         const mockMode = Boolean(evt.payload?.mock_mode);
       appendSystemMessage(`${mockMode ? 'Mock session ready' : 'Live session ready'} (${evt.payload?.model || state.model})`);
       setRuntimeMode(mockMode);
+      state.assistantChunkBuffer = '';
+      state.fakeToolWarningShown = false;
         break;
       case 'session.updated':
         appendSystemMessage('Session updated');
         break;
       case 'assistant.delta': {
         const chunk = evt.payload?.text || '';
-        if (looksLikeFakeToolMarkup(chunk)) {
-          finalizeAssistant();
-          appendSystemMessage('Suppressed fake tool-call markup emitted as assistant text', 'warn');
-          break;
-        }
-        appendAssistantDelta(chunk);
+        state.assistantChunkBuffer = `${state.assistantChunkBuffer || ''}${chunk}`;
+        flushAssistantChunkBuffer(false);
         break;
       }
       case 'assistant.completed':
+        flushAssistantChunkBuffer(true);
         finalizeAssistant();
+        state.fakeToolWarningShown = false;
         break;
       case 'tool.started': {
         const block = getOrCreateTool(evt.payload?.tool_id, evt.payload?.tool_name || 'tool');
@@ -1728,7 +1778,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
   }
 
   async function init() {
-    setCwd('');
+    await initCwd();
     renderPermissionMode();
     el.cwdPill?.addEventListener('click', openCwdModal);
     el.cwdBackdrop?.addEventListener('click', closeCwdModal);

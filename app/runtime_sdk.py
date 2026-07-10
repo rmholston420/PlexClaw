@@ -89,6 +89,22 @@ like an experienced pair programmer already inside the project.
 """.strip()
 
 
+def build_effective_system_prompt(base_prompt: str, cwd: str | None) -> str:
+    parts = [base_prompt.strip()]
+    if cwd:
+        parts.append(
+            (
+                "Runtime grounding:\n"
+                f"- The active working directory for this session is: {cwd}\n"
+                "- Treat this directory as the default repo/project root.\n"
+                "- Do not invent other filesystem roots, home directories, or placeholder paths "
+                "such as /home/user unless they are explicitly shown by the environment or the user.\n"
+                "- Before giving filesystem-specific advice, prefer to inspect the actual repo/files "
+                "or clearly state that you have not inspected them yet.\n"
+                "- If you mention a path, prefer paths relative to the active working directory when possible."
+            )
+        )
+    return "\n\n".join(part for part in parts if part.strip())
 
 
 def _provider_env(provider: str) -> dict[str, str]:
@@ -421,7 +437,10 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
     _sessions[session_id] = session
     touch_session(session)
 
-    effective_system_prompt = req.system_prompt or DEFAULT_SYSTEM_PROMPT
+    effective_system_prompt = build_effective_system_prompt(
+        req.system_prompt or DEFAULT_SYSTEM_PROMPT,
+        normalized_cwd,
+    )
     provider_env = get_provider_env(req.provider)
     tool_search_env = get_tool_search_env(req.tool_search_mode)
     session_env = {**provider_env, **tool_search_env}
