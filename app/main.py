@@ -24,7 +24,12 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app import fs_routes
 from app import runtime_sdk as runtime
-from app.config import get_allowed_hosts, get_allowed_origins
+from app.config import (
+    get_allowed_hosts,
+    get_allowed_origins,
+    get_ollama_base_url,
+    get_vllm_base_url,
+)
 from app.archive_normalizer import normalize_session, normalize_session_list
 from app.event_store import init_db, query_events, search_events
 from app.schemas import (
@@ -199,7 +204,7 @@ CLOUD_MODELS = [
 
 
 async def _fetch_ollama_models() -> list[str]:
-    base = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+    base = get_ollama_base_url()
     try:
 
         def _load():
@@ -213,7 +218,7 @@ async def _fetch_ollama_models() -> list[str]:
 
 
 async def _fetch_vllm_models() -> list[str]:
-    base = os.getenv("VLLM_BASE_URL", "http://127.0.0.1:30000").rstrip("/")
+    base = get_vllm_base_url()
     try:
 
         def _load():
@@ -228,8 +233,8 @@ async def _fetch_vllm_models() -> list[str]:
 
 @app.get("/api/providers")
 async def get_providers() -> dict:
-    ollama_base = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
-    vllm_base = os.getenv("VLLM_BASE_URL", "http://127.0.0.1:30000").rstrip("/")
+    ollama_base = get_ollama_base_url()
+    vllm_base = get_vllm_base_url()
     ollama_models, vllm_models = await asyncio.gather(
         _fetch_ollama_models(),
         _fetch_vllm_models(),

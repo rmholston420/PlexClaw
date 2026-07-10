@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.config import get_provider_env, get_tool_search_env
 from app.event_store import append_event
 from app.hooks import HookContext, run_hooks
 from app.mock_sdk import MockSDKClient, MockStreamEvent
@@ -86,27 +87,14 @@ like an experienced pair programmer already inside the project.
 """.strip()
 
 
+
+
 def _provider_env(provider: str) -> dict[str, str]:
-    env: dict[str, str] = {}
-    if provider == "ollama":
-        env["ANTHROPIC_BASE_URL"] = os.getenv(
-            "OLLAMA_BASE_URL",
-            "http://127.0.0.1:11434",
-        ).rstrip("/")
-    elif provider == "vllm":
-        env["ANTHROPIC_BASE_URL"] = os.getenv(
-            "VLLM_BASE_URL",
-            "http://127.0.0.1:30000",
-        ).rstrip("/")
-    return env
+    return get_provider_env(provider)
 
 
 def _tool_search_env(mode: str | None) -> dict[str, str]:
-    env: dict[str, str] = {}
-    if not mode:
-        return env
-    env["ENABLE_TOOL_SEARCH"] = mode
-    return env
+    return get_tool_search_env(mode)
 
 
 # ---------------------------------------------------------------------------
@@ -363,8 +351,8 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
     _sessions[session_id] = session
 
     effective_system_prompt = req.system_prompt or DEFAULT_SYSTEM_PROMPT
-    provider_env = _provider_env(req.provider)
-    tool_search_env = _tool_search_env(req.tool_search_mode)
+    provider_env = get_provider_env(req.provider)
+    tool_search_env = get_tool_search_env(req.tool_search_mode)
     session_env = {**provider_env, **tool_search_env}
     provider_base_url = provider_env.get("ANTHROPIC_BASE_URL")
 
