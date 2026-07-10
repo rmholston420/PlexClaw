@@ -203,7 +203,10 @@ class LiveSession:
     seq: int = 0
     _client: Any = field(default=None, repr=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, repr=False)
-    pending_approvals: dict[str, PendingApproval] = field(default_factory=dict, repr=False)
+    pending_approvals: dict[str, PendingApproval] = field(
+        default_factory=dict,
+        repr=False,
+    )
     context_files: dict[str, str] = field(default_factory=dict, repr=False)
     _context_injected: bool = field(default=False, repr=False)
     mock_mode: bool = field(default=False, repr=False)

@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from app.schemas import SessionCreateRequest
 from app import runtime_sdk as runtime
+from app.schemas import SessionCreateRequest
 
 
 @pytest.mark.asyncio
