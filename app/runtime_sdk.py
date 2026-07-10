@@ -24,7 +24,7 @@ import os
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from app.config import get_provider_env, get_tool_search_env
 from app.event_store import append_event
@@ -407,6 +407,73 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
     return session
 
 
+
+def _iter_message_blocks(message: Any) -> Iterable[Any]:
+    content = getattr(message, "content", None)
+    if isinstance(content, list):
+        return content
+    return []
+
+
+def _block_type(block: Any) -> str | None:
+    if isinstance(block, dict):
+        return block.get("type")
+    return getattr(block, "type", None)
+
+
+def _block_attr(block: Any, key: str, default: Any = None) -> Any:
+    if isinstance(block, dict):
+        return block.get(key, default)
+    return getattr(block, key, default)
+
+
+def _coerce_tool_result_output(content: Any) -> Any:
+    if isinstance(content, list) and len(content) == 1:
+        item = content[0]
+        if isinstance(item, dict) and item.get("type") == "text" and "text" in item:
+            return item.get("text")
+    return content
+
+
+async def _emit_tool_completed_from_message(
+    session: LiveSession,
+    message: Any,
+    pending_tools: dict[str, dict[str, Any]],
+) -> None:
+    parent_tool_use_id = getattr(message, "parent_tool_use_id", None)
+
+    for block in _iter_message_blocks(message):
+        btype = _block_type(block)
+
+        is_tool_result = btype == "tool_result" or (
+            type(block).__name__ == "ToolResultBlock"
+        )
+        if not is_tool_result:
+            continue
+
+        tool_id = _block_attr(block, "tool_use_id")
+        if not tool_id:
+            tool_id = parent_tool_use_id
+        if not tool_id:
+            continue
+
+        meta = pending_tools.pop(tool_id, {})
+        tool_name = meta.get("tool_name", "tool")
+        output = _coerce_tool_result_output(_block_attr(block, "content"))
+        is_error = bool(_block_attr(block, "is_error", False))
+
+        env = normalize_tool_completed(
+            session.id,
+            session.next_seq(),
+            str(tool_id),
+            str(tool_name),
+            output,
+            is_error=is_error,
+        )
+        await _emit(session, env)
+
+
+
 def _is_mock_event(message: Any) -> bool:
     """Return True if message is a MockStreamEvent (real StreamEvent check handles real SDK)."""
     return isinstance(message, MockStreamEvent)
@@ -434,6 +501,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
     _current_tool_id: str | None = None
     _current_tool_name: str | None = None
     _current_tool_json: str = ""
+    _pending_tools: dict[str, dict[str, Any]] = {}
 
     try:
         # ClaudeSDKClient (and MockSDKClient) must be connected before querying
@@ -458,6 +526,10 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                         _current_tool_id = cb.get("id", str(uuid.uuid4()))
                         _current_tool_name = cb.get("name", "unknown")
                         _current_tool_json = ""
+                        _pending_tools[_current_tool_id] = {
+                            "tool_name": _current_tool_name,
+                            "tool_input": {},
+                        }
                         env = normalize_tool_started(
                             session.id,
                             session.next_seq(),
@@ -495,6 +567,9 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                         except Exception:
                             tool_input = {"_raw": _current_tool_json}
 
+                        if _current_tool_id in _pending_tools:
+                            _pending_tools[_current_tool_id]["tool_input"] = tool_input
+
                         env = normalize_tool_delta(
                             session.id,
                             session.next_seq(),
@@ -502,6 +577,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                             "",
                         )
                         env.payload["tool_input"] = tool_input
+                        env.payload["tool_name"] = _current_tool_name
                         await _emit(session, env)
 
                         if session.permission_mode == "manual":
@@ -520,6 +596,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                                     {"status": "rejected"},
                                     is_error=True,
                                 )
+                                _pending_tools.pop(_current_tool_id, None)
                                 await _emit(session, reject_env)
                                 if session._client:
                                     try:
@@ -549,7 +626,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
             # AssistantMessage: complete assembled message (no-op — already streamed)
             # ------------------------------------------------------------------
             if AssistantMessage is not None and isinstance(message, AssistantMessage):
-                pass  # content already emitted token-by-token via StreamEvents
+                await _emit_tool_completed_from_message(session, message, _pending_tools)
                 continue
 
             # ------------------------------------------------------------------
