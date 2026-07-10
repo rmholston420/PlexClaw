@@ -39,6 +39,7 @@ from app.normalizer import (
     normalize_text_delta,
     normalize_tool_completed,
     normalize_tool_delta,
+    normalize_tool_permission_decided,
     normalize_tool_started,
 )
 from app.schemas import PROTOCOL_VERSION, SessionCreateRequest, WSEnvelope
@@ -325,6 +326,15 @@ async def approve_tool_call(session_id: str, tool_id: str) -> None:
     if session._pending_tool_id != tool_id:
         raise KeyError(f"Tool {tool_id} is not pending for session {session_id}")
     session._approval_decision = "approve"
+    env = normalize_tool_permission_decided(
+        session.id,
+        session.next_seq(),
+        tool_id,
+        session._pending_tool_name or "unknown",
+        session._pending_tool_input,
+        "approve",
+    )
+    await _emit(session, env)
     session._approval_event.set()
 
 
@@ -335,6 +345,15 @@ async def reject_tool_call(session_id: str, tool_id: str) -> None:
     if session._pending_tool_id != tool_id:
         raise KeyError(f"Tool {tool_id} is not pending for session {session_id}")
     session._approval_decision = "reject"
+    env = normalize_tool_permission_decided(
+        session.id,
+        session.next_seq(),
+        tool_id,
+        session._pending_tool_name or "unknown",
+        session._pending_tool_input,
+        "reject",
+    )
+    await _emit(session, env)
     session._approval_event.set()
 
 

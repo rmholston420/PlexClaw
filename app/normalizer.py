@@ -88,6 +88,27 @@ def normalize_tool_completed(
     )
 
 
+def normalize_tool_permission_decided(
+    session_id: str,
+    seq: int,
+    tool_id: str,
+    tool_name: str,
+    tool_input: Any,
+    decision: str,
+) -> WSEnvelope:
+    return _envelope(
+        "tool.permission_decided",
+        session_id,
+        seq,
+        {
+            "tool_id": tool_id,
+            "tool_name": tool_name,
+            "tool_input": tool_input,
+            "decision": decision,
+        },
+    )
+
+
 def normalize_assistant_completed(
     session_id: str,
     seq: int,
