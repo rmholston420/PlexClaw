@@ -32,12 +32,13 @@ The app fully starts and is usable without `claude-agent-sdk`. Sessions are crea
 - Provider selection in the frontend now routes sessions through Anthropic-compatible backends (cloud, Ollama, vLLM) via `ANTHROPIC_BASE_URL`, matching Claude Code's environment-variable model.
 - The PlexClaw UI shows the effective provider base URL for each session in the header, so users can see exactly where requests are being sent.
 - Switching providers with an active live session now clears that session context, updates tab state, and emits a system message prompting the user to start a new session on the new route.
-- Frontend guardrail tests ensure that provider runtime metadata is rendered, `provider_base_url` is captured from session events and API responses, and live-session reset semantics are preserved.
-- The Python test suite has grown from 53 to 64 tests, covering provider routing, frontend semantics, and package structure, while keeping all original slice tests passing.
+- Frontend guardrail tests ensure that provider runtime metadata is rendered, `provider_base_url` is captured from session events and API responses, live-session reset semantics are preserved, and tool-search runtime state is shown in the UI.
+- Session creation now supports per-session tool-search env control via `tool_search_mode`, returning `provider_base_url`, `tool_search_mode`, and `tool_search_active` in both the create-session REST response and websocket lifecycle metadata.
+- The Python test suite has grown from 53 to 69 tests, covering provider routing, frontend semantics, tool-search env support, REST/WebSocket response parity, and package structure, while keeping all original slice tests passing.
 
 ## Quality status
 
-- **64 tests passing**
+- **69 tests passing**
 - Mock SDK fallback is implemented and covered by unit tests
 - WebSocket happy-path session flow is covered
 - WebSocket protocol mismatch rejection is covered
