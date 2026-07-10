@@ -9,6 +9,7 @@ const Bridge = (() => {
     provider: 'cloud',
     providers: {},
     providerHealth: {},
+    permissionMode: 'manual',
     cwd: '~',
     cwdSelected: null,
     cwdBrowsing: null,
@@ -382,6 +383,13 @@ const Bridge = (() => {
     return block;
   }
 
+
+  function sendToolDecision(decision, toolId) {
+    if (!state.socket || state.socket.readyState !== WebSocket.OPEN) return;
+    state.socket.send(JSON.stringify({ type: decision, tool_id: toolId }));
+  }
+
+
   function escapeHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
@@ -441,9 +449,52 @@ const Bridge = (() => {
         scrollBottom();
         break;
       }
-      case 'tool.permission_required':
-        appendSystemMessage('⚠ Tool permission required — check terminal', 'warn');
-        break;
+      case 'tool.permission_required': {
+      const block = getOrCreateTool(evt.payload?.tool_id, evt.payload?.tool_name || 'tool');
+      block.classList.remove('running', 'done', 'error');
+      block.classList.add('pending', 'expanded');
+      const badge = block.querySelector('.tool-status-badge');
+      if (badge) badge.textContent = 'pending';
+
+      let approvalSection = block.querySelector('.tool-approval-section');
+      if (!approvalSection) {
+        approvalSection = document.createElement('div');
+        approvalSection.className = 'tool-body-section tool-approval-section';
+        approvalSection.innerHTML = `
+          <div class="tool-label">Approval required</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="card-btn primary" data-approve-tool="${evt.payload?.tool_id}">Approve</button>
+            <button class="card-btn" data-reject-tool="${evt.payload?.tool_id}">Reject</button>
+          </div>
+        `;
+        block.querySelector('.tool-body').appendChild(approvalSection);
+      }
+
+      const approveBtn = approvalSection.querySelector(`[data-approve-tool="${evt.payload?.tool_id}"]`);
+      const rejectBtn = approvalSection.querySelector(`[data-reject-tool="${evt.payload?.tool_id}"]`);
+
+      if (approveBtn) {
+        approveBtn.onclick = () => {
+          sendToolDecision('approve', evt.payload?.tool_id);
+          if (badge) badge.textContent = 'running';
+          block.classList.remove('pending');
+          block.classList.add('running');
+          approvalSection.remove();
+        };
+      }
+      if (rejectBtn) {
+        rejectBtn.onclick = () => {
+          sendToolDecision('reject', evt.payload?.tool_id);
+          if (badge) badge.textContent = 'rejected';
+          block.classList.remove('pending', 'running');
+          block.classList.add('error');
+          approvalSection.remove();
+        };
+      }
+
+      scrollBottom();
+      break;
+    }
       case 'system.message':
         appendSystemMessage(evt.payload?.text || '', evt.payload?.level || 'info');
         break;
@@ -479,7 +530,7 @@ const Bridge = (() => {
       model: state.model,
       cwd: state.cwdSelected,
       provider: state.provider,
-      permission_mode: 'default',
+      permission_mode: state.permissionMode,
       system_prompt: null,
       resume_session_id: resumeSessionId,
       fork_session: forkSession,

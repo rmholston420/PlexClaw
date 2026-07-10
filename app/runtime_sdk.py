@@ -85,6 +85,11 @@ class LiveSession:
     seq: int = 0
     _client: Any = field(default=None, repr=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, repr=False)
+    _approval_event: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
+    _pending_tool_id: Optional[str] = field(default=None, repr=False)
+    _pending_tool_name: Optional[str] = field(default=None, repr=False)
+    _pending_tool_input: Any = field(default=None, repr=False)
+    _approval_decision: Optional[str] = field(default=None, repr=False)
 
     def next_seq(self) -> int:
         self.seq += 1
@@ -100,6 +105,61 @@ def get_session(session_id: str) -> Optional[LiveSession]:
 
 def list_live_sessions() -> list[LiveSession]:
     return list(_sessions.values())
+
+
+async def _await_tool_approval(
+    session: LiveSession,
+    tool_id: str,
+    tool_name: str,
+    tool_input: Any,
+) -> bool:
+    session._pending_tool_id = tool_id
+    session._pending_tool_name = tool_name
+    session._pending_tool_input = tool_input
+    session._approval_decision = None
+    session._approval_event.clear()
+
+    env = WSEnvelope(
+        type="tool.permission_required",
+        session_id=session.id,
+        seq=session.next_seq(),
+        payload={
+            "tool_id": tool_id,
+            "tool_name": tool_name,
+            "tool_input": tool_input,
+            "status": "pending",
+        },
+        protocol_version=PROTOCOL_VERSION,
+    )
+    await _emit(session, env)
+    await session._approval_event.wait()
+
+    decision = session._approval_decision == "approve"
+    session._pending_tool_id = None
+    session._pending_tool_name = None
+    session._pending_tool_input = None
+    session._approval_decision = None
+    return decision
+
+
+async def approve_tool_call(session_id: str, tool_id: str) -> None:
+    session = _sessions.get(session_id)
+    if not session:
+        raise KeyError(f"Session {session_id} not found")
+    if session._pending_tool_id != tool_id:
+        raise KeyError(f"Tool {tool_id} is not pending for session {session_id}")
+    session._approval_decision = "approve"
+    session._approval_event.set()
+
+
+async def reject_tool_call(session_id: str, tool_id: str) -> None:
+    session = _sessions.get(session_id)
+    if not session:
+        raise KeyError(f"Session {session_id} not found")
+    if session._pending_tool_id != tool_id:
+        raise KeyError(f"Tool {tool_id} is not pending for session {session_id}")
+    session._approval_decision = "reject"
+    session._approval_event.set()
 
 
 async def _emit(session: LiveSession, envelope: WSEnvelope) -> None:
@@ -252,6 +312,30 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                             tool_input,
                         )
                         await _emit(session, env)
+
+                        if session.permission_mode == "manual":
+                            approved = await _await_tool_approval(
+                                session,
+                                _current_tool_id,
+                                _current_tool_name,
+                                tool_input,
+                            )
+                            if not approved:
+                                reject_env = normalize_tool_completed(
+                                    session.id,
+                                    session.next_seq(),
+                                    _current_tool_id,
+                                    _current_tool_name,
+                                    {"status": "rejected"},
+                                    is_error=True,
+                                )
+                                await _emit(session, reject_env)
+                                if _SDK_AVAILABLE and session._client:
+                                    try:
+                                        await session._client.interrupt()
+                                    except Exception as exc:
+                                        log.warning("Interrupt after reject failed: %s", exc)
+
                         _current_tool_id = None
                         _current_tool_name = None
                         _current_tool_json = ""

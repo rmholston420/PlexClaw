@@ -250,6 +250,19 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
         while True:
             text = await websocket.receive_text()
             data = json.loads(text)
+
+            msg_type = data.get("type")
+            if msg_type == "approve":
+                tool_id = data.get("tool_id")
+                if tool_id:
+                    await runtime.approve_tool_call(session_id, tool_id)
+                continue
+            if msg_type == "reject":
+                tool_id = data.get("tool_id")
+                if tool_id:
+                    await runtime.reject_tool_call(session_id, tool_id)
+                continue
+
             prompt = data.get("prompt", "")
             if prompt:
                 asyncio.create_task(runtime.submit_prompt(session_id, prompt))
