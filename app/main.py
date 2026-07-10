@@ -9,7 +9,7 @@ import urllib.request
 from typing import Optional
 
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -84,14 +84,36 @@ async def interrupt_session(session_id: str) -> dict:
     return {"ok": True}
 
 
-@app.post("/api/sessions/{session_id}/model/{model}")
-async def change_model(session_id: str, model: str) -> dict:
-    session = runtime.get_session(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    session.model = model
-    return {"ok": True, "model": model}
+@app.post("/api/sessions/{session_id}/context")
+async def upload_context_file(session_id: str, file: UploadFile = File(...)) -> dict:
+    try:
+        raw = await file.read()
+        text = raw.decode("utf-8")
+        item = runtime.add_context_file(session_id, file.filename or "attachment.txt", text)
+        return {"ok": True, "file": item, "files": runtime.list_context_files(session_id)}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Only UTF-8 text files are supported") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+
+@app.get("/api/sessions/{session_id}/context")
+async def list_context(session_id: str) -> dict:
+    try:
+        return {"files": runtime.list_context_files(session_id)}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.delete("/api/sessions/{session_id}/context/{filename}")
+async def delete_context_file(session_id: str, filename: str) -> dict:
+    try:
+        runtime.remove_context_file(session_id, filename)
+        return {"ok": True, "files": runtime.list_context_files(session_id)}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------

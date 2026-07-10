@@ -90,6 +90,8 @@ class LiveSession:
     _pending_tool_name: Optional[str] = field(default=None, repr=False)
     _pending_tool_input: Any = field(default=None, repr=False)
     _approval_decision: Optional[str] = field(default=None, repr=False)
+    context_files: dict[str, str] = field(default_factory=dict, repr=False)
+    _context_injected: bool = field(default=False, repr=False)
 
     def next_seq(self) -> int:
         self.seq += 1
@@ -160,6 +162,55 @@ async def reject_tool_call(session_id: str, tool_id: str) -> None:
         raise KeyError(f"Tool {tool_id} is not pending for session {session_id}")
     session._approval_decision = "reject"
     session._approval_event.set()
+
+
+def list_context_files(session_id: str) -> list[dict[str, str | int]]:
+    session = _sessions.get(session_id)
+    if not session:
+        raise KeyError(f"Session {session_id} not found")
+    return [
+        {"filename": name, "size": len(content.encode("utf-8"))}
+        for name, content in session.context_files.items()
+    ]
+
+
+def add_context_file(session_id: str, filename: str, content: str) -> dict[str, str | int]:
+    session = _sessions.get(session_id)
+    if not session:
+        raise KeyError(f"Session {session_id} not found")
+    if len(session.context_files) >= 10 and filename not in session.context_files:
+        raise ValueError("maximum 10 context files allowed")
+    size = len(content.encode("utf-8"))
+    if size > 200 * 1024:
+        raise ValueError("file exceeds 200KB limit")
+    session.context_files[filename] = content
+    session._context_injected = False
+    return {"filename": filename, "size": size}
+
+
+def remove_context_file(session_id: str, filename: str) -> None:
+    session = _sessions.get(session_id)
+    if not session:
+        raise KeyError(f"Session {session_id} not found")
+    if filename not in session.context_files:
+        raise KeyError(f"context file not found: {filename}")
+    del session.context_files[filename]
+    session._context_injected = False
+
+
+def _inject_context_into_prompt(session: LiveSession, prompt: str) -> str:
+    if not session.context_files:
+        return prompt
+    if session._context_injected:
+        return prompt
+
+    parts = ["Attached file context:"]
+    for filename, content in session.context_files.items():
+        parts.append(f"\n--- FILE: {filename} ---\n{content}")
+    parts.append(f"\n--- USER PROMPT ---\n{prompt}")
+
+    session._context_injected = True
+    return "\n".join(parts)
 
 
 async def _emit(session: LiveSession, envelope: WSEnvelope) -> None:
@@ -394,10 +445,11 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
         await _emit(session, sys_env)
 
         try:
+            prompt_with_context = _inject_context_into_prompt(session, prompt)
             if _SDK_AVAILABLE and session._client is not None:
-                await _stream_sdk(session, prompt)
+                await _stream_sdk(session, prompt_with_context)
             else:
-                await _stream_mock(session, prompt)
+                await _stream_mock(session, prompt_with_context)
         finally:
             session.status = "ready"
 

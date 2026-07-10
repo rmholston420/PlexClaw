@@ -15,6 +15,7 @@ const Bridge = (() => {
     cwdBrowsing: null,
     replayMode: false,
     archive: [],
+    attachments: [],
     lineageOpen: new Map(),
     toolEls: new Map(),
     firstToolExpanded: false,
@@ -23,6 +24,9 @@ const Bridge = (() => {
   const el = {
     transcript: document.getElementById('transcript'),
     welcome: document.getElementById('welcome'),
+    attachmentRow: document.getElementById('attachment-row'),
+    attachFileBtn: document.getElementById('attach-file-btn'),
+    attachFileInput: document.getElementById('attach-file-input'),
     promptInput: document.getElementById('prompt-input'),
     sendBtn: document.getElementById('send-btn'),
     interruptBtn: document.getElementById('interrupt-btn'),
@@ -524,6 +528,66 @@ const Bridge = (() => {
     return res.json();
   }
 
+
+  function renderAttachments() {
+    if (!el.attachmentRow) return;
+    el.attachmentRow.innerHTML = '';
+    state.attachments.forEach((item) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.innerHTML = `
+        <span>${escapeHtml(item.filename)} (${Math.round((item.size || 0) / 1024)}KB)</span>
+        <button type="button" data-remove-attachment="${escapeHtml(item.filename)}" style="margin-left:8px;border:none;background:none;cursor:pointer;color:inherit">×</button>
+      `;
+      const btn = chip.querySelector('button');
+      btn?.addEventListener('click', async () => {
+        if (!state.sessionId) return;
+        await api(`/api/sessions/${state.sessionId}/context/${encodeURIComponent(item.filename)}`, { method: 'DELETE' });
+        await loadAttachments();
+      });
+      el.attachmentRow.appendChild(chip);
+    });
+  }
+
+  async function loadAttachments() {
+    if (!state.sessionId) {
+      state.attachments = [];
+      renderAttachments();
+      return;
+    }
+    try {
+      const data = await api(`/api/sessions/${state.sessionId}/context`);
+      state.attachments = data.files || [];
+      renderAttachments();
+    } catch (err) {
+      console.warn('Attachment load error', err);
+      state.attachments = [];
+      renderAttachments();
+    }
+  }
+
+  async function uploadAttachment(file) {
+    if (!state.sessionId) {
+      await createSession();
+    }
+    const form = new FormData();
+    form.append('file', file);
+
+    const res = await fetch(`${state.bridgeUrl}/api/sessions/${state.sessionId}/context`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      let detail = `Upload failed (${res.status})`;
+      try {
+        const data = await res.json();
+        if (data?.detail) detail = data.detail;
+      } catch (_) {}
+      throw new Error(detail);
+    }
+    await loadAttachments();
+  }
+
   async function createSession({ resumeSessionId = null, forkSession = false } = {}) {
     state.model = el.modelSelect?.value || state.model;
     const body = {
@@ -539,6 +603,7 @@ const Bridge = (() => {
     state.sessionId = data.session_id;
     setSessionLabel(state.sessionId);
     connectSocket();
+    await loadAttachments();
     return data;
   }
 

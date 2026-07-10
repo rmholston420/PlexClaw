@@ -1006,7 +1006,11 @@
     <!-- COMPOSER -->
     <footer class="composer">
       <div class="composer-toolbar">
-        <button class="action-btn danger" id="interrupt-btn" aria-label="Interrupt running task">
+        <button class="icon-btn" id="attach-file-btn" aria-label="Attach file" title="Attach file">
+  <i data-lucide="paperclip" style="width:16px;height:16px"></i>
+</button>
+<input type="file" id="attach-file-input" hidden />
+<button class="action-btn danger" id="interrupt-btn" aria-label="Interrupt running task">
           <i data-lucide="square" style="width:14px;height:14px"></i>
           Interrupt
         </button>
@@ -1017,6 +1021,7 @@
         <span class="label">Enter to send · Shift+Enter for newline</span>
       </div>
       <div class="composer-input-row">
+      <div id="attachment-row" class="chips" style="margin-bottom:8px;"></div>
         <textarea
           id="prompt-input"
           class="composer-textarea"
