@@ -323,6 +323,9 @@ const Bridge = (() => {
     el.transcript.innerHTML = '';
     state.toolEls.clear();
     state.firstToolExpanded = false;
+    currentAssistantEl = null;
+    currentAssistantText = '';
+    state.pendingSearchJump = '';
     syncStateToActiveTab();
   }
 
