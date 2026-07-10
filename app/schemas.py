@@ -49,6 +49,7 @@ class SessionCreateResponse(BaseModel):
     status: str = "created"
     protocol_version: str = PROTOCOL_VERSION
     mock_mode: bool = False
+    model: str
 
 
 class PromptRequest(BaseModel):
