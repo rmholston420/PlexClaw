@@ -16,6 +16,10 @@ const Bridge = (() => {
     replayMode: false,
     archive: [],
     attachments: [],
+    rawLogLines: [],
+    terminalOpen: false,
+    terminalErrorsOnly: false,
+    terminalHeight: 220,
     lineageOpen: new Map(),
     toolEls: new Map(),
     firstToolExpanded: false,
@@ -54,11 +58,48 @@ const Bridge = (() => {
     providerSwitcher: document.getElementById('provider-switcher'),
     modelSelect: document.getElementById('model-select'),
     refreshArchive: document.getElementById('refresh-archive'),
+    terminalToggle: document.getElementById('terminal-toggle'),
+    terminalDrawer: document.getElementById('terminal-drawer'),
+    terminalResizeHandle: document.getElementById('terminal-resize-handle'),
+    terminalErrorsOnly: document.getElementById('terminal-errors-only'),
+    terminalClear: document.getElementById('terminal-clear'),
+    terminalCopy: document.getElementById('terminal-copy'),
+    terminalPre: document.getElementById('terminal-pre'),
+    terminalCount: document.getElementById('terminal-count'),
   };
 
   // ---- Helpers ----
   function hideWelcome() {
     if (el.welcome) el.welcome.classList.add('hidden');
+  }
+
+  function shouldIncludeRawLog(evt) {
+    if (!state.terminalErrorsOnly) return true;
+    return ['session.failed', 'system.message'].includes(evt.type) ||
+      evt.type.includes('error') ||
+      String(evt.payload?.level || '').toLowerCase() === 'error' ||
+      String(evt.payload?.level || '').toLowerCase() === 'warn';
+  }
+
+  function renderRawLog() {
+    if (!el.terminalPre) return;
+    const lines = state.rawLogLines.filter(item => shouldIncludeRawLog(item.evt));
+    el.terminalPre.textContent = lines.map(item => item.line).join('\n');
+    if (el.terminalCount) el.terminalCount.textContent = `${lines.length} lines`;
+    el.terminalPre.scrollTop = el.terminalPre.scrollHeight;
+  }
+
+  function appendRawLog(evt) {
+    const line = `[${new Date().toISOString()}] ${JSON.stringify(evt)}`;
+    state.rawLogLines.push({ evt, line });
+    if (state.rawLogLines.length > 500) state.rawLogLines = state.rawLogLines.slice(-500);
+    renderRawLog();
+  }
+
+  function setTerminalOpen(open) {
+    state.terminalOpen = !!open;
+    el.terminalDrawer?.classList.toggle('open', state.terminalOpen);
+    el.terminalToggle?.classList.toggle('active', state.terminalOpen);
   }
 
   function scrollBottom() {
@@ -399,6 +440,7 @@ const Bridge = (() => {
   }
 
   function renderEvent(evt) {
+    appendRawLog(evt);
     switch (evt.type) {
       case 'session.created':
       case 'session.ready':
