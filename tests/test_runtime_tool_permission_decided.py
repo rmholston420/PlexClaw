@@ -55,7 +55,7 @@ async def test_approve_tool_call_emits_permission_decided(monkeypatch):
     await runtime.approve_tool_call(session.id, "tool-1")
 
     assert session.pending_approvals["tool-1"].decision == "approve"
-    assert session._approval_event.is_set()
+    assert session.pending_approvals["tool-1"].event.is_set() is True
     evt = emitted[-1]
     assert evt.type == "tool.permission_decided"
     assert evt.payload["tool_id"] == "tool-1"
@@ -90,7 +90,7 @@ async def test_reject_tool_call_emits_permission_decided(monkeypatch):
     await runtime.reject_tool_call(session.id, "tool-1")
 
     assert session.pending_approvals["tool-1"].decision == "reject"
-    assert session._approval_event.is_set()
+    assert session.pending_approvals["tool-1"].event.is_set() is True
     evt = emitted[-1]
     assert evt.type == "tool.permission_decided"
     assert evt.payload["tool_id"] == "tool-1"
@@ -136,8 +136,7 @@ def test_websocket_approval_messages_emit_permission_decided_events():
         assert msg["payload"]["decision"] == "approve"
 
         assert session.pending_approvals["tool-a"].event.is_set() is True
-        session._approval_decision = None
-        session.pending_approvals["tool-b"] = runtime.PendingApproval(
+                session.pending_approvals["tool-b"] = runtime.PendingApproval(
             tool_id="tool-b",
             tool_name="read",
             tool_input={"path": "README.md"},
