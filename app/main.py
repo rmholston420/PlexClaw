@@ -153,6 +153,7 @@ async def list_sessions() -> list:
     Useful for the frontend to recover tab state after a page refresh
     and to display session badges in the top bar.
     """
+    now = runtime.time.monotonic()
     return [
         {
             "session_id": s.id,
@@ -164,6 +165,8 @@ async def list_sessions() -> list:
             "cwd": s.cwd,
             "tag": s.tag,
             "title": s.title,
+            "connections": ws_manager.connection_count(s.id),
+            "idle_seconds": round(max(0.0, now - s.last_activity_at), 3),
         }
         for s in runtime.list_live_sessions()
     ]
