@@ -992,7 +992,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
 async def list_archive_sessions() -> list[dict]:
     if not _SDK_AVAILABLE:
         return []
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         raw: list = await loop.run_in_executor(None, _sdk_list_sessions)
         sessions = [_sdksession_to_dict(s) for s in (raw or [])]
@@ -1006,7 +1006,7 @@ async def list_archive_sessions() -> list[dict]:
 async def get_archive_session(session_id: str) -> dict:
     if not _SDK_AVAILABLE:
         return {"id": session_id}
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         info = await loop.run_in_executor(None, _sdk_get_session_info, session_id)
         return _sdksession_to_dict(info) or {"id": session_id}
@@ -1018,7 +1018,7 @@ async def get_archive_session(session_id: str) -> dict:
 async def get_archive_messages(session_id: str) -> list:
     if not _SDK_AVAILABLE:
         return []
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         raw: list = await loop.run_in_executor(
             None, _sdk_get_session_messages, session_id
@@ -1037,7 +1037,7 @@ async def get_archive_replay_events(session_id: str) -> list[dict]:
 async def rename_archive_session(session_id: str, title: str) -> None:
     if not _SDK_AVAILABLE:
         return
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         await loop.run_in_executor(None, _sdk_rename_session, session_id, title)
     except Exception as exc:
@@ -1047,7 +1047,7 @@ async def rename_archive_session(session_id: str, title: str) -> None:
 async def tag_archive_session(session_id: str, tag: str | None) -> None:
     if not _SDK_AVAILABLE:
         return
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         await loop.run_in_executor(None, _sdk_tag_session, session_id, tag)
     except Exception as exc:
