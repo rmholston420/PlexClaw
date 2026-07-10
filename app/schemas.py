@@ -50,6 +50,7 @@ class SessionCreateResponse(BaseModel):
     protocol_version: str = PROTOCOL_VERSION
     mock_mode: bool = False
     model: str
+    provider: str
 
 
 class PromptRequest(BaseModel):

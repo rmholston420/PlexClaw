@@ -100,3 +100,4 @@ def test_create_session_accepts_trimmed_model(client):
     assert "mock_mode" in body
     assert isinstance(body["mock_mode"], bool)
     assert body["model"] == "claude-sonnet-4-5"
+    assert body["provider"] == "cloud"
