@@ -1268,7 +1268,44 @@ function renderProviderRuntimeMeta() {
       scrollBottom();
       break;
     }
-      case 'system.message':
+      case 'tool.permission_decided': {
+      const toolId = evt.payload?.tool_id;
+      const decision = evt.payload?.decision || 'unknown';
+      const toolName = evt.payload?.tool_name || 'tool';
+      const block = getOrCreateTool(toolId, toolName);
+
+      const approvalSection = block.querySelector('.tool-approval-section');
+      if (approvalSection) approvalSection.remove();
+
+      block.classList.remove('pending');
+      const badge = block.querySelector('.tool-status-badge');
+
+      if (decision === 'approve') {
+        if (badge) badge.textContent = 'approved';
+        block.classList.remove('error');
+        block.classList.add('running');
+      } else if (decision === 'reject') {
+        if (badge) badge.textContent = 'rejected';
+        block.classList.remove('running');
+        block.classList.add('error');
+      } else {
+        if (badge) badge.textContent = decision;
+      }
+
+      let decisionSection = block.querySelector('.tool-decision-section');
+      if (!decisionSection) {
+        decisionSection = document.createElement('div');
+        decisionSection.className = 'tool-body-section tool-decision-section';
+        decisionSection.innerHTML = '<div class="tool-label">Decision</div><pre></pre>';
+        block.querySelector('.tool-body').appendChild(decisionSection);
+      }
+      decisionSection.querySelector('pre').textContent = decision;
+
+      tagSearchableNode(block, `${toolName} ${decision}`);
+      scrollBottom();
+      break;
+    }
+    case 'system.message':
         appendSystemMessage(evt.payload?.text || '', evt.payload?.level || 'info');
         break;
       case 'session.interrupted':
