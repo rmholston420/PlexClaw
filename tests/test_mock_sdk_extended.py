@@ -135,19 +135,39 @@ async def test_close_cancels_and_awaits_running_producer():
 
 
 @pytest.mark.asyncio
-async def test_produce_tokens_full_text_fallback_hits_chunks_assignment(monkeypatch):
+@pytest.mark.asyncio
+async def test_produce_tokens_full_text_fallback_hits_chunks_assignment(
+    monkeypatch,
+):
     client = make_client()
-    client._prompt = ""
+    client._prompt = "hello"
 
-    monkeypatch.setattr(mock_sdk, "_MOCK_INTRO", "x")
-    monkeypatch.setattr(mock_sdk, "_CHUNK_SIZE", 10_000)
+    monkeypatch.setattr(mock_sdk, "_MOCK_INTRO", "")
+
+    class EmptyRange:
+        def __call__(self, start, stop=None, step=None):
+            return []
+
+    monkeypatch.setattr(mock_sdk, "range", EmptyRange(), raising=False)
     monkeypatch.setattr(mock_sdk, "_CHUNK_DELAY", 0)
+
+    items = []
+
+    async def capture_put(item):
+        items.append(item)
+
+    monkeypatch.setattr(client._response_queue, "put", capture_put)
 
     await client._produce_tokens()
 
-    items = []
-    while not client._response_queue.empty():
-        items.append(client._response_queue.get_nowait())
+    def event_data(item):
+        if isinstance(item, dict):
+            return item
+        for attr in ("data", "raw", "_data", "event"):
+            value = getattr(item, attr, None)
+            if isinstance(value, dict):
+                return value
+        raise AssertionError(f"Could not extract event data from {item!r}")
 
     dumped = [event_data(item) for item in items if item is not None]
     types = [item["type"] for item in dumped]
@@ -156,7 +176,6 @@ async def test_produce_tokens_full_text_fallback_hits_chunks_assignment(monkeypa
     assert "content_block_delta" in types
     assert "content_block_stop" in types
     assert "message_stop" in types
-
 
 @pytest.mark.asyncio
 async def test_produce_tokens_interrupt_breaks_before_sleep(monkeypatch):

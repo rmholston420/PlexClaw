@@ -115,3 +115,19 @@ def test_get_events_passes_filters(monkeypatch):
     assert resp.status_code == 200
     assert resp.json() == [{"seq": 2}]
     assert captured["args"] == ("s1", "tool.completed", 9)
+
+
+
+def test_export_session_invalid_format_raises_http_400():
+    import asyncio
+
+    async def run():
+        try:
+            await main.export_session("s1", format="xml")
+        except main.HTTPException as exc:
+            assert exc.status_code == 400
+            assert exc.detail == "format must be 'json' or 'md'"
+        else:
+            raise AssertionError("Expected HTTPException for invalid format")
+
+    asyncio.run(run())
