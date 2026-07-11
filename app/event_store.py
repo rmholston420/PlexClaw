@@ -255,9 +255,7 @@ def _search_fts5(c: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
 
 def _search_linear(c: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
     needle = query.lower()
-    rows = c.execute(
-        "SELECT * FROM events ORDER BY created_at DESC, id DESC"
-    ).fetchall()
+    rows = c.execute("SELECT * FROM events ORDER BY created_at DESC, id DESC")
 
     results: list[dict[str, Any]] = []
     seen: set[tuple[str, int]] = set()
@@ -292,5 +290,7 @@ def _search_linear(c: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
                 "created_at": r["created_at"],
             }
         )
+        if len(results) >= 200:
+            break
 
     return results
