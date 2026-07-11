@@ -692,7 +692,7 @@ function renderProviderRuntimeMeta() {
       });
       el.cwdBrowser.appendChild(row);
     });
-    lucide.createIcons({ nodes: el.cwdBrowser.querySelectorAll('[data-lucide]') });
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons({ nodes: el.cwdBrowser.querySelectorAll('[data-lucide]') });
   }
 
   async function loadGitRoots() {
@@ -1040,7 +1040,7 @@ function renderProviderRuntimeMeta() {
     });
 
     el.transcript.appendChild(block);
-    lucide.createIcons({ nodes: [block] });
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons({ nodes: [block] });
     state.toolEls.set(toolId, block);
     scrollBottom();
     return block;
@@ -1687,7 +1687,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
           <i data-lucide="folder-open" style="width:32px;height:32px"></i>
           <p>${query ? 'No sessions match your search.' : 'No archived sessions yet.'}</p>
         </div>`;
-      lucide.createIcons({ nodes: [el.archiveList] });
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons({ nodes: [el.archiveList] });
       return;
     }
 
@@ -1778,7 +1778,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
       el.archiveList.appendChild(group);
     }
 
-    lucide.createIcons({ nodes: [el.archiveList] });
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons({ nodes: [el.archiveList] });
   }
 
   async function loadArchive() {
