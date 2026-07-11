@@ -169,3 +169,42 @@ def test_archive_replay_permission_events_can_coexist_with_tool_events():
     assert "## Tool: bash" in md
     assert "approve" in md.lower()
     assert "/tmp" in md
+
+def test_archive_replay_tool_events_use_monotonic_seq_numbers() -> None:
+    messages = [
+        {
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-1",
+                        "name": "bash",
+                        "input": {"cmd": "ls"},
+                    },
+                    {
+                        "type": "text",
+                        "text": "done",
+                    },
+                ],
+                "stop_reason": "end_turn",
+            }
+        }
+    ]
+
+    events = _archive_messages_to_events("s1", messages)
+
+    assert [event["type"] for event in events] == [
+        "tool.started",
+        "tool.delta",
+        "assistant.delta",
+        "assistant.completed",
+    ]
+    assert [event["seq"] for event in events] == [1, 2, 3, 4]
+    assert events[0]["payload"]["tool_id"] == "tool-1"
+    assert events[0]["payload"]["tool_name"] == "bash"
+    assert events[1]["payload"]["tool_id"] == "tool-1"
+    assert events[1]["payload"]["tool_input"] == {"cmd": "ls"}
+    assert events[2]["payload"]["text"] == "done"
+    assert events[3]["payload"]["stop_reason"] == "end_turn"
+
