@@ -692,7 +692,7 @@ function renderProviderRuntimeMeta() {
       });
       el.cwdBrowser.appendChild(row);
     });
-    if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons({ nodes: el.cwdBrowser.querySelectorAll('[data-lucide]') });
+    if (window.lucide && typeof window.lucide.createIcons === 'function') window.if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons({ nodes: el.cwdBrowser.querySelectorAll('[data-lucide]') });
   }
 
   async function loadGitRoots() {
@@ -771,6 +771,7 @@ function renderProviderRuntimeMeta() {
   }
 
 
+  
   function bindStableUiHandlers() {
     if (el.newTabBtn && !el.newTabBtn.dataset.bound) {
       el.newTabBtn.addEventListener('click', () => openNewTab());
@@ -812,6 +813,7 @@ function renderProviderRuntimeMeta() {
       el.searchBackdrop.dataset.bound = 'true';
     }
   }
+
 
   function renderSearchResults() {
     if (!el.searchResults) return;
