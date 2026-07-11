@@ -1,0 +1,35 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+
+def test_playwright_package_manifest_exists() -> None:
+    text = Path("frontend/package.json").read_text()
+    assert '"@playwright/test"' in text
+    assert '"test:e2e"' in text
+    assert '"playwright.config.js"' not in text
+
+
+def test_playwright_config_exists() -> None:
+    text = Path("frontend/playwright.config.mjs").read_text()
+    assert "defineConfig" in text
+    assert "./e2e" in text
+    assert "baseURL" in text
+    assert "reuseExistingServer" in text
+
+
+def test_playwright_smoke_spec_exists() -> None:
+    text = Path("frontend/e2e/smoke.spec.js").read_text()
+    assert "test('loads core frontend controls'" in text
+    assert "runtime-mode-label" in text
+    assert "tool-search-select" in text
+    assert "provider-switcher" in text
+    assert "new-tab-btn" in text
+    assert "terminal-errors-only" in text
+
+
+def test_playwright_tabs_spec_exists() -> None:
+    text = Path("frontend/e2e/tabs.spec.js").read_text()
+    assert "test('new tab button creates another tab'" in text
+    assert "#new-tab-btn" in text
+    assert "#tabbar" in text

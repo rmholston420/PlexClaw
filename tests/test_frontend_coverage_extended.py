@@ -1,7 +1,7 @@
-"""Extended frontend test coverage for sdk-bridge-client.js and plexclaw-ui-canonical.html.
+"""Extended frontend test coverage for sdk-bridge-client.js.
 
-Each test targets a distinct surface area not already covered by the existing
-frontend test suite, driving overall coverage toward 100%.
+These tests also cover plexclaw-ui-canonical.html and target frontend
+surface area not already covered by the existing frontend test suite.
 """
 from __future__ import annotations
 
@@ -65,11 +65,19 @@ def test_render_permission_mode_function_exists() -> None:
 
 
 def test_render_permission_mode_toggles_manual_btn() -> None:
-    assert "el.modeManualBtn.classList.toggle('active', state.permissionMode === 'manual')" in JS
+    assert (
+        "el.modeManualBtn.classList.toggle("
+        "'active', state.permissionMode === 'manual')"
+        in JS
+    )
 
 
 def test_render_permission_mode_toggles_auto_btn() -> None:
-    assert "el.modeAutoBtn.classList.toggle('active', state.permissionMode === 'auto')" in JS
+    assert (
+        "el.modeAutoBtn.classList.toggle("
+        "'active', state.permissionMode === 'auto')"
+        in JS
+    )
 
 
 def test_set_permission_mode_function_exists() -> None:
@@ -184,15 +192,21 @@ def test_fake_tool_warning_shown_reset_on_session_created() -> None:
 
 def test_fake_tool_warning_shown_reset_on_assistant_completed() -> None:
     # Also reset at assistant turn boundary so long conversations stay clean
-    lines = [l.strip() for l in JS.splitlines()]
+    lines = [line.strip() for line in JS.splitlines()]
     completed_idx = next(
-        (i for i, l in enumerate(lines) if "case 'assistant.completed'" in l), None
+        (
+            index
+            for index, line in enumerate(lines)
+            if "case 'assistant.completed'" in line
+        ),
+        None,
     )
     assert completed_idx is not None
     # Reset occurs after assistant.completed case
     reset_count = sum(
-        1 for l in lines[completed_idx: completed_idx + 10]
-        if "fakeToolWarningShown = false" in l
+        1
+        for line in lines[completed_idx : completed_idx + 10]
+        if "fakeToolWarningShown = false" in line
     )
     assert reset_count >= 1
 
@@ -223,7 +237,11 @@ def test_append_system_message_function_exists() -> None:
 
 def test_system_message_event_routed_to_append_system_message() -> None:
     assert "case 'system.message':" in JS
-    assert "appendSystemMessage(evt.payload?.text || '', evt.payload?.level || 'info')" in JS
+    assert (
+        "appendSystemMessage(evt.payload?.text || '', "
+        "evt.payload?.level || 'info')"
+        in JS
+    )
 
 
 def test_session_interrupted_emits_system_message() -> None:
@@ -302,7 +320,11 @@ def test_session_runtime_meta_element_in_html() -> None:
 # ---------------------------------------------------------------------------
 
 def test_set_runtime_meta_copy_value_function_exists() -> None:
-    assert "function setRuntimeMetaCopyValue(node, displayText, copyText, titleText)" in JS
+    assert (
+        "function setRuntimeMetaCopyValue("
+        "node, displayText, copyText, titleText)"
+        in JS
+    )
 
 
 def test_set_runtime_meta_copy_value_sets_dataset() -> None:
