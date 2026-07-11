@@ -4,8 +4,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.main import app
 import app.fs_routes as fs_routes
+from app.main import app
 
 client = TestClient(app)
 
