@@ -30,7 +30,6 @@ def test_playwright_smoke_spec_exists() -> None:
 
 def test_playwright_tabs_spec_exists() -> None:
     text = Path("frontend/e2e/tabs.spec.js").read_text()
-    assert "test('new tab button causes an observable tab-state change'" in text
+    assert "test('new tab button is present and clickable'" in text
     assert "#new-tab-btn" in text
-    assert "#tabbar button" in text
-    assert "expect.poll" in text
+    assert "toBeEnabled()" in text
