@@ -9,7 +9,7 @@ from app import runtime_sdk
 
 router = APIRouter(prefix="/api/fs", tags=["fs"])
 
-FS_ROOT = Path.cwd().resolve()
+FS_ROOT = Path(os.getenv("PLEXCLAW_FS_ROOT", str(Path.cwd()))).resolve()
 
 MAX_READ_BYTES = 512 * 1024  # 512 KB hard cap
 
