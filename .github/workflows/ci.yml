@@ -24,4 +24,4 @@ jobs:
           pip install -e .[dev]
 
       - name: Validate
-        run: ./scripts/validate.sh
+        run: PYTHON_BIN=python3 ./scripts/validate.sh
