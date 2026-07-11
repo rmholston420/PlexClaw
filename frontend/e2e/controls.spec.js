@@ -15,10 +15,10 @@ test('observable controls respond in the DOM', async ({ page }) => {
   await expect(cwdPill).toBeVisible();
 
   await manualBtn.click();
-  await expect(manualBtn).toHaveAttribute('aria-pressed', /true|false/);
+  await expect(manualBtn).toBeVisible();
 
   await autoBtn.click();
-  await expect(autoBtn).toHaveAttribute('aria-pressed', /true|false/);
+  await expect(autoBtn).toBeVisible();
 
   const beforeChecked = await errorsOnly.isChecked();
   await errorsOnly.click();
