@@ -371,3 +371,34 @@ def test_manual_tool_rejection_emits_rejection_without_completed() -> None:
     assert "tool.completed" in emitted
     assert "assistant.completed" not in emitted
     assert status == "interrupted"
+
+
+
+async def _collect_reaped_ids_for_idle_session() -> tuple[list[str], bool]:
+    session = rs.LiveSession(
+        id="idle-session",
+        model="claude-sonnet-4-5",
+        cwd=None,
+        provider="cloud",
+        permission_mode="manual",
+        resume_session_id=None,
+        fork_session=False,
+        mock_mode=True,
+    )
+    session.status = "ready"
+    session.last_activity_at = 0.0
+    rs._sessions[session.id] = session
+
+    try:
+        reaped = await rs.reap_idle_sessions(now=10_000.0)
+        still_present = session.id in rs._sessions
+    finally:
+        rs._sessions.pop(session.id, None)
+
+    return reaped, still_present
+
+
+def test_reap_idle_sessions_reaps_only_live_entries() -> None:
+    reaped, still_present = asyncio.run(_collect_reaped_ids_for_idle_session())
+    assert reaped == ["idle-session"]
+    assert still_present is False
