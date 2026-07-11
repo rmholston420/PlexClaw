@@ -402,3 +402,25 @@ def test_reap_idle_sessions_reaps_only_live_entries() -> None:
     reaped, still_present = asyncio.run(_collect_reaped_ids_for_idle_session())
     assert reaped == ["idle-session"]
     assert still_present is False
+
+
+
+def test_normalize_tool_delta_includes_tool_name_and_input() -> None:
+    from app import normalizer
+
+    env = normalizer.normalize_tool_delta(
+        "session-1",
+        7,
+        "tool-123",
+        "",
+        tool_name="search_web",
+        tool_input={"query": "hello"},
+    )
+
+    assert env.type == "tool.delta"
+    assert env.payload == {
+        "tool_id": "tool-123",
+        "tool_name": "search_web",
+        "partial": "",
+        "tool_input": {"query": "hello"},
+    }

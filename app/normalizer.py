@@ -62,14 +62,21 @@ def normalize_tool_delta(
     seq: int,
     tool_id: str,
     partial: str,
+    *,
+    tool_name: str | None = None,
+    tool_input: object | None = None,
 ) -> WSEnvelope:
     return _envelope(
         "tool.delta",
         session_id,
         seq,
-        {"tool_id": tool_id, "partial": partial},
+        {
+            "tool_id": tool_id,
+            "tool_name": tool_name,
+            "partial": partial,
+            "tool_input": tool_input,
+        },
     )
-
 
 def normalize_tool_completed(
     session_id: str,

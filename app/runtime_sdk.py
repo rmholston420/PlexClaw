@@ -714,9 +714,9 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                             session.next_seq(),
                             _current_tool_id,
                             "",
+                            tool_name=_current_tool_name,
+                            tool_input=tool_input,
                         )
-                        env.payload["tool_input"] = tool_input
-                        env.payload["tool_name"] = _current_tool_name
                         await _emit(session, env)
 
                         if session.permission_mode == "manual":
@@ -985,9 +985,9 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                             0,
                             tool_id,
                             "",
+                            tool_name=tool_name,
+                            tool_input=tool_input,
                         )
-                        env.payload["tool_name"] = tool_name
-                        env.payload["tool_input"] = tool_input
                         push(env)
 
                     else:
