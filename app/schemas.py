@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.provider_defaults import DEFAULT_CLOUD_MODELS
+from app.config import get_default_local_model
 
 PROTOCOL_VERSION = "0.2.0"
 
@@ -26,9 +26,13 @@ class WSEnvelope(BaseModel):
 
 
 class SessionCreateRequest(BaseModel):
-    model: str = Field(default=DEFAULT_CLOUD_MODELS[0], min_length=1, max_length=200)
+    model: str = Field(
+        default_factory=lambda: get_default_local_model("ollama"),
+        min_length=1,
+        max_length=200,
+    )
     cwd: str | None = None
-    provider: ProviderName = "cloud"
+    provider: ProviderName = "ollama"
     provider_base_url: str | None = None
     permission_mode: PermissionMode = "manual"
     sdk_permission_mode: SDKPermissionMode = "default"

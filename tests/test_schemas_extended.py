@@ -16,6 +16,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from app.config import DEFAULT_OLLAMA_MODEL
 from app.provider_defaults import DEFAULT_CLOUD_MODELS
 from app.schemas import (
     PROTOCOL_VERSION,
@@ -70,8 +71,8 @@ def test_ws_envelope_model_dump_json_is_valid_json():
 
 def test_session_create_request_defaults():
     req = SessionCreateRequest()
-    assert req.model == DEFAULT_CLOUD_MODELS[0]
-    assert req.provider == "cloud"
+    assert req.model == DEFAULT_OLLAMA_MODEL
+    assert req.provider == "ollama"
     assert req.permission_mode == "manual"
     assert req.cwd is None
     assert req.fork_session is False
@@ -209,6 +210,7 @@ def test_default_cloud_models_are_strings():
         assert isinstance(m, str) and len(m) > 0
 
 
-def test_default_cloud_models_first_matches_session_create_default():
-    req = SessionCreateRequest()
+def test_default_cloud_models_remain_available_for_explicit_cloud_sessions():
+    req = SessionCreateRequest(model=DEFAULT_CLOUD_MODELS[0], provider="cloud")
     assert req.model == DEFAULT_CLOUD_MODELS[0]
+    assert req.provider == "cloud"

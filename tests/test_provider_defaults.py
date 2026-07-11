@@ -1,10 +1,13 @@
-"""Tests for app/provider_defaults.py.
-
-Verifies the shape and content invariants of DEFAULT_CLOUD_MODELS.
-"""
+"""Tests for provider defaults and SessionCreateRequest local-first behavior."""
 from __future__ import annotations
 
+from app.config import (
+    DEFAULT_OLLAMA_MODEL,
+    DEFAULT_VLLM_MODEL,
+    get_default_local_model,
+)
 from app.provider_defaults import DEFAULT_CLOUD_MODELS
+from app.schemas import SessionCreateRequest
 
 
 def test_default_cloud_models_is_non_empty_list():
@@ -23,18 +26,25 @@ def test_default_cloud_models_no_empty_strings():
 
 
 def test_default_cloud_models_no_duplicates():
-    assert len(DEFAULT_CLOUD_MODELS) == len(set(DEFAULT_CLOUD_MODELS)), \
+    assert len(DEFAULT_CLOUD_MODELS) == len(set(DEFAULT_CLOUD_MODELS)), (
         "Duplicate model IDs found in DEFAULT_CLOUD_MODELS"
-
-
-def test_default_cloud_models_first_is_default():
-    """schemas.py uses DEFAULT_CLOUD_MODELS[0] as the SessionCreateRequest default."""
-    from app.schemas import SessionCreateRequest
-    req = SessionCreateRequest()
-    assert req.model == DEFAULT_CLOUD_MODELS[0]
+    )
 
 
 def test_default_cloud_models_contain_claude_strings():
-    """Every entry should look like a Claude model identifier."""
     for model in DEFAULT_CLOUD_MODELS:
         assert "claude" in model.lower(), f"Unexpected model ID: {model!r}"
+
+
+def test_session_create_request_defaults_to_ollama_provider():
+    req = SessionCreateRequest()
+    assert req.provider == "ollama"
+
+
+def test_session_create_request_defaults_to_ollama_model():
+    req = SessionCreateRequest()
+    assert req.model == DEFAULT_OLLAMA_MODEL
+
+
+def test_get_default_local_model_uses_vllm_default():
+    assert get_default_local_model("vllm") == DEFAULT_VLLM_MODEL

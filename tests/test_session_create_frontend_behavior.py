@@ -52,3 +52,17 @@ def test_session_create_response_matches_frontend_bootstrap_expectations() -> No
         "if (typeof data.mock_mode === 'boolean') "
         "setRuntimeMode(data.mock_mode);"
     ) in js
+
+
+def test_session_create_defaults_match_local_frontend_bootstrap() -> None:
+    response = client.post("/api/sessions", json={})
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["session_id"]
+    assert data["status"] == "created"
+    assert data["protocol_version"] == PROTOCOL_VERSION
+    assert data["provider"] == "ollama"
+    assert data["model"] == "qwen3:latest"
+    assert isinstance(data["mock_mode"], bool)
