@@ -563,7 +563,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
             "mock_mode": session.mock_mode,
         },
     )
-    await websocket.send_text(ready.model_dump_json())
+    await runtime._emit(session, ready)
 
     try:
         while True:

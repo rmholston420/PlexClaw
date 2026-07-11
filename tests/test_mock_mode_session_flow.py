@@ -55,6 +55,16 @@ def test_mock_mode_session_create_and_websocket_prompt_flow() -> None:
         assert ready["session_id"] == session_id
         assert ready["protocol_version"] == PROTOCOL_VERSION
 
+        replay_after_ready = client.get(f"/api/sessions/{session_id}/replay")
+        assert replay_after_ready.status_code == 200, replay_after_ready.text
+        replay_events = replay_after_ready.json()
+        replay_ready = next(
+            evt for evt in replay_events if evt["type"] == "session.ready"
+        )
+        assert replay_ready["session_id"] == session_id
+        assert "mock_mode" in replay_ready["payload"]
+        assert isinstance(replay_ready["payload"]["mock_mode"], bool)
+
         prompt = f"mock-flow-{uuid.uuid4()}"
         websocket.send_json({"prompt": prompt})
 
