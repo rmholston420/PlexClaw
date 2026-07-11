@@ -127,3 +127,49 @@ async def test_handle_sdk_terminal_message_usage_object_uses_vars(
         "output_tokens": 22,
     }
 
+@pytest.mark.asyncio
+async def test_handle_sdk_terminal_message_usage_mapping_uses_dict(
+    monkeypatch, clean_sessions
+):
+    session = make_session(mock_mode=False)
+    runtime_sdk._sessions[session.id] = session
+
+    class MappingUsage:
+        __slots__ = ()
+
+        def __iter__(self):
+            return iter(
+                [
+                    ("input_tokens", 33),
+                    ("output_tokens", 44),
+                ]
+            )
+
+    ResultType = type("ResultMessage", (), {})
+    msg = ResultType()
+    msg.subtype = "end_turn"
+    msg.usage = MappingUsage()
+
+    emitted = []
+
+    async def fake_emit(_session, env):
+        emitted.append(env)
+
+    monkeypatch.setattr(runtime_sdk, "_emit", fake_emit)
+    monkeypatch.setattr(runtime_sdk, "ResultMessage", ResultType)
+
+    handled = await _handle_sdk_terminal_message(
+        session,
+        msg,
+        {},
+        allow_completed=True,
+    )
+
+    assert handled is True
+    assert emitted[-1].type == "assistant.completed"
+    assert emitted[-1].payload["stop_reason"] == "end_turn"
+    assert emitted[-1].payload["usage"] == {
+        "input_tokens": 33,
+        "output_tokens": 44,
+    }
+
