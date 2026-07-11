@@ -250,7 +250,10 @@ async def delete_session(session_id: str) -> dict:
 @app.post("/api/sessions/{session_id}/context")
 async def upload_context_file(session_id: str, file: UploadFile = File(...)) -> dict:
     try:
-        raw = await file.read()
+        max_upload = 200 * 1024 + 1
+        raw = await file.read(max_upload)
+        if len(raw) > 200 * 1024:
+            raise HTTPException(status_code=413, detail="file exceeds 200KB limit")
         text = raw.decode("utf-8")
         item = runtime.add_context_file(
             session_id, file.filename or "attachment.txt", text
