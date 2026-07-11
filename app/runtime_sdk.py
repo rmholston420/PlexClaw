@@ -796,6 +796,15 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                 )
                 await _emit(session, env)
 
+        # In mock mode (and any path where ResultMessage is never delivered),
+        # the async-for loop exits without emitting assistant.completed.
+        # Emit it here so the protocol is always complete on success.
+        if session.status != "failed":
+            _completed_env = normalize_assistant_completed(
+                session.id, session.next_seq(), "end_turn", {}
+            )
+            await _emit(session, _completed_env)
+
     except Exception as exc:
         log.error("SDK stream error session=%s: %s", session.id, exc)
         env = normalize_session_failed(session.id, session.next_seq(), str(exc))
