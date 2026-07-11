@@ -12,5 +12,5 @@ if [ ! -x "$PYTHON_BIN" ]; then
 fi
 
 echo "[validate] Using: $PYTHON_BIN"
-"$PYTHON_BIN" -m ruff check app tests
+"$PYTHON_BIN" -m ruff check .
 "$PYTHON_BIN" -m pytest -q
