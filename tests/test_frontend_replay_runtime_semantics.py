@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def test_frontend_replay_ui_keeps_runtime_and_replay_state_distinct() -> None:
-    html = Path("frontend/plexclaw-ui-canonical.html").read_text()
+    html = Path("frontend/index.html").read_text()
     js = Path("frontend/sdk-bridge-client.js").read_text()
 
     # Replay UI affordances exist in the canonical frontend.

@@ -1,6 +1,6 @@
 """Extended frontend test coverage for sdk-bridge-client.js.
 
-These tests also cover plexclaw-ui-canonical.html and target frontend
+These tests cover frontend/index.html (single canonical UI entrypoint)
 surface area not already covered by the existing frontend test suite.
 """
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 JS = Path("frontend/sdk-bridge-client.js").read_text()
-HTML = Path("frontend/plexclaw-ui-canonical.html").read_text()
+HTML = Path("frontend/index.html").read_text()
 
 
 # ---------------------------------------------------------------------------

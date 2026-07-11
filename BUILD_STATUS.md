@@ -57,6 +57,7 @@ All 10 slices from the build spec are implemented and committed, with additional
 
 ## Launcher behavior
 
+- `frontend/index.html` is the single canonical UI entrypoint; `plexclaw-ui-canonical.html` is a backward-compat redirect shim
 - `run.sh` auto-enables repo-tracked hooks for the current clone when needed
 - `run.sh` fails fast with a clear error if port 8020 or 5555 are already occupied
 - `scripts/setup-git-hooks.sh` can be run manually to configure `core.hooksPath` to `.githooks`

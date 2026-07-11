@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def test_frontend_runtime_badge_and_labels_present() -> None:
-    html = Path("frontend/plexclaw-ui-canonical.html").read_text()
+    html = Path("frontend/index.html").read_text()
     js = Path("frontend/sdk-bridge-client.js").read_text()
 
     # Static smoke test: badge element and runtime-mode helper exist.
@@ -15,5 +15,5 @@ def test_frontend_runtime_badge_and_labels_present() -> None:
 
 
 def test_frontend_provider_reason_meta_present() -> None:
-    html = Path("frontend/plexclaw-ui-canonical.html").read_text()
+    html = Path("frontend/index.html").read_text()
     assert 'id="provider-reason-meta"' in html

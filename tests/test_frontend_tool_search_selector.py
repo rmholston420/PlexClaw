@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 def test_tool_search_selector_is_present_in_ui():
-    html = Path("frontend/plexclaw-ui-canonical.html").read_text()
+    html = Path("frontend/index.html").read_text()
     assert 'id="tool-search-select"' in html
     assert 'Tool search: Default' in html
     assert 'Tool search: Off' in html
