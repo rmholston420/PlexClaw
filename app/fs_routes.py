@@ -9,7 +9,10 @@ from app import runtime_sdk
 
 router = APIRouter(prefix="/api/fs", tags=["fs"])
 
-FS_ROOT = Path(os.getenv("PLEXCLAW_FS_ROOT", str(Path.cwd()))).resolve()
+def get_default_fs_root() -> Path:
+    """Resolve the default FS root at call time, not import time."""
+    return Path(os.getenv("PLEXCLAW_FS_ROOT", str(Path.cwd()))).resolve()
+
 
 MAX_READ_BYTES = 512 * 1024  # 512 KB hard cap
 
@@ -27,7 +30,7 @@ def _get_fs_root(session_id: str | None) -> Path:
         session = runtime_sdk.get_session(session_id)
         if session and session.cwd:
             return Path(session.cwd).expanduser().resolve()
-    return FS_ROOT.resolve()
+    return get_default_fs_root()
 
 
 def _resolve_safe_path(
