@@ -806,7 +806,7 @@ function renderProviderRuntimeMeta() {
         if (!id) return;
         state.pendingSearchJump = btn.getAttribute('data-search-snippet') || el.searchInputModal?.value || '';
         closeSearchModal();
-        await replaySession(id);
+        await replaySession(id, 'archive');
       });
     });
   }
