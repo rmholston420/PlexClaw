@@ -72,7 +72,9 @@ async def browse(
     if not base.is_dir():
         raise HTTPException(status_code=400, detail=f"not a directory: {base}")
 
+    max_entries = 2000
     entries: list[dict] = []
+    truncated = False
 
     parent = base.parent
     if parent != base and _is_within_root(parent, root):
@@ -86,7 +88,11 @@ async def browse(
             }
         )
 
+    scanned = 0
     for entry in os.scandir(base):
+        if scanned >= max_entries:
+            truncated = True
+            break
         try:
             st = entry.stat()
         except FileNotFoundError:
@@ -99,9 +105,15 @@ async def browse(
                 "modified": int(st.st_mtime),
             }
         )
+        scanned += 1
 
     entries.sort(key=lambda e: (not e["is_dir"], e["name"].lower()))
-    return {"path": str(base), "root": str(root), "entries": entries}
+    return {
+        "path": str(base),
+        "root": str(root),
+        "entries": entries,
+        "truncated": truncated,
+    }
 
 
 @router.get("/read")
