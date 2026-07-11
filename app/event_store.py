@@ -38,7 +38,7 @@ def _get_conn() -> sqlite3.Connection:
     return _conn
 
 
-def _check_fts5_locked() -> bool:
+def _check_fts5_available_locked() -> bool:
     global _fts_available
     if _fts_available is not None:
         return _fts_available
@@ -57,7 +57,7 @@ def _check_fts5() -> bool:
     if _fts_available is not None:
         return _fts_available
     with _db_lock:
-        return _check_fts5_locked()
+        return _check_fts5_available_locked()
 
 
 def init_db() -> None:
@@ -84,7 +84,7 @@ def init_db() -> None:
             "ON events (created_at DESC, id DESC)"
         )
 
-        if _check_fts5_locked():
+        if _check_fts5_available_locked():
             c.execute(
                 """
                 CREATE VIRTUAL TABLE IF NOT EXISTS events_fts
@@ -143,7 +143,7 @@ def append_event(
             (session_id, seq, event_type, payload_json),
         )
 
-        if _check_fts5_locked():
+        if _check_fts5_available_locked():
             role, body = _event_search_parts(event_type, payload)
             if body:
                 c.execute(
@@ -212,7 +212,7 @@ def search_events(query: str) -> list[dict[str, Any]]:
 
     with _db_lock:
         c = _get_conn()
-        if _check_fts5_locked():
+        if _check_fts5_available_locked():
             return _search_fts5(c, needle)
         return _search_linear(c, needle)
 
