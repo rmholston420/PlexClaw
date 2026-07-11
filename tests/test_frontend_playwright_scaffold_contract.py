@@ -86,3 +86,14 @@ def test_playwright_session_utils_spec_exists() -> None:
     assert "#export-session" in text
     assert "#export-session-json" in text
     assert "#connection-status" not in text
+
+
+def test_playwright_composer_spec_exists() -> None:
+    text = Path("frontend/e2e/composer.spec.js").read_text()
+    assert "test('composer controls are exposed in the current DOM'" in text
+    assert "#composer" in text
+    assert "#prompt-input" in text
+    assert "#prompt-stats" in text
+    assert "#send-btn" in text
+    assert "#attach-file-btn" in text
+    assert "#attach-file-input" in text
