@@ -86,6 +86,7 @@ const Bridge = (() => {
   toolRuntimeMeta: document.getElementById('tool-runtime-meta'),
  sessionCwdMeta: document.getElementById('session-cwd-meta'),
  sessionRuntimeMeta: document.getElementById('session-runtime-meta'),
+sessionConfigMeta: document.getElementById('session-config-meta'),
 sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
   toolSearchSelect: document.getElementById('tool-search-select'),
  sdkPermissionModeSelect: document.getElementById('sdk-permission-mode-select'),
@@ -223,6 +224,7 @@ function bindRuntimeMetaCopyHandlers() {
     [el.toolRuntimeMeta, 'Tool search state'],
     [el.sessionCwdMeta, 'Working directory'],
     [el.sessionRuntimeMeta, 'Runtime mode'],
+   [el.sessionConfigMeta, 'Session config'],
   ];
   bindings.forEach(([node, label]) => {
     if (!node || node.dataset.copyBound === 'true') return;
@@ -233,6 +235,22 @@ function bindRuntimeMetaCopyHandlers() {
   });
 }
 
+
+function buildSessionConfigSummary() {
+  const summary = {
+    sessionId: state.sessionId || null,
+    model: state.model || null,
+    provider: state.provider || null,
+    providerBaseUrl: state.providerBaseUrl || null,
+    permissionMode: state.permissionMode || null,
+    sdkPermissionMode: state.sdkPermissionMode || 'default',
+    toolSearchMode: state.toolSearchMode || null,
+    toolSearchActive: typeof state.toolSearchActive === 'boolean' ? state.toolSearchActive : null,
+    cwd: state.cwd || state.cwdSelected || null,
+    runtimeMode: state.runtimeMode || null,
+  };
+  return JSON.stringify(summary, null, 2);
+}
 
 function renderProviderRuntimeMeta() {
   const provider = state.providers[state.provider] || {};
@@ -286,6 +304,16 @@ function renderProviderRuntimeMeta() {
       runtimeText,
       runtimeText,
       `Click to copy runtime mode: ${runtimeText}`
+    );
+  }
+
+  if (el.sessionConfigMeta) {
+    const summary = buildSessionConfigSummary();
+    setRuntimeMetaCopyValue(
+      el.sessionConfigMeta,
+      'Copy config',
+      summary,
+      'Click to copy session config summary'
     );
   }
 
