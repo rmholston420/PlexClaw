@@ -864,7 +864,10 @@ function renderProviderRuntimeMeta() {
   function renderMarkdown(text) {
     const div = document.createElement('div');
     // Split on code fences first
-    const parts = text.split(/(```[\s\S]*?```)/g);
+    const rawText = String(text);
+    const fenceCount = (rawText.match(/```/g) || []).length;
+    const normalizedText = fenceCount % 2 === 1 ? rawText + '\n\n```' : rawText;
+    const parts = normalizedText.split(/(```[\s\S]*?```)/g);
     parts.forEach(part => {
       if (part.startsWith('```')) {
         const lines = part.slice(3).split('\n');
