@@ -166,3 +166,10 @@ def test_playwright_tab_activation_spec_exists() -> None:
     assert ".session-tab" in text
     assert "toHaveClass(/active/)" in text
     assert "not.toHaveClass(/active/)" in text
+
+def test_playwright_search_focus_spec_exists() -> None:
+    text = Path("frontend/e2e/search-focus.spec.js").read_text()
+    assert "test('opening search modal moves focus to the search input'" in text
+    assert "#open-search" in text
+    assert "toBeFocused()" in text
+    assert 'input[type="search"]' in text
