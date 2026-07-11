@@ -12,3 +12,8 @@ def test_frontend_runtime_badge_and_labels_present() -> None:
     assert "function setRuntimeMode(mockMode)" in js
     assert "Mock session ready" in js
     assert "Live session ready" in js
+
+
+def test_frontend_provider_reason_meta_present() -> None:
+    html = Path("frontend/plexclaw-ui-canonical.html").read_text()
+    assert 'id="provider-reason-meta"' in html

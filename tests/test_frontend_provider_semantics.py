@@ -41,3 +41,10 @@ def test_provider_runtime_meta_exposes_selection_reason():
     assert "return 'vLLM fallback selected because Ollama is offline';" in text
     assert "return 'Cloud selected explicitly';" in text
     assert "const selectionReason = providerSelectionReason();" in text
+
+
+def test_provider_reason_meta_is_bound_and_rendered():
+    text = Path("frontend/sdk-bridge-client.js").read_text()
+    assert "providerReasonMeta: document.getElementById('provider-reason-meta')" in text
+    assert "if (el.providerReasonMeta) {" in text
+    assert "Click to copy provider selection reason:" in text

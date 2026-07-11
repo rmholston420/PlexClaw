@@ -92,6 +92,7 @@ const Bridge = (() => {
     exitReplay: document.getElementById('exit-replay'),
     providerSwitcher: document.getElementById('provider-switcher'),
    providerRuntimeMeta: document.getElementById('provider-runtime-meta'),
+  providerReasonMeta: document.getElementById('provider-reason-meta'),
   providerBaseUrlMeta: document.getElementById('provider-base-url-meta'),
   providerBaseUrlInput: document.getElementById('provider-base-url-input'),
   providerSettingsBtn: document.getElementById('provider-settings-btn'),
@@ -336,6 +337,15 @@ function renderProviderRuntimeMeta() {
     `${label} — ${selectionReason}`,
     `Click to copy provider route: ${label} (${selectionReason})`
   );
+
+  if (el.providerReasonMeta) {
+    setCopyableValue(
+      el.providerReasonMeta,
+      selectionReason,
+      selectionReason,
+      `Click to copy provider selection reason: ${selectionReason}`
+    );
+  }
 
   setCopyableValue(
     el.providerBaseUrlMeta,
