@@ -73,3 +73,17 @@ async def test_handle_sdk_terminal_message_usage_dict_failure_falls_back_empty(
     assert emitted[-1].type == "assistant.completed"
     assert emitted[-1].payload["stop_reason"] == "end_turn"
     assert emitted[-1].payload["usage"] == {}
+
+@pytest.mark.asyncio
+async def test_update_session_sets_valid_sdk_permission_mode(clean_sessions):
+    session = make_session()
+    runtime_sdk._sessions[session.id] = session
+
+    result = await runtime_sdk.update_session(
+        session.id,
+        sdk_permission_mode="acceptEdits",
+    )
+
+    assert result is session
+    assert session.sdk_permission_mode == "acceptEdits"
+
