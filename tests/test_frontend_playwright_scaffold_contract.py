@@ -30,12 +30,10 @@ def test_playwright_smoke_spec_exists() -> None:
 
 def test_playwright_tabs_spec_exists() -> None:
     text = Path("frontend/e2e/tabs.spec.js").read_text()
-    assert (
-        "test('new tab button diagnostic reveals runtime tab state'" in text
-    )
-    assert "BEFORE_RUNTIME=" in text
-    assert "AFTER_RUNTIME=" in text
-    assert "sessionTabCount" in text
+    assert "test('new tab button adds a rendered session tab'" in text
+    assert "#new-tab-btn" in text
+    assert ".session-tab" in text
+    assert "toHaveCount(before + 1)" in text
 
 
 def test_playwright_controls_spec_exists() -> None:
