@@ -59,7 +59,10 @@ async def lifespan(_: FastAPI):
     async def _session_reaper_loop() -> None:
         try:
             while not stop_reaper.is_set():
-                await runtime.reap_idle_sessions()
+                try:
+                    await runtime.reap_idle_sessions()
+                except Exception as exc:
+                    logging.warning("session reaper loop error: %s", exc)
                 try:
                     await asyncio.wait_for(
                         stop_reaper.wait(),

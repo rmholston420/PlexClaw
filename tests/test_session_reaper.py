@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import time
 
 import pytest
@@ -78,5 +79,56 @@ async def test_reap_idle_sessions_logs_idle_reap(monkeypatch, caplog):
     assert session.id in reaped
     assert any(
         "Reaping idle live session" in record.message and session.id in record.message
+        for record in caplog.records
+    )
+
+
+
+async def test_session_reaper_loop_logs_and_continues_after_reap_error(
+    monkeypatch, caplog
+):
+    stop_reaper = asyncio.Event()
+    calls: list[str] = []
+
+    async def _session_reaper_loop() -> None:
+        try:
+            while not stop_reaper.is_set():
+                try:
+                    await runtime.reap_idle_sessions()
+                except Exception as exc:
+                    runtime.log.warning("session reaper loop error: %s", exc)
+                try:
+                    await asyncio.wait_for(
+                        stop_reaper.wait(),
+                        timeout=runtime.get_reap_interval_seconds(),
+                    )
+                except asyncio.TimeoutError:
+                    continue
+        except asyncio.CancelledError:
+            raise
+
+    async def _fake_reap_idle_sessions(now=None):
+        calls.append("reap")
+        if len(calls) == 1:
+            raise RuntimeError("boom")
+        stop_reaper.set()
+        return []
+
+    async def _fake_wait_for(awaitable, timeout):
+        if stop_reaper.is_set():
+            return await awaitable
+        awaitable.close()
+        raise asyncio.TimeoutError()
+
+    monkeypatch.setattr(runtime, "reap_idle_sessions", _fake_reap_idle_sessions)
+    monkeypatch.setattr(runtime, "get_reap_interval_seconds", lambda: 0.01)
+    monkeypatch.setattr(asyncio, "wait_for", _fake_wait_for)
+
+    with caplog.at_level("WARNING"):
+        await _session_reaper_loop()
+
+    assert calls == ["reap", "reap"]
+    assert any(
+        "session reaper loop error: boom" in record.getMessage()
         for record in caplog.records
     )
