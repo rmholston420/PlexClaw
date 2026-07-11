@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('export controls are exposed in the current DOM', async ({ page }) => {
+test('export controls expose accessible metadata in the current DOM', async ({ page }) => {
   await page.goto('/plexclaw-ui-canonical.html');
 
   const exportText = page.locator('#export-session');
@@ -12,6 +12,6 @@ test('export controls are exposed in the current DOM', async ({ page }) => {
   await expect(exportText).toHaveCount(1);
   await expect(exportJson).toHaveCount(1);
 
-  await expect(exportText).toContainText(/export/i);
-  await expect(exportJson).toContainText(/json/i);
+  await expect(exportText).toHaveAttribute('aria-label', /export.*markdown/i);
+  await expect(exportJson).toHaveAttribute('aria-label', /json/i);
 });

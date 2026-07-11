@@ -53,8 +53,11 @@ def test_playwright_controls_spec_exists() -> None:
 
 def test_playwright_exports_spec_exists() -> None:
     text = Path("frontend/e2e/exports.spec.js").read_text()
-    assert "test('export controls are exposed in the current DOM'" in text
+    assert (
+        "test('export controls expose accessible metadata in the current DOM'" in text
+    )
     assert "#export-session" in text
     assert "#export-session-json" in text
-    assert "toContainText(/export/i)" in text
-    assert "toContainText(/json/i)" in text
+    assert "aria-label" in text
+    assert "markdown" in text.lower()
+    assert "json" in text.lower()
