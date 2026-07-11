@@ -210,6 +210,7 @@ async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
         tool_search_mode=tool_search_mode,
         tool_search_active=tool_search_active,
         permission_mode=session.permission_mode,
+        sdk_permission_mode=session.sdk_permission_mode,
         cwd=session.cwd,
     )
 
@@ -220,6 +221,7 @@ async def update_session(session_id: str, req: SessionUpdateRequest) -> dict:
         session = await runtime.update_session(
             session_id,
             permission_mode=req.permission_mode,
+            sdk_permission_mode=req.sdk_permission_mode,
         )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -229,6 +231,7 @@ async def update_session(session_id: str, req: SessionUpdateRequest) -> dict:
         "session_id": session.id,
         "status": session.status,
         "permission_mode": session.permission_mode,
+        "sdk_permission_mode": session.sdk_permission_mode,
     }
 
 

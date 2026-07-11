@@ -196,6 +196,7 @@ class LiveSession:
     cwd: str | None
     provider: str
     permission_mode: str
+    sdk_permission_mode: str
     resume_session_id: str | None
     fork_session: bool
     status: str = "created"  # created | ready | running | interrupted | failed
@@ -448,7 +449,10 @@ async def _emit(session: LiveSession, envelope: WSEnvelope) -> None:
 
 
 async def update_session(
-    session_id: str, *, permission_mode: str | None = None
+    session_id: str,
+    *,
+    permission_mode: str | None = None,
+    sdk_permission_mode: str | None = None,
 ) -> LiveSession:
     session = _sessions.get(session_id)
     if not session:
@@ -458,6 +462,11 @@ async def update_session(
         if permission_mode not in {"auto", "manual"}:
             raise ValueError(f"invalid permission_mode: {permission_mode}")
         session.permission_mode = permission_mode
+
+    if sdk_permission_mode is not None:
+        if sdk_permission_mode not in {"default", "acceptEdits", "bypassPermissions"}:
+            raise ValueError(f"invalid sdk_permission_mode: {sdk_permission_mode}")
+        session.sdk_permission_mode = sdk_permission_mode
 
     return session
 
@@ -481,6 +490,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
         cwd=normalized_cwd,
         provider=req.provider,
         permission_mode=req.permission_mode,
+        sdk_permission_mode=req.sdk_permission_mode,
         resume_session_id=req.resume_session_id,
         fork_session=req.fork_session,
         mock_mode=mock_mode,
@@ -503,7 +513,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
         options = ClaudeAgentOptions(
             model=req.model,
             cwd=normalized_cwd,
-            permission_mode=req.permission_mode,
+            permission_mode=req.sdk_permission_mode,
             system_prompt=effective_system_prompt,
             resume=req.resume_session_id,
             fork_session=req.fork_session,
@@ -542,6 +552,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
                 "tool_search_active": bool(req.tool_search_mode),
                 "cwd": session.cwd,
                 "permission_mode": session.permission_mode,
+                "sdk_permission_mode": session.sdk_permission_mode,
                 "resume_session_id": session.resume_session_id,
                 "fork_session": session.fork_session,
                 "mock_mode": mock_mode,

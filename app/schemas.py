@@ -12,6 +12,7 @@ PROTOCOL_VERSION = "0.2.0"
 
 ProviderName = Literal["cloud", "ollama", "vllm"]
 PermissionMode = Literal["auto", "manual"]
+SDKPermissionMode = Literal["default", "acceptEdits", "bypassPermissions"]
 
 
 class WSEnvelope(BaseModel):
@@ -29,6 +30,7 @@ class SessionCreateRequest(BaseModel):
     cwd: str | None = None
     provider: ProviderName = "cloud"
     permission_mode: PermissionMode = "manual"
+    sdk_permission_mode: SDKPermissionMode = "default"
     tool_search_mode: str | None = None
     system_prompt: str | None = None
     resume_session_id: str | None = None
@@ -45,6 +47,7 @@ class SessionCreateRequest(BaseModel):
 
 class SessionUpdateRequest(BaseModel):
     permission_mode: PermissionMode | None = None
+    sdk_permission_mode: SDKPermissionMode | None = None
 
 
 class SessionCreateResponse(BaseModel):
@@ -58,6 +61,7 @@ class SessionCreateResponse(BaseModel):
     tool_search_mode: str | None = None
     tool_search_active: bool | None = None
     permission_mode: str | None = None
+    sdk_permission_mode: str | None = None
     cwd: str | None = None
 
 
