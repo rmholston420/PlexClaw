@@ -12,7 +12,7 @@ from app.main import app
 
 @pytest.fixture(autouse=True)
 def _patch_fs_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(fs_mod, "FS_ROOT", tmp_path.resolve())
+    monkeypatch.setattr(fs_mod, "get_default_fs_root", lambda: tmp_path.resolve())
     yield
 
 

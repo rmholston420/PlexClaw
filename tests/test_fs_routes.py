@@ -35,7 +35,7 @@ def test_git_roots_returns_nearest_containing_repo(tmp_path, monkeypatch):
     nested = repo / "src" / "pkg"
     nested.mkdir(parents=True)
     (repo / ".git").mkdir()
-    monkeypatch.setattr(fs_routes, "get_default_fs_root()", root.resolve())
+    monkeypatch.setattr(fs_routes, "get_default_fs_root", lambda: root.resolve())
 
     with TestClient(app) as local_client:
         resp = local_client.get("/api/fs/git-roots", params={"start": str(nested)})
