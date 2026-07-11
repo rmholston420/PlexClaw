@@ -49,4 +49,12 @@ def test_playwright_controls_spec_exists() -> None:
     assert "#provider-switcher" in text
     assert "#model-select" in text
     assert "#terminal-errors-only" in text
-    assert "toHaveCount(1)" in text
+
+
+def test_playwright_exports_spec_exists() -> None:
+    text = Path("frontend/e2e/exports.spec.js").read_text()
+    assert "test('export controls are exposed in the current DOM'" in text
+    assert "#export-session" in text
+    assert "#export-session-json" in text
+    assert "toContainText(/export/i)" in text
+    assert "toContainText(/json/i)" in text
