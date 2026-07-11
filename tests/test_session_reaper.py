@@ -4,6 +4,7 @@ import asyncio
 import time
 
 import pytest
+from fastapi.testclient import TestClient
 
 from app import runtime_sdk as runtime
 from app.schemas import SessionCreateRequest
@@ -118,3 +119,43 @@ async def test_session_reaper_loop_logs_and_continues_after_reap_error(
         "session reaper loop error: boom" in record.getMessage()
         for record in caplog.records
     )
+
+
+
+def test_app_lifespan_starts_and_stops_session_reaper_task(monkeypatch) -> None:
+    from app.main import app
+
+    created: list[object] = []
+
+    class _FakeTask:
+        def __init__(self) -> None:
+            self.cancel_called = False
+            self.awaited = False
+
+        def cancel(self) -> None:
+            self.cancel_called = True
+
+        def __await__(self):
+            async def _done():
+                self.awaited = True
+                raise asyncio.CancelledError()
+
+            return _done().__await__()
+
+    def _fake_create_task(coro):
+        coro.close()
+        task = _FakeTask()
+        created.append(task)
+        return task
+
+    monkeypatch.setattr("app.main.asyncio.create_task", _fake_create_task)
+
+    with TestClient(app):
+        assert len(created) == 1
+        task = created[0]
+        assert task.cancel_called is False
+        assert task.awaited is False
+
+    task = created[0]
+    assert task.cancel_called is True
+    assert task.awaited is True
