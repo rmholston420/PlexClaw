@@ -94,3 +94,48 @@ async def test_delete_session_route_ok(client):
     assert response.status_code == 200
     assert response.json() == {"ok": True}
     assert runtime.get_session(session.id) is None
+
+@pytest.mark.asyncio
+async def test_context_files_inject_once_until_context_changes():
+    session = await runtime.create_session(
+        SessionCreateRequest(
+            model="claude-sonnet-4-5",
+            provider="cloud",
+            permission_mode="manual",
+        )
+    )
+    session._client = DummyClient()
+
+    runtime.add_context_file(session.id, "notes.txt", "alpha")
+    first = runtime._inject_context_into_prompt(session, "hello")
+    second = runtime._inject_context_into_prompt(session, "follow-up")
+
+    assert "Attached file context:" in first
+    assert "--- FILE: notes.txt ---" in first
+    assert "alpha" in first
+    assert "--- USER PROMPT ---" in first
+    assert first.endswith("hello")
+
+    assert second == "follow-up"
+
+    runtime.add_context_file(session.id, "todo.txt", "beta")
+    third = runtime._inject_context_into_prompt(session, "after add")
+
+    assert "Attached file context:" in third
+    assert "--- FILE: notes.txt ---" in third
+    assert "--- FILE: todo.txt ---" in third
+    assert "alpha" in third
+    assert "beta" in third
+    assert third.endswith("after add")
+
+    runtime.remove_context_file(session.id, "todo.txt")
+    fourth = runtime._inject_context_into_prompt(session, "after remove")
+
+    assert "Attached file context:" in fourth
+    assert "--- FILE: notes.txt ---" in fourth
+    assert "--- FILE: todo.txt ---" not in fourth
+    assert "alpha" in fourth
+    assert fourth.endswith("after remove")
+
+    await runtime.delete_session(session.id)
+

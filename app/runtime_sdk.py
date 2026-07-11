@@ -408,6 +408,12 @@ def remove_context_file(session_id: str, filename: str) -> None:
 
 
 def _inject_context_into_prompt(session: LiveSession, prompt: str) -> str:
+    """Inject attached context files once per unchanged context set.
+
+    Context files are prepended to the next prompt after they are added or
+    removed. After that first injection, subsequent prompts are passed through
+    unchanged until the context file set changes again.
+    """
     if not session.context_files:
         return prompt
     if session._context_injected:
