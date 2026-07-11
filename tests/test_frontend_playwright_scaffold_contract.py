@@ -190,3 +190,10 @@ def test_playwright_export_controls_tabs_spec_exists() -> None:
     assert "#export-session-json" in text
     assert ".session-tab" in text
     assert "toBeEnabled()" in text
+def test_playwright_search_close_spec_exists() -> None:
+    text = Path("frontend/e2e/search-close.spec.js").read_text()
+    assert "test('search close button closes the search modal'" in text
+    assert "#open-search" in text
+    assert "#search-modal" in text
+    assert "#search-close" in text
+    assert "aria-hidden" in text
