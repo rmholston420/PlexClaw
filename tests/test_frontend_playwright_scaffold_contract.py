@@ -61,3 +61,12 @@ def test_playwright_exports_spec_exists() -> None:
     assert "aria-label" in text
     assert "markdown" in text.lower()
     assert "json" in text.lower()
+
+
+def test_playwright_runtime_mode_spec_exists() -> None:
+    text = Path("frontend/e2e/runtime-mode.spec.js").read_text()
+    assert "test('runtime mode controls are exposed in the current DOM'" in text
+    assert "#runtime-mode-label" in text
+    assert "#mode-manual-btn" in text
+    assert "#mode-auto-btn" in text
+    assert "not.toHaveText" in text
