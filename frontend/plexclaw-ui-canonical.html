@@ -1063,9 +1063,12 @@
       display: flex;
       flex-direction: column;
       gap: var(--s3);
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 7%, transparent), transparent 28%),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg)), var(--bg));
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
-    }
+   }
 
     /* Welcome */
     .welcome {
@@ -1108,12 +1111,16 @@
 
     /* Message bubbles */
     .msg {
+      max-width: min(88ch, 92%);
       border-radius: var(--radius-lg);
       padding: var(--s3) var(--s4);
       font-size: var(--text-sm);
       line-height: 1.7;
+      box-shadow: var(--shadow-sm);
       border: 1px solid var(--border);
-    }
+      white-space: pre-wrap;
+      word-break: break-word;
+   }
     .msg.user {
       background: var(--surface-offset);
       border-color: var(--border);
