@@ -770,6 +770,49 @@ function renderProviderRuntimeMeta() {
     el.searchModal?.setAttribute('aria-hidden', 'true');
   }
 
+
+  function bindStableUiHandlers() {
+    if (el.newTabBtn && !el.newTabBtn.dataset.bound) {
+      el.newTabBtn.addEventListener('click', () => openNewTab());
+      el.newTabBtn.dataset.bound = 'true';
+    }
+
+    if (el.cwdPill && !el.cwdPill.dataset.bound) {
+      el.cwdPill.addEventListener('click', () => openCwdModal());
+      el.cwdPill.dataset.bound = 'true';
+    }
+
+    if (el.cwdClose && !el.cwdClose.dataset.bound) {
+      el.cwdClose.addEventListener('click', () => closeCwdModal());
+      el.cwdClose.dataset.bound = 'true';
+    }
+
+    if (el.cwdCancel && !el.cwdCancel.dataset.bound) {
+      el.cwdCancel.addEventListener('click', () => closeCwdModal());
+      el.cwdCancel.dataset.bound = 'true';
+    }
+
+    if (el.cwdBackdrop && !el.cwdBackdrop.dataset.bound) {
+      el.cwdBackdrop.addEventListener('click', () => closeCwdModal());
+      el.cwdBackdrop.dataset.bound = 'true';
+    }
+
+    if (el.openSearchBtn && !el.openSearchBtn.dataset.bound) {
+      el.openSearchBtn.addEventListener('click', () => openSearchModal());
+      el.openSearchBtn.dataset.bound = 'true';
+    }
+
+    if (el.searchClose && !el.searchClose.dataset.bound) {
+      el.searchClose.addEventListener('click', () => closeSearchModal());
+      el.searchClose.dataset.bound = 'true';
+    }
+
+    if (el.searchBackdrop && !el.searchBackdrop.dataset.bound) {
+      el.searchBackdrop.addEventListener('click', () => closeSearchModal());
+      el.searchBackdrop.dataset.bound = 'true';
+    }
+  }
+
   function renderSearchResults() {
     if (!el.searchResults) return;
     const query = el.searchInputModal?.value?.trim() || '';
@@ -1912,6 +1955,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
         e.preventDefault();
         openNewTab();
     renderTabs();
+  bindStableUiHandlers();
         return;
       }
 

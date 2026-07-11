@@ -118,3 +118,12 @@ def test_playwright_terminal_spec_exists() -> None:
     assert "#terminal-errors-only" in text
     assert "#terminal-count" in text
     assert "#terminal-pre" in text
+
+def test_playwright_search_modal_spec_exists() -> None:
+    text = Path("frontend/e2e/search-modal.spec.js").read_text()
+    assert "test('search modal opens and closes from stable controls'" in text
+    assert "#open-search" in text
+    assert "#search-modal" in text
+    assert "#search-close" in text
+    assert "aria-hidden" in text
+
