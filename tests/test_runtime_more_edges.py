@@ -293,3 +293,89 @@ def test_archive_messages_to_events_covers_text_tool_use_and_warnings():
         in (e.get("payload", {}) or {}).get("text", "")
         for e in events
     )
+
+# --- remaining runtime_sdk branch coverage ---
+
+@pytest.mark.asyncio
+async def test_handle_sdk_terminal_message_result_usage_falls_back_to_empty_dict(
+    monkeypatch,
+):
+    import app.runtime_sdk as runtime_sdk
+
+    emitted = []
+
+    async def fake_emit(session, env):
+        emitted.append(env)
+
+    class BadUsage:
+        def __iter__(self):
+            raise RuntimeError("bad usage iter")
+
+    class FakeResultMessage:
+        def __init__(self):
+            self.subtype = "end_turn"
+            self.usage = BadUsage()
+
+    monkeypatch.setattr(runtime_sdk, "_emit", fake_emit)
+    monkeypatch.setattr(runtime_sdk, "ResultMessage", FakeResultMessage)
+
+    session = LiveSession(
+        id="sess-usage-fallback",
+        model="claude-sonnet-4-5",
+        cwd=".",
+        provider="mock",
+        permission_mode="default",
+        resume_session_id=None,
+        fork_session=False,
+    )
+
+    handled = await _handle_sdk_terminal_message(
+        session,
+        FakeResultMessage(),
+        {},
+        allow_completed=True,
+    )
+
+    assert handled is True
+    assert emitted[-1].type == "assistant.completed"
+    assert emitted[-1].payload["usage"] == {}
+
+
+@pytest.mark.asyncio
+async def test_result_message_skips_completed_when_disallowed(
+    monkeypatch,
+):
+    import app.runtime_sdk as runtime_sdk
+
+    emitted = []
+
+    async def fake_emit(session, env):
+        emitted.append(env)
+
+    class FakeResultMessage:
+        def __init__(self):
+            self.subtype = "end_turn"
+            self.usage = {}
+
+    monkeypatch.setattr(runtime_sdk, "_emit", fake_emit)
+    monkeypatch.setattr(runtime_sdk, "ResultMessage", FakeResultMessage)
+
+    session = LiveSession(
+        id="sess-no-complete",
+        model="claude-sonnet-4-5",
+        cwd=".",
+        provider="mock",
+        permission_mode="default",
+        resume_session_id=None,
+        fork_session=False,
+    )
+
+    handled = await _handle_sdk_terminal_message(
+        session,
+        FakeResultMessage(),
+        {},
+        allow_completed=False,
+    )
+
+    assert handled is True
+    assert emitted == []

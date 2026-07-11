@@ -764,3 +764,68 @@ async def test_tag_archive_session_logs_warning_on_error(monkeypatch, caplog):
         await runtime_sdk.tag_archive_session("sess-x", "green")
 
     assert "tag_session error: tag boom" in caplog.text
+
+# --- remaining runtime_sdk branch coverage ---
+
+def test_archive_messages_to_events_uses_dict_for_mapping_like_env(monkeypatch):
+    import app.runtime_sdk as runtime_sdk
+
+    original_text = runtime_sdk.normalize_text_delta
+    original_completed = runtime_sdk.normalize_assistant_completed
+
+    class MappingEnvelope:
+        def __init__(self, data):
+            self._data = data
+
+        def __iter__(self):
+            return iter(self._data.items())
+
+    def fake_text_delta(session_id, seq, text):
+        return MappingEnvelope(
+            {
+                "type": "assistant.delta",
+                "session_id": session_id,
+                "seq": seq,
+                "payload": {"text": text},
+            }
+        )
+
+    def fake_completed(session_id, seq, stop_reason, usage=None):
+        return MappingEnvelope(
+            {
+                "type": "assistant.completed",
+                "session_id": session_id,
+                "seq": seq,
+                "payload": {"stop_reason": stop_reason, "usage": usage},
+            }
+        )
+
+    monkeypatch.setattr(runtime_sdk, "normalize_text_delta", fake_text_delta)
+    monkeypatch.setattr(runtime_sdk, "normalize_assistant_completed", fake_completed)
+
+    messages = [
+        {
+            "message": {
+                "role": "assistant",
+                "content": "hello from mapping env",
+                "stop_reason": "end_turn",
+            }
+        }
+    ]
+
+    events = runtime_sdk._archive_messages_to_events("sess-map", messages)
+
+    assert [event["type"] for event in events] == [
+        "assistant.delta",
+        "assistant.completed",
+    ]
+    assert events[0]["payload"]["text"] == "hello from mapping env"
+    assert events[0]["seq"] == 1
+    assert events[1]["seq"] == 2
+
+    monkeypatch.setattr(runtime_sdk, "normalize_text_delta", original_text)
+    monkeypatch.setattr(
+        runtime_sdk,
+        "normalize_assistant_completed",
+        original_completed,
+    )
