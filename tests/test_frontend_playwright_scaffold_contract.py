@@ -81,8 +81,8 @@ def test_playwright_session_utils_spec_exists() -> None:
     text = Path("frontend/e2e/session-utils.spec.js").read_text()
     assert "test('session utility controls are exposed in the current DOM'" in text
     assert "#session-label" in text
-    assert "#connection-status" in text
     assert "#runtime-mode-label" in text
     assert "#tool-search-select" in text
     assert "#export-session" in text
     assert "#export-session-json" in text
+    assert "#connection-status" not in text
