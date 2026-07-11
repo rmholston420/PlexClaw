@@ -645,7 +645,7 @@ function renderProviderRuntimeMeta() {
    } catch (err) {
      console.warn('Provider load error', err);
      state.providers = {
-       cloud: { label: 'Cloud', models: ['claude-sonnet-4-5', 'claude-opus-4-5', 'claude-haiku-4-5'] },
+       cloud: { label: 'Cloud', models: ['claude-sonnet-4-5-20250929', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001'] },
      };
      state.provider = 'cloud';
      renderModelOptions();
