@@ -281,3 +281,14 @@ def test_playwright_terminal_copy_spec_exists() -> None:
     assert "#terminal-copy" in text
     assert "#terminal-clear" in text
     assert "toBeEnabled()" in text
+def test_playwright_terminal_clear_spec_exists() -> None:
+    text = Path("frontend/e2e/terminal-clear.spec.js").read_text()
+    assert (
+        "test('terminal clear control remains usable after opening the drawer'"
+        in text
+    )
+    assert "#terminal-toggle" in text
+    assert "#terminal-drawer" in text
+    assert "#terminal-clear" in text
+    assert "#terminal-copy" in text
+    assert "toBeEnabled()" in text
