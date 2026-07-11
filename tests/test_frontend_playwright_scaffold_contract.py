@@ -36,3 +36,13 @@ def test_playwright_tabs_spec_exists() -> None:
     assert "BEFORE_RUNTIME=" in text
     assert "AFTER_RUNTIME=" in text
     assert "sessionTabCount" in text
+
+
+def test_playwright_controls_spec_exists() -> None:
+    text = Path("frontend/e2e/controls.spec.js").read_text()
+    assert "test('observable controls respond in the DOM'" in text
+    assert "#mode-manual-btn" in text
+    assert "#mode-auto-btn" in text
+    assert "#terminal-errors-only" in text
+    assert "#cwd-pill" in text
+    assert "#cwd-modal" in text
