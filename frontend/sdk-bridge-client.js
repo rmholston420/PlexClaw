@@ -1847,6 +1847,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
       window.setTimeout(updateTabScrollButtons, 180);
     });
     el.tabbar?.addEventListener('scroll', updateTabScrollButtons);
+  el.newTabBtn?.addEventListener('click', openNewTab);
     el.terminalToggle?.addEventListener('click', () => {
       setTerminalOpen(!state.terminalOpen);
       syncStateToActiveTab();
