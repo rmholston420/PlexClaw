@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 import urllib.request
 from contextlib import asynccontextmanager
 
@@ -129,7 +130,7 @@ async def health() -> dict:
 @app.get("/api/runtime/diag")
 async def runtime_diagnostics() -> dict:
     sessions = runtime.list_live_sessions()
-    now = runtime.time.monotonic()
+    now = time.monotonic()
     items = []
     for s in sessions:
         items.append(
@@ -164,7 +165,7 @@ async def list_sessions() -> list:
     Useful for the frontend to recover tab state after a page refresh
     and to display session badges in the top bar.
     """
-    now = runtime.time.monotonic()
+    now = time.monotonic()
     return [
         {
             "session_id": s.id,
