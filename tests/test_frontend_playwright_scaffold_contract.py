@@ -169,7 +169,7 @@ def test_playwright_tab_activation_spec_exists() -> None:
 
 def test_playwright_search_focus_spec_exists() -> None:
     text = Path("frontend/e2e/search-focus.spec.js").read_text()
-    assert "test('opening search modal moves focus to the search input'" in text
+    assert "test('opening search modal moves focus to the modal search input'" in text
     assert "#open-search" in text
+    assert "#search-input-modal" in text
     assert "toBeFocused()" in text
-    assert 'input[type="search"]' in text
