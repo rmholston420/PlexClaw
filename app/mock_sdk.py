@@ -11,7 +11,6 @@ Mock responses are token-by-token so the streaming UI path is exercised.
 from __future__ import annotations
 
 import asyncio
-import uuid
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -82,7 +81,6 @@ class MockSDKClient:
 
     async def _produce_tokens(self) -> None:
         full_text = _MOCK_INTRO + self._prompt
-        tool_id = str(uuid.uuid4())
 
         # content_block_start (text)
         await self._response_queue.put(
@@ -139,8 +137,6 @@ class MockSDKClient:
 
         # sentinel
         await self._response_queue.put(None)
-
-        _ = tool_id  # silence unused-variable warning
 
 
 class MockStreamEvent:

@@ -467,12 +467,6 @@ async def update_session(
 
 
 async def create_session(req: SessionCreateRequest) -> LiveSession:
-    if (
-        req.provider == "cloud"
-        and not get_settings().mock_mode
-        and not os.environ.get("ANTHROPIC_API_KEY")
-    ):
-        raise ValueError("ANTHROPIC_API_KEY is not set")
     normalized_cwd = None
     if req.cwd:
         normalized_cwd = str(Path(req.cwd).expanduser().resolve())
