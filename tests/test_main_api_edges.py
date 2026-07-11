@@ -8,7 +8,11 @@ client = TestClient(main.app)
 
 
 def test_update_session_maps_keyerror_to_404(monkeypatch):
-    async def fake_update_session(session_id: str, permission_mode=None):
+    async def fake_update_session(
+        session_id: str,
+        permission_mode=None,
+        sdk_permission_mode=None,
+    ):
         raise KeyError("missing-session")
 
     monkeypatch.setattr(main.runtime, "update_session", fake_update_session)
@@ -19,7 +23,11 @@ def test_update_session_maps_keyerror_to_404(monkeypatch):
 
 
 def test_update_session_maps_valueerror_to_400(monkeypatch):
-    async def fake_update_session(session_id: str, permission_mode=None):
+    async def fake_update_session(
+        session_id: str,
+        permission_mode=None,
+        sdk_permission_mode=None,
+    ):
         raise ValueError("bad permission mode")
 
     monkeypatch.setattr(main.runtime, "update_session", fake_update_session)

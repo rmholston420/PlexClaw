@@ -142,10 +142,16 @@ def test_update_session_returns_payload_direct(monkeypatch):
         id = "s1"
         status = "ready"
         permission_mode = "manual"
+        sdk_permission_mode = "default"
 
-    async def fake_update_session(session_id, permission_mode=None):
+    async def fake_update_session(
+        session_id,
+        permission_mode=None,
+        sdk_permission_mode=None,
+    ):
         assert session_id == "s1"
         assert permission_mode == "manual"
+        assert sdk_permission_mode is None
         return Session()
 
     monkeypatch.setattr(main.runtime, "update_session", fake_update_session)
@@ -159,6 +165,7 @@ def test_update_session_returns_payload_direct(monkeypatch):
             "session_id": "s1",
             "status": "ready",
             "permission_mode": "manual",
+            "sdk_permission_mode": "default",
         }
 
     asyncio.run(run())

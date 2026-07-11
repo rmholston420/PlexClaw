@@ -196,9 +196,9 @@ class LiveSession:
     cwd: str | None
     provider: str
     permission_mode: str
-    sdk_permission_mode: str
     resume_session_id: str | None
     fork_session: bool
+    sdk_permission_mode: str = "default"
     status: str = "created"  # created | ready | running | interrupted | failed
     last_activity_at: float = field(default_factory=time.monotonic)
     title: str = ""
