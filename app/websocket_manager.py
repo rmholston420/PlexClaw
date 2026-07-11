@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import WebSocket
 
 from app.schemas import WSEnvelope
+
+log = logging.getLogger(__name__)
 
 
 class WebSocketManager:
@@ -36,7 +40,12 @@ class WebSocketManager:
         for ws in conns:
             try:
                 await ws.send_text(data)
-            except Exception:
+            except Exception as exc:
+                log.debug(
+                    "Dropping dead websocket during broadcast for session %s: %r",
+                    envelope.session_id,
+                    exc,
+                )
                 dead.append(ws)
         for ws in dead:
             self.remove(envelope.session_id, ws)
