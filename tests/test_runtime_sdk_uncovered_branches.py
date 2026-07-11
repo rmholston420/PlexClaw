@@ -87,3 +87,43 @@ async def test_update_session_sets_valid_sdk_permission_mode(clean_sessions):
     assert result is session
     assert session.sdk_permission_mode == "acceptEdits"
 
+@pytest.mark.asyncio
+async def test_handle_sdk_terminal_message_usage_object_uses_vars(
+    monkeypatch, clean_sessions
+):
+    session = make_session(mock_mode=False)
+    runtime_sdk._sessions[session.id] = session
+
+    class GoodUsage:
+        def __init__(self):
+            self.input_tokens = 11
+            self.output_tokens = 22
+
+    ResultType = type("ResultMessage", (), {})
+    msg = ResultType()
+    msg.subtype = "end_turn"
+    msg.usage = GoodUsage()
+
+    emitted = []
+
+    async def fake_emit(_session, env):
+        emitted.append(env)
+
+    monkeypatch.setattr(runtime_sdk, "_emit", fake_emit)
+    monkeypatch.setattr(runtime_sdk, "ResultMessage", ResultType)
+
+    handled = await _handle_sdk_terminal_message(
+        session,
+        msg,
+        {},
+        allow_completed=True,
+    )
+
+    assert handled is True
+    assert emitted[-1].type == "assistant.completed"
+    assert emitted[-1].payload["stop_reason"] == "end_turn"
+    assert emitted[-1].payload["usage"] == {
+        "input_tokens": 11,
+        "output_tokens": 22,
+    }
+
