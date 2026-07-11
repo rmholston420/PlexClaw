@@ -207,3 +207,58 @@ async def test_stream_sdk_emits_completed_when_no_terminal_result(
     assert emitted[-1].payload["stop_reason"] == "end_turn"
     assert emitted[-1].payload["usage"] == {}
 
+@pytest.mark.asyncio
+async def test_stream_sdk_invalid_tool_json_emits_raw_tool_input(
+    monkeypatch, clean_sessions
+):
+    session = make_session(
+        session_id="bad-tool-json",
+        mock_mode=True,
+        permission_mode="auto",
+    )
+    runtime_sdk._sessions[session.id] = session
+
+    emitted = []
+
+    async def fake_emit(_session, env):
+        emitted.append(env)
+
+    class FakeBadJsonClient:
+        async def connect(self):
+            return None
+
+        async def query(self, prompt):
+            return None
+
+        async def receive_response(self):
+            yield runtime_sdk.MockStreamEvent(
+                {
+                    "type": "content_block_start",
+                    "content_block": {
+                        "type": "tool_use",
+                        "id": "tool-bad-json",
+                        "name": "bash",
+                    },
+                }
+            )
+            yield runtime_sdk.MockStreamEvent(
+                {
+                    "type": "content_block_delta",
+                    "delta": {
+                        "type": "input_json_delta",
+                        "partial_json": "{bad json",
+                    },
+                }
+            )
+            yield runtime_sdk.MockStreamEvent({"type": "content_block_stop"})
+
+    session._client = FakeBadJsonClient()
+    monkeypatch.setattr(runtime_sdk, "_emit", fake_emit)
+
+    await _stream_sdk(session, "hello")
+
+    tool_delta_events = [env for env in emitted if env.type == "tool.delta"]
+    assert tool_delta_events
+    assert tool_delta_events[-1].payload["tool_name"] == "bash"
+    assert tool_delta_events[-1].payload["tool_input"] == {"_raw": "{bad json"}
+
