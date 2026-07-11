@@ -245,30 +245,9 @@
     .sort-select { background-image: none; }
 
     /* ===== TRANSCRIPT + TOOL CARDS ===== */
-  .transcript {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s3);
-    padding: var(--s4);
-    overflow-y: auto;
-    min-height: 0;
-    background:
-      radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 7%, transparent), transparent 28%),
-      linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg)), var(--bg));
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
+  
 
-  .msg {
-    max-width: min(88ch, 92%);
-    padding: var(--s3) var(--s4);
-    border-radius: var(--radius-lg);
-    line-height: 1.55;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid transparent;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
+  
 
   .msg.assistant {
     align-self: flex-start;
@@ -277,12 +256,7 @@
     color: var(--text);
   }
 
-  .msg.user {
-    align-self: flex-end;
-    background: color-mix(in srgb, var(--primary-hl) 72%, var(--surface));
-    border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
-    color: var(--text);
-  }
+  
 
   .msg.system {
     align-self: center;
@@ -1057,18 +1031,7 @@
     cursor: default;
   }
 /* ===== TRANSCRIPT ===== */
-    .transcript {
-      overflow-y: auto;
-      padding: var(--s4) var(--s6);
-      display: flex;
-      flex-direction: column;
-      gap: var(--s3);
-      background:
-        radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 7%, transparent), transparent 28%),
-        linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg)), var(--bg));
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-   }
+    
 
     /* Welcome */
     .welcome {
