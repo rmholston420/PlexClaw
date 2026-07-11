@@ -10,11 +10,11 @@ Individual test files may still define their own fixtures on top of this,
 but they must NOT re-patch the same globals (use the shared fixture instead).
 """
 from __future__ import annotations
-from app import hooks
 
 import pytest
 
 import app.event_store as event_store
+from app import hooks
 from app import runtime_sdk as runtime
 from app.event_store import init_db
 
