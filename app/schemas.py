@@ -29,6 +29,7 @@ class SessionCreateRequest(BaseModel):
     model: str = Field(default=DEFAULT_CLOUD_MODELS[0], min_length=1, max_length=200)
     cwd: str | None = None
     provider: ProviderName = "cloud"
+    provider_base_url: str | None = None
     permission_mode: PermissionMode = "manual"
     sdk_permission_mode: SDKPermissionMode = "default"
     tool_search_mode: str | None = None

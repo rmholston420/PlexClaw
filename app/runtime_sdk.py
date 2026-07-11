@@ -123,8 +123,11 @@ def build_effective_system_prompt(base_prompt: str, cwd: str | None) -> str:
     return "\n\n".join(part for part in parts if part.strip())
 
 
-def _provider_env(provider: str) -> dict[str, str]:
-    return get_provider_env(provider)
+def _provider_env(
+    provider: str,
+    base_url_override: str | None = None,
+) -> dict[str, str]:
+    return get_provider_env(provider, base_url_override)
 
 
 def _tool_search_env(mode: str | None) -> dict[str, str]:
@@ -502,7 +505,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
         req.system_prompt or DEFAULT_SYSTEM_PROMPT,
         normalized_cwd,
     )
-    provider_env = get_provider_env(req.provider)
+    provider_env = get_provider_env(req.provider, req.provider_base_url)
     tool_search_env = get_tool_search_env(req.tool_search_mode)
     session_env = {**provider_env, **tool_search_env}
     provider_base_url = provider_env.get("ANTHROPIC_BASE_URL")

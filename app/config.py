@@ -42,8 +42,15 @@ def get_vllm_base_url() -> str:
     return os.getenv("VLLM_BASE_URL", DEFAULT_VLLM_BASE_URL).rstrip("/")
 
 
-def get_provider_env(provider: str) -> dict[str, str]:
+def get_provider_env(
+    provider: str,
+    base_url_override: str | None = None,
+) -> dict[str, str]:
     env: dict[str, str] = {}
+    override = (base_url_override or "").strip().rstrip("/")
+    if override and provider in {"ollama", "vllm"}:
+        env["ANTHROPIC_BASE_URL"] = override
+        return env
     if provider == "ollama":
         env["ANTHROPIC_BASE_URL"] = get_ollama_base_url()
     elif provider == "vllm":

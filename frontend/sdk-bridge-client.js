@@ -80,6 +80,9 @@ const Bridge = (() => {
     exitReplay: document.getElementById('exit-replay'),
     providerSwitcher: document.getElementById('provider-switcher'),
    providerRuntimeMeta: document.getElementById('provider-runtime-meta'),
+  providerBaseUrlMeta: document.getElementById('provider-base-url-meta'),
+  providerBaseUrlInput: document.getElementById('provider-base-url-input'),
+  providerSettingsBtn: document.getElementById('provider-settings-btn'),
   toolRuntimeMeta: document.getElementById('tool-runtime-meta'),
  sessionCwdMeta: document.getElementById('session-cwd-meta'),
  sessionRuntimeMeta: document.getElementById('session-runtime-meta'),
@@ -232,90 +235,33 @@ function bindRuntimeMetaCopyHandlers() {
 
 
 function renderProviderRuntimeMeta() {
- const provider = state.provider || 'cloud';
- const providerInfo = state.providers?.[provider] || {};
- const providerLabel = providerInfo.label || provider;
- const base = state.providerBaseUrl;
-
- if (el.providerRuntimeMeta) {
-   const providerText = base
-     ? `${providerLabel} via ${base}`
-     : `${providerLabel} (default route)`;
-   const providerTitle = base
-     ? `Click to copy provider route: ${providerLabel} via ${base}`
-     : `Click to copy provider route: ${providerLabel} using default backend routing`;
-   setRuntimeMetaCopyValue(el.providerRuntimeMeta, providerText, providerText, providerTitle);
- }
-
- if (el.sessionCwdMeta) {
-   const cwdText = state.cwd || state.cwdSelected || '~';
-   setRuntimeMetaCopyValue(
-     el.sessionCwdMeta,
-     shortenPath(cwdText),
-     cwdText,
-     `Click to copy working directory: ${cwdText}`
-   );
- }
-
- if (el.sessionRuntimeMeta) {
-   const runtimeText = state.runtimeMode === 'mock'
-     ? 'Mock runtime'
-     : state.runtimeMode === 'live'
-       ? 'Live runtime'
-       : 'Unknown runtime';
-   const sdkText = state.sdkPermissionMode || 'default';
-   const combinedRuntimeText = `${runtimeText} · SDK: ${sdkText}`;
-   setRuntimeMetaCopyValue(
-     el.sessionRuntimeMeta,
-     combinedRuntimeText,
-     combinedRuntimeText,
-     `Click to copy runtime mode: ${runtimeText}; Claude SDK mode: ${sdkText}`
-   );
- }
-
- if (el.toolRuntimeMeta) {
-   const mode = state.toolSearchMode;
-   const active = state.toolSearchActive;
-   let toolText = 'Default tools';
-   let toolTitle = 'Tools: default';
-   if (mode === 'auto') {
-     toolText = 'Auto tools';
-     toolTitle = 'Tool search is explicitly enabled in auto mode';
-   } else if (mode === 'auto:5') {
-     toolText = 'Auto tools 5%';
-     toolTitle = 'Tool search is explicitly enabled in auto 5% mode';
-   } else if (mode === 'true') {
-     toolText = 'Tools enabled';
-     toolTitle = 'Tool search is explicitly enabled for this session';
-   } else if (mode === 'false') {
-     toolText = 'Tools disabled';
-     toolTitle = 'Tool search is explicitly disabled for this session';
-   } else if (active === false && base) {
-     toolText = 'Tools disabled';
-     toolTitle = 'Tools: off (custom route)';
-   } else if (active === false) {
-     toolText = 'Tools disabled';
-     toolTitle = 'Tool search is disabled by backend configuration';
-   }
-   setRuntimeMetaCopyValue(
-     el.toolRuntimeMeta,
-     toolText,
-     toolText,
-     `Click to copy tool search state: ${toolTitle}`
-   );
- }
-
- bindRuntimeMetaCopyHandlers();
-
- if (el.toolSearchSelect) {
-  el.toolSearchSelect.value = state.toolSearchMode || '';
-  const selected = el.toolSearchSelect.options[el.toolSearchSelect.selectedIndex];
-  el.toolSearchSelect.title = `Tool search mode: ${selected ? selected.textContent : 'Tool search: Default'}`;
- }
-
- if (el.sdkPermissionModeSelect) {
-  el.sdkPermissionModeSelect.value = state.sdkPermissionMode || 'default';
- }
+  const provider = state.providers[state.provider] || {};
+  const label = provider.label || state.provider || 'Cloud';
+  const baseUrl = state.providerBaseUrl || provider.base_url || null;
+  setCopyableValue(
+    el.providerRuntimeMeta,
+    label,
+    label,
+    `Click to copy provider route: ${label}`
+  );
+  setCopyableValue(
+    el.providerBaseUrlMeta,
+    baseUrl || 'Default',
+    baseUrl || 'Default',
+    `Click to copy provider base URL: ${baseUrl || 'Default'}`
+  );
+  if (el.providerBaseUrlInput) {
+    el.providerBaseUrlInput.value = baseUrl || '';
+    el.providerBaseUrlInput.placeholder =
+      provider.base_url || (
+        state.provider === 'ollama'
+          ? 'http://127.0.0.1:11434'
+          : state.provider === 'vllm'
+            ? 'http://127.0.0.1:30000'
+            : 'Provider default'
+      );
+    el.providerBaseUrlInput.disabled = state.provider === 'cloud';
+  }
 }
 
 
@@ -1692,6 +1638,7 @@ function bindStableUiHandlers() {
 if (Object.prototype.hasOwnProperty.call(data, 'tool_search_mode')) state.toolSearchMode = data.tool_search_mode;
 if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.toolSearchActive = Boolean(data.tool_search_active);
   if (data.permission_mode) state.permissionMode = data.permission_mode;
+ if (data.sdk_permission_mode) state.sdkPermissionMode = data.sdk_permission_mode;
   if (Object.prototype.hasOwnProperty.call(data, 'cwd')) setCwd(data.cwd);
   if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);
   renderModelOptions();
@@ -2046,7 +1993,18 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
     el.searchBackdrop?.addEventListener('click', closeSearchModal);
     el.searchClose?.addEventListener('click', closeSearchModal);
     el.searchInputModal?.addEventListener('input', runSessionSearch);
-    el.modelSelect?.addEventListener('change', () => {
+    el.providerSettingsBtn?.addEventListener('click', () => {
+    const raw = (el.providerBaseUrlInput?.value || '').trim();
+    state.providerBaseUrl = state.provider === 'cloud' ? null : (raw || null);
+    renderProviderRuntimeMeta();
+    appendSystemMessage(
+      state.provider === 'cloud'
+        ? 'Cloud provider uses its default route.'
+        : `Provider endpoint set to ${state.providerBaseUrl || 'default'} for new sessions.`
+    );
+  });
+
+  el.modelSelect?.addEventListener('change', () => {
       state.model = el.modelSelect.value;
     });
     el.modeManualBtn?.addEventListener('click', () => setPermissionMode('manual'));
