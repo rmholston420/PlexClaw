@@ -19,6 +19,7 @@ Mock mode:
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import logging
 import os
@@ -914,7 +915,7 @@ async def delete_session(session_id: str) -> None:
             close = getattr(session._client, "close", None)
             if close is not None:
                 result = close()
-                if hasattr(result, "__await__"):
+                if inspect.iscoroutine(result):
                     await result
         except Exception as exc:
             log.warning("Session delete close failed: %s", exc)
