@@ -197,3 +197,14 @@ def test_playwright_search_close_spec_exists() -> None:
     assert "#search-modal" in text
     assert "#search-close" in text
     assert "aria-hidden" in text
+def test_playwright_terminal_toolbar_spec_exists() -> None:
+    text = Path("frontend/e2e/terminal-toolbar.spec.js").read_text()
+    assert (
+        "test('terminal toolbar copy and clear controls remain visible and enabled'"
+        in text
+    )
+    assert "#terminal-toggle" in text
+    assert "#terminal-drawer" in text
+    assert "#terminal-clear" in text
+    assert "#terminal-copy" in text
+    assert "toBeEnabled()" in text
