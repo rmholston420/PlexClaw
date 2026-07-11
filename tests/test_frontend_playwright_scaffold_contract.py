@@ -30,6 +30,7 @@ def test_playwright_smoke_spec_exists() -> None:
 
 def test_playwright_tabs_spec_exists() -> None:
     text = Path("frontend/e2e/tabs.spec.js").read_text()
-    assert "test('new tab button is present and clickable'" in text
+    assert "test('new tab button creates and activates a new tab'" in text
     assert "#new-tab-btn" in text
-    assert "toBeEnabled()" in text
+    assert "#tabbar button" in text
+    assert "toHaveCount(beforeCount + 1)" in text
