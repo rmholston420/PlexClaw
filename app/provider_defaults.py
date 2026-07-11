@@ -7,9 +7,8 @@ DEFAULT_CLOUD_MODELS = [
 ]
 
 # Canonical Anthropic API model IDs — use these when submitting to the real SDK.
-# The short aliases above are accepted by the latest Anthropic SDK (>=0.30) which
-# resolves them server-side, but if you need fully-qualified IDs for strict
-# validation or older SDK versions, use these instead:
+# Default cloud model aliases used by the app.
+# These short IDs are passed through as the configured cloud defaults.
 
 
 # Fallback to dated identifiers accepted by the Anthropic API for strict mode:
