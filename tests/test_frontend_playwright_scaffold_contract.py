@@ -208,3 +208,14 @@ def test_playwright_terminal_toolbar_spec_exists() -> None:
     assert "#terminal-clear" in text
     assert "#terminal-copy" in text
     assert "toBeEnabled()" in text
+def test_playwright_archive_search_spec_exists() -> None:
+    text = Path("frontend/e2e/archive-search.spec.js").read_text()
+    assert (
+        "test('archive search input remains editable and archive surface stays visible'"
+        in text
+    )
+    assert "#archive-search" in text
+    assert "#archive-list" in text
+    assert "#refresh-archive" in text
+    assert "toHaveValue('session')" in text
+    assert "toHaveValue('terminal')" in text
