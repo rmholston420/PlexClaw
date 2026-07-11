@@ -60,6 +60,7 @@ def test_validate_script_uses_default_dotvenv_python(tmp_path: Path) -> None:
     scripts_dir.mkdir(parents=True)
     venv_bin.mkdir(parents=True)
     fake_bin.mkdir(parents=True)
+    (repo_root / "app.py").write_text("print(123)\n")
 
     validate_src = Path("scripts/validate.sh").read_text()
     (scripts_dir / "validate.sh").write_text(validate_src)
@@ -68,6 +69,7 @@ def test_validate_script_uses_default_dotvenv_python(tmp_path: Path) -> None:
     _make_fake_git(fake_bin / "git", repo_root)
 
     env = os.environ.copy()
+    env.pop("PYTHON_BIN", None)
     env["PATH"] = f"{fake_bin}:{env['PATH']}"
 
     result = _run_validate(repo_root, env=env)
@@ -87,6 +89,7 @@ def test_validate_script_resolves_python_from_path(tmp_path: Path) -> None:
 
     scripts_dir.mkdir(parents=True)
     fake_bin.mkdir(parents=True)
+    (repo_root / "app.py").write_text("print(123)\n")
 
     validate_src = Path("scripts/validate.sh").read_text()
     (scripts_dir / "validate.sh").write_text(validate_src)
