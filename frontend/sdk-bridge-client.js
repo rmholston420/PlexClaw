@@ -1966,7 +1966,8 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
   }
 
   async function init() {
-  openNewTab();
+  try {
+    openNewTab();
     await initCwd();
     renderPermissionMode();
     el.cwdPill?.addEventListener('click', openCwdModal);
@@ -1995,9 +1996,13 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
     renderRawLog();
     updateTabScrollButtons();
     await loadArchive();
+  } catch (error) {
+    console.error('Startup initialization failed:', error);
+    appendSystemMessage('Could not reach backend at http://127.0.0.1:8020. Check that the PlexClaw server is running and reload the page.');
   }
+}
 
-  return { init };
+return { init };
 })();
 
 document.addEventListener('DOMContentLoaded', Bridge.init);
