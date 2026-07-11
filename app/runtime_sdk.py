@@ -758,13 +758,13 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                         _current_tool_id = None
                         _current_tool_name = None
                         _current_tool_json = ""
-
                 elif etype == "message_delta":
                     # Do not emit assistant.completed here.
                     # With include_partial_messages=True, message_delta can carry
                     # stop_reason before the later ResultMessage arrives. The
                     # ResultMessage is the single end-of-turn completion signal.
                     pass
+
 
                 # message_start / message_stop / content_block_stop (text) are no-ops
                 continue
@@ -933,11 +933,14 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
 
     def push(env) -> None:
         nonlocal seq
-        if hasattr(env, "model_dump"):
-            events.append(env.model_dump())
-        else:
-            events.append(dict(env))
+        current = seq
         seq += 1
+        if hasattr(env, "model_dump"):
+            payload = env.model_dump()
+        else:
+            payload = dict(env)
+        payload["seq"] = current
+        events.append(payload)
 
     for item in messages:
         msg = item.get("message") or {}
@@ -949,7 +952,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
 
             if isinstance(content, str):
                 if content:
-                    push(normalize_text_delta(session_id, seq, content))
+                    push(normalize_text_delta(session_id, 0, content))
                     saw_text = True
 
             elif isinstance(content, list):
@@ -973,7 +976,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                         push(
                             normalize_tool_started(
                                 session_id,
-                                seq,
+                                0,
                                 tool_id,
                                 tool_name,
                                 {},
@@ -982,7 +985,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
 
                         env = normalize_tool_delta(
                             session_id,
-                            seq,
+                            0,
                             tool_id,
                             "",
                         )
@@ -994,7 +997,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                         push(
                             normalize_system_message(
                                 session_id,
-                                seq,
+                                0,
                                 f"Unsupported archive assistant block: {btype}",
                                 level="warn",
                             )
@@ -1004,7 +1007,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                 push(
                     normalize_assistant_completed(
                         session_id,
-                        seq,
+                        0,
                         msg.get("stop_reason", "end_turn"),
                     )
                 )
@@ -1016,7 +1019,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
             push(
                 normalize_system_message(
                     session_id,
-                    seq,
+                    0,
                     f"Unsupported archive message role: {role or item.get('type')}",
                     level="warn",
                 )
