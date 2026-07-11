@@ -1,8 +1,25 @@
 # PlexClaw
 
-Current release: `0.2.0`
 
-PlexClaw is a local browser-based coding workstation modeled after the PlexClaw interaction style and backed by a FastAPI + WebSocket bridge for Claude Code sessions.
+PlexClaw is a browser-native GUI for **Claude Code** and the **Claude Agent SDK**.
+
+It is designed to expose Claude-native sessions, permissions, tools, runtime state, repo context, and useful local LLM settings as clearly and completely as possible in a modern browser interface. While the UI may borrow visual ideas from products like Perplexity Computer, PlexClaw is ultimately optimized for Claude Code and Claude Agent SDK workflows first.
+
+## Product direction
+
+PlexClaw aims to be:
+
+- A full-featured browser GUI for Claude Code and Claude Agent SDK.
+- A high-visibility control surface for useful local and self-hosted LLM settings.
+- A repo-aware coding workspace for multi-session, tool-driven, browser-based development.
+- A future embeddable plugin surface for Rigpa-LMS.
+
+## Design principles
+
+- Claude-native fidelity first; avoid hiding useful Claude Code or Agent SDK capabilities.
+- Browser UX should enhance Claude workflows, not replace them with unrelated abstractions.
+- Expose useful runtime state clearly: model, cwd, provider route, permission mode, tool state, and session status.
+- Prefer an interface optimized for coding sessions, approvals, diffs, archives, and repo operations over one optimized only for generic chat.
 
 ## Architecture
 
@@ -121,3 +138,16 @@ Backend configuration:
 - The top bar now also shows the session working directory and runtime mode, and the helper text under that panel explicitly marks it as the source of truth when model replies speculate about environment details.
 - Raw tool input is hidden in the transcript UI and omitted from normalized `tool.started` events, reducing accidental leakage of prompt or filesystem details into replay, search, and copy flows.
 - Runtime diagnostics are available at both `/api/diag/runtime` and `/api/runtime/diag`.
+
+
+## Competitive feature targets
+
+PlexClaw should selectively match or exceed the strongest ideas from existing Claude Code and Agent SDK UIs:
+
+- Session browser primitives: list, search, resume, rename, tag, fork, archive, export.
+- Parallel live sessions with clear busy/waiting/idle status.
+- Strong permission UX with visible Claude SDK mode and approval tracing.
+- Repo-aware coding affordances such as diffs, file context, worktree/project awareness, and touched-file visibility.
+- Useful local LLM controls including provider route, base URL, model selection, and runtime inspection.
+- A frontend architecture that can evolve from standalone app to Rigpa-LMS plugin.
+
