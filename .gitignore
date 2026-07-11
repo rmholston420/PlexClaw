@@ -11,3 +11,4 @@ REPLACE_WITH_REAL_DB_PATH
 *.egg-info/
 *.db-shm
 *.db-wal
+.coverage
