@@ -9,6 +9,7 @@ import os
 import time
 import urllib.request
 from contextlib import asynccontextmanager
+from typing import Literal
 
 from fastapi import (
     FastAPI,
@@ -466,7 +467,7 @@ async def search_api(q: str = Query(..., min_length=1)) -> list:
 
 
 @app.get("/api/sessions/{session_id}/export")
-async def export_session(session_id: str, format: str = "json"):
+async def export_session(session_id: str, format: Literal["json", "md"] = "json"):
     events = query_events(session_id)
     if format == "json":
         return JSONResponse(content={"session_id": session_id, "events": events})
