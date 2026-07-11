@@ -49,7 +49,11 @@ def normalize_tool_started(
         "tool.started",
         session_id,
         seq,
-        {"tool_id": tool_id, "tool_name": tool_name},
+        {
+            "tool_id": tool_id,
+            "tool_name": tool_name,
+            "tool_input": tool_input,
+        },
     )
 
 
