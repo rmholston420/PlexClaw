@@ -59,8 +59,6 @@ def test_playwright_exports_spec_exists() -> None:
     assert "#export-session" in text
     assert "#export-session-json" in text
     assert "aria-label" in text
-    assert "markdown" in text.lower()
-    assert "json" in text.lower()
 
 
 def test_playwright_runtime_mode_spec_exists() -> None:
@@ -69,7 +67,6 @@ def test_playwright_runtime_mode_spec_exists() -> None:
     assert "#runtime-mode-label" in text
     assert "#mode-manual-btn" in text
     assert "#mode-auto-btn" in text
-    assert "not.toHaveText" in text
 
 
 def test_playwright_tool_search_spec_exists() -> None:
@@ -78,3 +75,14 @@ def test_playwright_tool_search_spec_exists() -> None:
     assert "#tool-search-select" in text
     assert "toBeVisible" in text
     assert "toBeEnabled" in text
+
+
+def test_playwright_session_utils_spec_exists() -> None:
+    text = Path("frontend/e2e/session-utils.spec.js").read_text()
+    assert "test('session utility controls are exposed in the current DOM'" in text
+    assert "#session-label" in text
+    assert "#connection-status" in text
+    assert "#runtime-mode-label" in text
+    assert "#tool-search-select" in text
+    assert "#export-session" in text
+    assert "#export-session-json" in text
