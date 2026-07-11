@@ -227,3 +227,14 @@ def test_playwright_cwd_actions_spec_exists() -> None:
     assert "#cwd-cancel" in text
     assert "#cwd-confirm" in text
     assert "aria-hidden" in text
+def test_playwright_terminal_errors_filter_spec_exists() -> None:
+    text = Path("frontend/e2e/terminal-errors-filter.spec.js").read_text()
+    assert (
+        "test('terminal errors-only filter toggles cleanly after opening the drawer'"
+        in text
+    )
+    assert "#terminal-toggle" in text
+    assert "#terminal-drawer" in text
+    assert "#terminal-errors-only" in text
+    assert "toBeChecked()" in text
+    assert "uncheck()" in text
