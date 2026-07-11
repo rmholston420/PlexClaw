@@ -57,3 +57,17 @@ async def _log_hook(ctx: HookContext) -> None:
 
 
 register_hook(_log_hook)
+
+
+def unregister_hook(fn) -> None:
+    """Remove a previously registered hook if present."""
+    try:
+        _hooks.remove(fn)
+    except ValueError:
+        pass
+
+
+def reset_hooks() -> None:
+    """Reset hook registry to the default built-in hooks."""
+    global _hooks
+    _hooks[:] = [_log_hook]

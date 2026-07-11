@@ -10,6 +10,7 @@ Individual test files may still define their own fixtures on top of this,
 but they must NOT re-patch the same globals (use the shared fixture instead).
 """
 from __future__ import annotations
+from app import hooks
 
 import pytest
 
@@ -34,6 +35,7 @@ def reset_plexclaw_state(tmp_path, monkeypatch):
     init_db()
 
     yield
+    hooks.reset_hooks()
 
     # --- teardown ---
     runtime._sessions.clear()
