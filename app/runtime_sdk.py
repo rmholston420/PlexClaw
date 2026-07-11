@@ -19,6 +19,7 @@ Mock mode:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import time
@@ -706,11 +707,9 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
 
                 elif etype == "content_block_stop":
                     if _current_tool_id and _current_tool_name:
-                        import json as _json
-
                         try:
                             tool_input = (
-                                _json.loads(_current_tool_json)
+                                json.loads(_current_tool_json)
                                 if _current_tool_json
                                 else {}
                             )
