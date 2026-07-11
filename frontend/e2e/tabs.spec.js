@@ -21,7 +21,8 @@ test('new tab button diagnostic reveals runtime tab state', async ({ page }) => 
       hasState: typeof runtime.state !== 'undefined',
       tabsLength: runtime.state?.tabs?.length ?? null,
       activeTabId: runtime.state?.activeTabId ?? null,
-      tabbarHtml: document.querySelector('#tabbar')?.innerHTML?.replace(/\s+/g, ' ').trim() ?? null,
+      tabbarHtml:
+        document.querySelector('#tabbar')?.innerHTML?.replace(/\s+/g, ' ').trim() ?? null,
       sessionTabCount: document.querySelectorAll('#tabbar .session-tab').length,
     };
   });
@@ -39,7 +40,8 @@ test('new tab button diagnostic reveals runtime tab state', async ({ page }) => 
       hasState: typeof runtime.state !== 'undefined',
       tabsLength: runtime.state?.tabs?.length ?? null,
       activeTabId: runtime.state?.activeTabId ?? null,
-      tabbarHtml: document.querySelector('#tabbar')?.innerHTML?.replace(/\s+/g, ' ').trim() ?? null,
+      tabbarHtml:
+        document.querySelector('#tabbar')?.innerHTML?.replace(/\s+/g, ' ').trim() ?? null,
       sessionTabCount: document.querySelectorAll('#tabbar .session-tab').length,
     };
   });

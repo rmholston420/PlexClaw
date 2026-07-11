@@ -1911,6 +1911,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
       if (e.key.toLowerCase() === 't') {
         e.preventDefault();
         openNewTab();
+    renderTabs();
         return;
       }
 
