@@ -80,8 +80,20 @@ def normalize_session_list(
 ) -> list[dict[str, Any]]:
     """Normalize a list and sort descending by updated_at."""
     normalized = [normalize_session(s) for s in sessions]
+    def _ts(value: object) -> float:
+        if value is None:
+            return 0.0
+        if isinstance(value, int | float):
+            return float(value)
+        try:
+            from datetime import datetime
+
+            return datetime.fromisoformat(str(value)).timestamp()
+        except Exception:
+            return 0.0
+
     return sorted(
         normalized,
-        key=lambda s: s["updated_at"] or "",
+        key=lambda s: _ts(s["updated_at"]),
         reverse=True,
     )
