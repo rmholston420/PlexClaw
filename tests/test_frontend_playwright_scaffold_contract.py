@@ -173,3 +173,9 @@ def test_playwright_search_focus_spec_exists() -> None:
     assert "#open-search" in text
     assert "#search-input-modal" in text
     assert "toBeFocused()" in text
+def test_playwright_terminal_toggle_spec_exists() -> None:
+    text = Path("frontend/e2e/terminal-toggle.spec.js").read_text()
+    assert "test('terminal toggle opens and closes the terminal panel'" in text
+    assert "#terminal-toggle" in text
+    assert "#terminal-drawer" in text
+    assert "aria-hidden" in text
