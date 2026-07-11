@@ -20,8 +20,9 @@ test('observable controls respond in the DOM', async ({ page }) => {
   await autoBtn.click();
   await expect(autoBtn).toBeVisible();
 
+  await errorsOnly.scrollIntoViewIfNeeded();
   const beforeChecked = await errorsOnly.isChecked();
-  await errorsOnly.click();
+  await errorsOnly.setChecked(!beforeChecked);
   expect(await errorsOnly.isChecked()).toBe(!beforeChecked);
 
   await cwdPill.click();

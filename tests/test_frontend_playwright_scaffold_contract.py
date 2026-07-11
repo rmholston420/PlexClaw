@@ -46,3 +46,5 @@ def test_playwright_controls_spec_exists() -> None:
     assert "#terminal-errors-only" in text
     assert "#cwd-pill" in text
     assert "#cwd-modal" in text
+    assert "scrollIntoViewIfNeeded" in text
+    assert "setChecked" in text
