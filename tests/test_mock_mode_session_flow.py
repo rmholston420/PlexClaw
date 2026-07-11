@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 
 from fastapi.testclient import TestClient
 
+from app import runtime_sdk as rs
 from app.main import app
 from app.schemas import PROTOCOL_VERSION
 
@@ -70,26 +72,21 @@ def test_mock_mode_session_create_and_websocket_prompt_flow() -> None:
         assert second["protocol_version"] == PROTOCOL_VERSION
 
 
-import asyncio
-
-from app import runtime_sdk as rs
-
-
 class _FakeResultUsage(dict):
     pass
 
 
 class _FakeResultMessage:
-    def __init__(self, subtype="end_turn", usage=None):
+    def __init__(self, subtype: str = "end_turn", usage=None) -> None:
         self.subtype = subtype
         self.usage = usage or _FakeResultUsage(output_tokens=1)
 
 
 class _FakeClientWithResult:
-    async def connect(self):
+    async def connect(self) -> None:
         return None
 
-    async def query(self, prompt: str):
+    async def query(self, prompt: str) -> None:
         return None
 
     async def receive_response(self):
@@ -102,22 +99,22 @@ class _FakeClientWithResult:
         yield _FakeResultMessage()
 
 
-async def _collect_emitted_types_for_real_result_path():
+async def _collect_emitted_types_for_real_result_path() -> list[str]:
     session = rs.LiveSession(
         id="test-session",
-        created_at="now",
         model="claude-sonnet-4-5",
-        provider="cloud",
         cwd=None,
+        provider="cloud",
         permission_mode="manual",
-        protocol_version=rs.PROTOCOL_VERSION,
+        resume_session_id=None,
+        fork_session=False,
         mock_mode=False,
     )
     session._client = _FakeClientWithResult()
 
-    emitted = []
+    emitted: list[str] = []
 
-    async def _fake_emit(session, env):
+    async def _fake_emit(_session, env) -> None:
         emitted.append(env.type)
 
     original_emit = rs._emit
@@ -133,7 +130,8 @@ async def _collect_emitted_types_for_real_result_path():
     return emitted
 
 
-def test_stream_sdk_emits_single_assistant_completed_when_result_message_arrives():
+def test_stream_sdk_emits_single_assistant_completed_when_result_message_arrives(
+) -> None:
     emitted = asyncio.run(_collect_emitted_types_for_real_result_path())
     assert emitted.count("assistant.completed") == 1
     assert emitted.count("assistant.delta") == 1
