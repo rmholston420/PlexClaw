@@ -303,3 +303,67 @@ async def test_stream_sdk_message_delta_is_noop_until_stream_exit(
     assert completed_events[0].payload["stop_reason"] == "end_turn"
     assert completed_events[0].payload["usage"] == {}
 
+@pytest.mark.asyncio
+async def test_stream_sdk_reject_tool_interrupt_exception_still_interrupts(
+    monkeypatch, clean_sessions
+):
+    session = make_session(
+        session_id="reject-interrupt-error",
+        mock_mode=True,
+        permission_mode="manual",
+    )
+    runtime_sdk._sessions[session.id] = session
+
+    emitted = []
+
+    async def fake_emit(_session, env):
+        emitted.append(env)
+
+    async def reject_tool(*args, **kwargs):
+        return False
+
+    class FakeRejectInterruptErrorClient:
+        async def connect(self):
+            return None
+
+        async def query(self, prompt):
+            return None
+
+        async def interrupt(self):
+            raise RuntimeError("interrupt failed")
+
+        async def receive_response(self):
+            yield runtime_sdk.MockStreamEvent(
+                {
+                    "type": "content_block_start",
+                    "content_block": {
+                        "type": "tool_use",
+                        "id": "tool-interrupt-error",
+                        "name": "bash",
+                    },
+                }
+            )
+            yield runtime_sdk.MockStreamEvent(
+                {
+                    "type": "content_block_delta",
+                    "delta": {
+                        "type": "input_json_delta",
+                        "partial_json": '{"cmd":"echo hi"}',
+                    },
+                }
+            )
+            yield runtime_sdk.MockStreamEvent({"type": "content_block_stop"})
+
+    session._client = FakeRejectInterruptErrorClient()
+    monkeypatch.setattr(runtime_sdk, "_emit", fake_emit)
+    monkeypatch.setattr(runtime_sdk, "_await_tool_approval", reject_tool)
+
+    await _stream_sdk(session, "hello")
+
+    tool_completed_events = [env for env in emitted if env.type == "tool.completed"]
+    assert tool_completed_events
+    assert tool_completed_events[-1].payload["is_error"] is True
+    assert tool_completed_events[-1].payload["output"]["status"] == "rejected"
+    assert session.status == "interrupted"
+    assert not any(env.type == "assistant.completed" for env in emitted)
+
