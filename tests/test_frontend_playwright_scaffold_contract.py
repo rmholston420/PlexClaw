@@ -238,3 +238,14 @@ def test_playwright_terminal_errors_filter_spec_exists() -> None:
     assert "#terminal-errors-only" in text
     assert "toBeChecked()" in text
     assert "uncheck()" in text
+def test_playwright_search_shortcut_spec_exists() -> None:
+    text = Path("frontend/e2e/search-shortcut.spec.js").read_text()
+    assert (
+        "test('Ctrl/Cmd+F opens the search modal and focuses the search input'"
+        in text
+    )
+    assert "#search-modal" in text
+    assert "#search-input-modal" in text
+    assert "Control" in text
+    assert "Meta" in text
+    assert "toBeFocused()" in text
