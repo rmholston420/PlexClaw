@@ -135,3 +135,11 @@ def test_playwright_search_modal_diagnostic_spec_exists() -> None:
     assert "BEFORE=" in text
     assert "AFTER_CLICK=" in text
     assert "AFTER_DOM_CLICK=" in text
+
+def test_playwright_cwd_modal_spec_exists() -> None:
+    text = Path("frontend/e2e/cwd-modal.spec.js").read_text()
+    assert "test('cwd modal opens and closes from stable controls'" in text
+    assert "#cwd-pill" in text
+    assert "#cwd-modal" in text
+    assert "#cwd-close" in text
+    assert "aria-hidden" in text
