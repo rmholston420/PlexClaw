@@ -278,10 +278,23 @@ function buildSessionConfigSummary() {
      ? state.effectiveSessionConfig.toolSearchActive
      : requested.toolSearchActive,
    cwd: state.effectiveSessionConfig?.cwd || requested.cwd,
-   runtimeMode: state.effectiveSessionConfig?.runtimeMode || requested.runtimeMode,
+   runtimeMode: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'runtimeMode')
+     ? state.effectiveSessionConfig.runtimeMode
+     : requested.runtimeMode,
  };
 
- return JSON.stringify({ requested, effective }, null, 2);
+ const diff = Object.fromEntries(
+   Object.keys(requested)
+     .filter((key) => JSON.stringify(requested[key]) !== JSON.stringify(effective[key]))
+     .map((key) => [key, { requested: requested[key], effective: effective[key] }])
+ );
+
+ return JSON.stringify({
+   capturedAt: new Date().toISOString(),
+   requested,
+   effective,
+   diff,
+ }, null, 2);
 }
 
 function renderProviderRuntimeMeta() {
@@ -1373,7 +1386,9 @@ function bindStableUiHandlers() {
        ? Boolean(evt.payload.tool_search_active)
        : null,
      cwd: state.cwd || state.cwdSelected || null,
-     runtimeMode: Boolean(evt.payload?.mock_mode) ? 'mock' : 'live',
+     runtimeMode: typeof evt.payload?.mock_mode === 'boolean'
+       ? (evt.payload.mock_mode ? 'mock' : 'live')
+       : null,
    };
    renderProviderRuntimeMeta();
         const mockMode = Boolean(evt.payload?.mock_mode);
