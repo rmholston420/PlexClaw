@@ -265,3 +265,99 @@ def test_interrupt_session_emits_interrupted_without_completed_for_cancelled_tur
     assert "session.interrupted" in emitted
     assert "assistant.completed" not in emitted
     assert status == "interrupted"
+
+
+
+class _FakeManualRejectClient:
+    def __init__(self) -> None:
+        self.interrupted = False
+
+    async def connect(self) -> None:
+        return None
+
+    async def query(self, prompt: str) -> None:
+        return None
+
+    async def interrupt(self) -> None:
+        self.interrupted = True
+
+    async def receive_response(self):
+        yield rs.MockStreamEvent(
+            {
+                "type": "content_block_start",
+                "content_block": {
+                    "type": "tool_use",
+                    "id": "tool-1",
+                    "name": "bash",
+                },
+            }
+        )
+        yield rs.MockStreamEvent(
+            {
+                "type": "content_block_delta",
+                "delta": {
+                    "type": "input_json_delta",
+                    "partial_json": '{"cmd":"echo hi"}',
+                },
+            }
+        )
+        yield rs.MockStreamEvent({"type": "content_block_stop"})
+        while not self.interrupted:
+            await asyncio.sleep(0.01)
+
+
+async def _collect_emitted_types_for_manual_rejection() -> tuple[list[str], str]:
+    session = rs.LiveSession(
+        id="rejected-tool-session",
+        model="claude-sonnet-4-5",
+        cwd=None,
+        provider="cloud",
+        permission_mode="manual",
+        resume_session_id=None,
+        fork_session=False,
+        mock_mode=True,
+    )
+    session._client = _FakeManualRejectClient()
+
+    emitted: list[tuple[str, dict]] = []
+
+    async def _fake_emit(_session, env) -> None:
+        emitted.append((env.type, dict(env.payload)))
+
+    original_emit = rs._emit
+    original_await_approval = rs._await_tool_approval
+    try:
+        rs._emit = _fake_emit
+
+        async def _reject(*args, **kwargs) -> bool:
+            return False
+
+        rs._await_tool_approval = _reject
+        await rs._stream_sdk(session, "hello")
+    finally:
+        rs._emit = original_emit
+        rs._await_tool_approval = original_await_approval
+
+    event_types = [event_type for event_type, _payload in emitted]
+    rejected_payloads = [
+        payload
+        for event_type, payload in emitted
+        if event_type == "tool.completed"
+    ]
+
+    assert any(payload.get("is_error") is True for payload in rejected_payloads)
+    assert any(
+        payload.get("output", {}).get("status") == "rejected"
+        for payload in rejected_payloads
+    )
+
+    return event_types, session.status
+
+
+def test_manual_tool_rejection_emits_rejection_without_completed() -> None:
+    emitted, status = asyncio.run(_collect_emitted_types_for_manual_rejection())
+    assert "tool.started" in emitted
+    assert "tool.delta" in emitted
+    assert "tool.completed" in emitted
+    assert "assistant.completed" not in emitted
+    assert status == "interrupted"

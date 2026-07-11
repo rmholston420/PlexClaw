@@ -748,6 +748,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                                 )
                                 _pending_tools.pop(_current_tool_id, None)
                                 await _emit(session, reject_env)
+                                session.status = "interrupted"
                                 if session._client:
                                     try:
                                         await session._client.interrupt()
