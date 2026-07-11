@@ -84,28 +84,14 @@ async def test_reap_idle_sessions_logs_idle_reap(monkeypatch, caplog):
 
 
 
+@pytest.mark.asyncio
 async def test_session_reaper_loop_logs_and_continues_after_reap_error(
     monkeypatch, caplog
 ):
+    from app.main import _session_reaper_loop
+
     stop_reaper = asyncio.Event()
     calls: list[str] = []
-
-    async def _session_reaper_loop() -> None:
-        try:
-            while not stop_reaper.is_set():
-                try:
-                    await runtime.reap_idle_sessions()
-                except Exception as exc:
-                    runtime.log.warning("session reaper loop error: %s", exc)
-                try:
-                    await asyncio.wait_for(
-                        stop_reaper.wait(),
-                        timeout=runtime.get_reap_interval_seconds(),
-                    )
-                except asyncio.TimeoutError:
-                    continue
-        except asyncio.CancelledError:
-            raise
 
     async def _fake_reap_idle_sessions(now=None):
         calls.append("reap")
@@ -125,7 +111,7 @@ async def test_session_reaper_loop_logs_and_continues_after_reap_error(
     monkeypatch.setattr(asyncio, "wait_for", _fake_wait_for)
 
     with caplog.at_level("WARNING"):
-        await _session_reaper_loop()
+        await _session_reaper_loop(stop_reaper)
 
     assert calls == ["reap", "reap"]
     assert any(
