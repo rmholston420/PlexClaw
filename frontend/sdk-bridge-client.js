@@ -451,12 +451,6 @@ function renderProviderRuntimeMeta() {
       existingNew?.before(btn);
     });
 
-  el.toolSearchSelect?.addEventListener('change', () => {
-    state.toolSearchMode = el.toolSearchSelect.value || null;
-    renderProviderRuntimeMeta();
-    syncStateToActiveTab();
-  });
-
     updateTabScrollButtons();
   }
 
@@ -1768,7 +1762,12 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
   function bindEvents() {
     el.sendBtn.addEventListener('click', sendPrompt);
     el.attachFileBtn?.addEventListener('click', () => el.attachFileInput?.click());
-    el.attachFileInput?.addEventListener('change', async (e) => {
+    el.attachFileInput?.addEventListener('change'
+  el.toolSearchSelect?.addEventListener("change", () => {
+    state.toolSearchMode = el.toolSearchSelect?.value || state.toolSearchMode;
+    renderToolSearchResults?.();
+  });
+, async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       try {
