@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { gotoCanonicalUi } from './helpers/canonical-ui.js';
 
 test('archive refresh control remains usable with archive surface visible', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await gotoCanonicalUi(page);
 
   const refreshArchive = page.locator('#refresh-archive');
   const archiveList = page.locator('#archive-list');

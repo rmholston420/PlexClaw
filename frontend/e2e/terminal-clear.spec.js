@@ -1,16 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { gotoCanonicalUi, openTerminalDrawer } from './helpers/canonical-ui.js';
 
 test('terminal clear control remains usable after opening the drawer', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await gotoCanonicalUi(page);
 
-  const terminalToggle = page.locator('#terminal-toggle');
-  const terminalDrawer = page.locator('#terminal-drawer');
-  const terminalClear = page.locator('#terminal-clear');
-  const terminalCopy = page.locator('#terminal-copy');
+  const { terminalDrawer, terminalClear, terminalCopy } = await openTerminalDrawer(page);
 
-  await expect(terminalToggle).toBeVisible();
-
-  await terminalToggle.click();
   await expect(terminalDrawer).toBeVisible();
   await expect(terminalClear).toBeVisible();
   await expect(terminalClear).toBeEnabled();

@@ -255,11 +255,11 @@ def test_playwright_tab_scroll_spec_exists() -> None:
         "test('tab scroll controls remain visible after creating multiple tabs'"
         in text
     )
-    assert "#new-tab-btn" in text
-    assert "#tab-scroll-left" in text
-    assert "#tab-scroll-right" in text
-    assert "#tabbar" in text
-    assert ".session-tab" in text
+    assert "createAdditionalTabs" in text
+    assert "gotoCanonicalUi" in text
+    assert "scrollLeft" in text
+    assert "scrollRight" in text
+    assert "tabs" in text
 def test_playwright_archive_refresh_spec_exists() -> None:
     text = Path("frontend/e2e/archive-refresh.spec.js").read_text()
     assert (
@@ -276,10 +276,11 @@ def test_playwright_terminal_copy_spec_exists() -> None:
         "test('terminal copy control remains usable after opening the drawer'"
         in text
     )
-    assert "#terminal-toggle" in text
-    assert "#terminal-drawer" in text
-    assert "#terminal-copy" in text
-    assert "#terminal-clear" in text
+    assert "openTerminalDrawer" in text
+    assert "gotoCanonicalUi" in text
+    assert "terminalDrawer" in text
+    assert "terminalCopy" in text
+    assert "terminalClear" in text
     assert "toBeEnabled()" in text
 def test_playwright_terminal_clear_spec_exists() -> None:
     text = Path("frontend/e2e/terminal-clear.spec.js").read_text()
@@ -287,8 +288,9 @@ def test_playwright_terminal_clear_spec_exists() -> None:
         "test('terminal clear control remains usable after opening the drawer'"
         in text
     )
-    assert "#terminal-toggle" in text
-    assert "#terminal-drawer" in text
-    assert "#terminal-clear" in text
-    assert "#terminal-copy" in text
+    assert "openTerminalDrawer" in text
+    assert "gotoCanonicalUi" in text
+    assert "terminalDrawer" in text
+    assert "terminalClear" in text
+    assert "terminalCopy" in text
     assert "toBeEnabled()" in text
