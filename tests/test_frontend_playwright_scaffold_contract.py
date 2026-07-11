@@ -70,3 +70,11 @@ def test_playwright_runtime_mode_spec_exists() -> None:
     assert "#mode-manual-btn" in text
     assert "#mode-auto-btn" in text
     assert "not.toHaveText" in text
+
+
+def test_playwright_tool_search_spec_exists() -> None:
+    text = Path("frontend/e2e/tool-search.spec.js").read_text()
+    assert "test('tool search selector is exposed in the current DOM'" in text
+    assert "#tool-search-select" in text
+    assert "toBeVisible" in text
+    assert "toBeEnabled" in text
