@@ -10,14 +10,17 @@ test('clicking a session tab activates it after creating a new tab', async ({ pa
   await expect(tabButtons).toHaveCount(1);
 
   const firstTab = tabButtons.nth(0);
-  await expect(firstTab).toHaveAttribute('aria-selected', 'true');
+  await expect(firstTab).toHaveClass(/active/);
 
   await newTabBtn.click();
   await expect(tabButtons).toHaveCount(2);
 
   const secondTab = tabButtons.nth(1);
-  await secondTab.click();
+  await expect(secondTab).toHaveClass(/active/);
+  await expect(firstTab).not.toHaveClass(/active/);
 
-  await expect(secondTab).toHaveAttribute('aria-selected', 'true');
-  await expect(firstTab).toHaveAttribute('aria-selected', 'false');
+  await firstTab.click();
+
+  await expect(firstTab).toHaveClass(/active/);
+  await expect(secondTab).not.toHaveClass(/active/);
 });

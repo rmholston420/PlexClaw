@@ -158,3 +158,11 @@ def test_playwright_modal_backdrop_spec_exists() -> None:
     assert "#cwd-pill" in text
     assert "#cwd-modal" in text
     assert "click({ position: { x: 5, y: 5 } })" in text
+
+def test_playwright_tab_activation_spec_exists() -> None:
+    text = Path("frontend/e2e/tab-activation.spec.js").read_text()
+    assert "test('clicking a session tab activates it after creating a new tab'" in text
+    assert "#new-tab-btn" in text
+    assert ".session-tab" in text
+    assert "toHaveClass(/active/)" in text
+    assert "not.toHaveClass(/active/)" in text
