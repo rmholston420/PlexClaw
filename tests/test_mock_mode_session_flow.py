@@ -68,3 +68,72 @@ def test_mock_mode_session_create_and_websocket_prompt_flow() -> None:
         assert second["type"] == "assistant.completed"
         assert second["session_id"] == session_id
         assert second["protocol_version"] == PROTOCOL_VERSION
+
+
+import asyncio
+
+from app import runtime_sdk as rs
+
+
+class _FakeResultUsage(dict):
+    pass
+
+
+class _FakeResultMessage:
+    def __init__(self, subtype="end_turn", usage=None):
+        self.subtype = subtype
+        self.usage = usage or _FakeResultUsage(output_tokens=1)
+
+
+class _FakeClientWithResult:
+    async def connect(self):
+        return None
+
+    async def query(self, prompt: str):
+        return None
+
+    async def receive_response(self):
+        yield rs.MockStreamEvent(
+            {
+                "type": "content_block_delta",
+                "delta": {"type": "text_delta", "text": "hello"},
+            }
+        )
+        yield _FakeResultMessage()
+
+
+async def _collect_emitted_types_for_real_result_path():
+    session = rs.LiveSession(
+        id="test-session",
+        created_at="now",
+        model="claude-sonnet-4-5",
+        provider="cloud",
+        cwd=None,
+        permission_mode="manual",
+        protocol_version=rs.PROTOCOL_VERSION,
+        mock_mode=False,
+    )
+    session._client = _FakeClientWithResult()
+
+    emitted = []
+
+    async def _fake_emit(session, env):
+        emitted.append(env.type)
+
+    original_emit = rs._emit
+    original_result = rs.ResultMessage
+    try:
+        rs._emit = _fake_emit
+        rs.ResultMessage = _FakeResultMessage
+        await rs._stream_sdk(session, "hello")
+    finally:
+        rs._emit = original_emit
+        rs.ResultMessage = original_result
+
+    return emitted
+
+
+def test_stream_sdk_emits_single_assistant_completed_when_result_message_arrives():
+    emitted = asyncio.run(_collect_emitted_types_for_real_result_path())
+    assert emitted.count("assistant.completed") == 1
+    assert emitted.count("assistant.delta") == 1
