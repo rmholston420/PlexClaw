@@ -659,6 +659,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
         await client.connect()
         await client.query(prompt=prompt)
 
+        _completed_emitted = False
         async for message in client.receive_response():
             # ------------------------------------------------------------------
             # StreamEvent / MockStreamEvent: token-level incremental updates
@@ -795,11 +796,12 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                     session.id, session.next_seq(), stop_reason, usage
                 )
                 await _emit(session, env)
+                _completed_emitted = True
 
         # In mock mode (and any path where ResultMessage is never delivered),
         # the async-for loop exits without emitting assistant.completed.
         # Emit it here so the protocol is always complete on success.
-        if session.status != "failed":
+        if not _completed_emitted and session.status != "failed":
             _completed_env = normalize_assistant_completed(
                 session.id, session.next_seq(), "end_turn", {}
             )
