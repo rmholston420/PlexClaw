@@ -1003,12 +1003,12 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                             )
                         )
 
-            if saw_text or content:
+            if msg.get("stop_reason") == "end_turn":
                 push(
                     normalize_assistant_completed(
                         session_id,
                         0,
-                        msg.get("stop_reason", "end_turn"),
+                        "end_turn",
                     )
                 )
 
