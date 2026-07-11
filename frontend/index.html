@@ -1566,7 +1566,7 @@
 </div>
 </div>
 <div class="runtime-meta-help" id="runtime-meta-help">
-  Use this panel for the true working directory and runtime state; model replies may be approximate.
+   Use this panel for the true working directory and runtime state. PlexClaw approval and Claude SDK mode are separate controls.
 </div>
 <div class="runtime-select-row">
   <label class="runtime-select-label" for="tool-search-select">Tool mode</label>
@@ -1578,10 +1578,18 @@
     <option value="true">Tool search: On</option>
   </select>
 </div>
+ <div class="runtime-select-row">
+   <label class="runtime-select-label" for="sdk-permission-mode-select">Claude SDK mode</label>
+   <select class="model-select" id="sdk-permission-mode-select" title="Claude SDK permission mode" aria-label="Claude SDK permission mode">
+     <option value="default">SDK mode: Default</option>
+     <option value="acceptEdits">SDK mode: Accept edits</option>
+     <option value="bypassPermissions">SDK mode: Bypass permissions</option>
+   </select>
+ </div>
 </div>
-        <div class="mode-toggle" id="mode-toggle" aria-label="Tool approval mode">
-          <button class="mode-toggle-btn" id="mode-manual-btn" type="button">Manual</button>
-          <button class="mode-toggle-btn" id="mode-auto-btn" type="button">Auto</button>
+        <div class="mode-toggle" id="mode-toggle" aria-label="PlexClaw approval policy">
+          <button class="mode-toggle-btn" id="mode-manual-btn" type="button">Ask each tool</button>
+          <button class="mode-toggle-btn" id="mode-auto-btn" type="button">Auto-approve</button>
         </div>
         <select class="model-select" id="model-select" title="Model"></select>
         <button class="icon-btn" id="open-search" aria-label="Search sessions (Cmd/Ctrl+F)" title="Search sessions (Cmd/Ctrl+F)">
