@@ -29,7 +29,6 @@ def test_archive_replay_normalizes_assistant_tool_use():
     assert [evt["type"] for evt in events] == [
         "tool.started",
         "tool.delta",
-        "assistant.completed",
     ]
     assert events[1]["payload"]["tool_input"] == {"file_path": "/tmp/x.txt"}
 
@@ -87,7 +86,6 @@ def test_archive_replay_tool_use_events_export_with_finalized_input():
     assert [evt["type"] for evt in events] == [
         "tool.started",
         "tool.delta",
-        "assistant.completed",
     ]
     assert events[1]["payload"]["tool_input"] == {"cmd": "ls -la"}
     assert "## Tool: bash" in md

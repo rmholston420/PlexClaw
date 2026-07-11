@@ -948,12 +948,9 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
         content = msg.get("content")
 
         if role == "assistant":
-            saw_text = False
-
             if isinstance(content, str):
                 if content:
                     push(normalize_text_delta(session_id, 0, content))
-                    saw_text = True
 
             elif isinstance(content, list):
                 for block in content:
@@ -966,7 +963,6 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                         text = block.get("text", "")
                         if text:
                             push(normalize_text_delta(session_id, seq, text))
-                            saw_text = True
 
                     elif btype == "tool_use":
                         tool_id = str(block.get("id", ""))
