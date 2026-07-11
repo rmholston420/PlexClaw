@@ -1,29 +1,21 @@
 import { test, expect } from '@playwright/test';
 
-test('new tab button creates and activates a new tab', async ({ page }) => {
+test('new tab button renders a new session tab and marks it active', async ({ page }) => {
   await page.goto('/plexclaw-ui-canonical.html');
 
   const newTabButton = page.locator('#new-tab-btn');
-  const tabButtons = page.locator('#tabbar button');
+  const sessionTabs = page.locator('#tabbar .session-tab');
+  const activeSessionTab = page.locator('#tabbar .session-tab.active');
 
   await expect(newTabButton).toBeVisible();
   await expect(newTabButton).toBeEnabled();
-  await expect(tabButtons.first()).toBeVisible();
 
-  const beforeCount = await tabButtons.count();
-  const beforeLabels = await tabButtons.evaluateAll((nodes) =>
-    nodes.map((node) => (node.textContent || '').trim())
-  );
+  const beforeCount = await sessionTabs.count();
 
   await newTabButton.click();
 
-  await expect(tabButtons).toHaveCount(beforeCount + 1);
-
-  const afterLabels = await tabButtons.evaluateAll((nodes) =>
-    nodes.map((node) => (node.textContent || '').trim())
-  );
-  expect(afterLabels.length).toBe(beforeLabels.length + 1);
-  expect(afterLabels).not.toEqual(beforeLabels);
-
-  await expect(tabButtons.last()).toBeVisible();
+  await expect(sessionTabs).toHaveCount(beforeCount + 1);
+  await expect(activeSessionTab).toHaveCount(1);
+  await expect(sessionTabs.last()).toHaveClass(/active/);
+  await expect(sessionTabs.last()).toContainText(/Tab\s+\d+/);
 });

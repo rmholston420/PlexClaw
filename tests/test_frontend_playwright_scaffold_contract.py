@@ -30,7 +30,8 @@ def test_playwright_smoke_spec_exists() -> None:
 
 def test_playwright_tabs_spec_exists() -> None:
     text = Path("frontend/e2e/tabs.spec.js").read_text()
-    assert "test('new tab button creates and activates a new tab'" in text
-    assert "#new-tab-btn" in text
-    assert "#tabbar button" in text
+    assert "test('new tab button renders a new session tab and marks it active'" in text
+    assert "#tabbar .session-tab" in text
+    assert ".session-tab.active" in text
     assert "toHaveCount(beforeCount + 1)" in text
+    assert "toContainText(/Tab\\s+\\d+/)" in text
