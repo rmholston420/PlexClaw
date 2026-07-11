@@ -1015,7 +1015,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                         push(
                             normalize_tool_started(
                                 session_id,
-                                0,
+                                seq,
                                 tool_id,
                                 tool_name,
                                 {},
@@ -1024,7 +1024,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
 
                         env = normalize_tool_delta(
                             session_id,
-                            0,
+                            seq,
                             tool_id,
                             "",
                             tool_name=tool_name,
