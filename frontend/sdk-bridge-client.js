@@ -1763,9 +1763,10 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
     el.sendBtn.addEventListener('click', sendPrompt);
     el.attachFileBtn?.addEventListener('click', () => el.attachFileInput?.click());
     el.attachFileInput?.addEventListener('change'
-  el.toolSearchSelect?.addEventListener("change", () => {
-    state.toolSearchMode = el.toolSearchSelect?.value || state.toolSearchMode;
-    renderToolSearchResults?.();
+  el.toolSearchSelect?.addEventListener('change', () => {
+    state.toolSearchMode = el.toolSearchSelect?.value || null;
+    renderProviderRuntimeMeta();
+    syncStateToActiveTab();
   });
 , async (e) => {
       const file = e.target.files?.[0];
