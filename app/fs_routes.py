@@ -55,12 +55,6 @@ def _resolve_safe_path(
         )
     return resolved, root
 
-
-def _safe_path(path: str | None) -> Path:
-    resolved, _root = _resolve_safe_path(path, session_id=None)
-    return resolved
-
-
 @router.get("/browse")
 async def browse(
     path: str | None = Query(default=None, description="Path to browse"),
