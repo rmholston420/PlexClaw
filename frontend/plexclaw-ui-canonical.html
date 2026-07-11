@@ -1390,7 +1390,9 @@
       .app { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .app.sidebar-open .sidebar { display: flex; position: fixed; left: 0; top: 0; bottom: 0; width: min(300px, 85vw); z-index: 100; }
-      .transcript { padding: var(--s3) var(--s3); }
+      .transcript { padding: var(--s3) var(--s3); 
+      background: radial-gradient(circle at top, rgba(124,92,255,0.18), transparent 52%), linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+    }
       .composer { padding: var(--s3) var(--s3) var(--s4); }
     }
   .terminal-toggle.active { color: var(--text); border-color: var(--primary); background: var(--primary-hl); }
