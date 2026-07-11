@@ -761,32 +761,18 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                 continue
 
             # ------------------------------------------------------------------
-            # AssistantMessage: complete assembled message (no-op — already streamed)
+            # AssistantMessage / ResultMessage: shared terminal handling
             # ------------------------------------------------------------------
-            if AssistantMessage is not None and isinstance(message, AssistantMessage):
-                await _emit_tool_completed_from_message(
-                    session, message, _pending_tools
-                )
+            handled_terminal = await _handle_sdk_terminal_message(
+                session,
+                message,
+                _pending_tools,
+                allow_completed=True,
+            )
+            if handled_terminal:
+                if ResultMessage is not None and isinstance(message, ResultMessage):
+                    _completed_emitted = True
                 continue
-
-            # ------------------------------------------------------------------
-            # ResultMessage: final result — signals end of turn
-            # ------------------------------------------------------------------
-            if ResultMessage is not None and isinstance(message, ResultMessage):
-                stop_reason = getattr(message, "subtype", "end_turn")
-                usage = {}
-                raw_usage = getattr(message, "usage", None)
-                if raw_usage is not None:
-                    usage = (
-                        vars(raw_usage)
-                        if hasattr(raw_usage, "__dict__")
-                        else dict(raw_usage)
-                    )
-                env = normalize_assistant_completed(
-                    session.id, session.next_seq(), stop_reason, usage
-                )
-                await _emit(session, env)
-                _completed_emitted = True
 
         # In mock mode (and any path where ResultMessage is never delivered),
         # the async-for loop exits without emitting assistant.completed.
@@ -803,6 +789,56 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
         await _emit(session, env)
         session.status = "failed"
         raise
+
+
+async def _handle_sdk_terminal_message(
+    session: LiveSession,
+    message: Any,
+    pending_tools: dict[str, dict[str, Any]],
+    *,
+    allow_completed: bool,
+) -> bool:
+    """Handle assembled SDK terminal messages shared by stream and interrupt drain."""
+    if AssistantMessage is not None and isinstance(message, AssistantMessage):
+        await _emit_tool_completed_from_message(session, message, pending_tools)
+
+        blocks = getattr(message, "content", None) or []
+        for block in blocks:
+            btype = getattr(block, "type", None)
+            if btype == "text":
+                text = getattr(block, "text", "") or ""
+                if text:
+                    await _emit(
+                        session,
+                        normalize_text_delta(session.id, session.next_seq(), text),
+                    )
+        return True
+
+    if ResultMessage is not None and isinstance(message, ResultMessage):
+        if not allow_completed:
+            return True
+
+        stop_reason = getattr(message, "subtype", None) or getattr(
+            message, "stop_reason", "end_turn"
+        )
+        usage = {}
+        raw_usage = getattr(message, "usage", None)
+        if raw_usage is not None:
+            try:
+                usage = (
+                    vars(raw_usage)
+                    if hasattr(raw_usage, "__dict__")
+                    else dict(raw_usage)
+                )
+            except Exception:
+                usage = {}
+        env = normalize_assistant_completed(
+            session.id, session.next_seq(), stop_reason, usage
+        )
+        await _emit(session, env)
+        return True
+
+    return False
 
 
 async def submit_prompt(session_id: str, prompt: str) -> None:
@@ -832,34 +868,6 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
                 session.status = "ready"
 
 
-async def _emit_interrupt_drained_message(session: LiveSession, message: Any) -> None:
-    """Emit best-effort events drained after interrupt()."""
-    if AssistantMessage is not None and isinstance(message, AssistantMessage):
-        blocks = getattr(message, "content", None) or []
-        for block in blocks:
-            btype = getattr(block, "type", None)
-            if btype == "text":
-                text = getattr(block, "text", "") or ""
-                if text:
-                    await _emit(
-                        session,
-                        normalize_text_delta(session.id, session.next_seq(), text),
-                    )
-
-    if ResultMessage is not None and isinstance(message, ResultMessage):
-        stop_reason = getattr(message, "stop_reason", None) or "interrupted"
-        usage = getattr(message, "usage", None) or {}
-        await _emit(
-            session,
-            normalize_assistant_completed(
-                session.id,
-                session.next_seq(),
-                stop_reason,
-                usage,
-            ),
-        )
-
-
 async def interrupt_session(session_id: str) -> None:
     session = _sessions.get(session_id)
     if not session:
@@ -870,7 +878,12 @@ async def interrupt_session(session_id: str) -> None:
             if not session.mock_mode:
                 # Only drain the real SDK response queue, but do not drop late events.
                 async for message in session._client.receive_response():
-                    await _emit_interrupt_drained_message(session, message)
+                    await _handle_sdk_terminal_message(
+                        session,
+                        message,
+                        {},
+                        allow_completed=False,
+                    )
         except Exception as exc:
             log.warning("Interrupt drain error: %s", exc)
     session.status = "interrupted"
