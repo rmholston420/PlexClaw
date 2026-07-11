@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 import app.runtime_sdk as runtime_sdk
-from app.runtime_sdk import LiveSession, _handle_sdk_terminal_message
+from app.runtime_sdk import LiveSession, _handle_sdk_terminal_message, _stream_sdk
 
 
 @pytest.fixture
@@ -172,4 +172,38 @@ async def test_handle_sdk_terminal_message_usage_mapping_uses_dict(
         "input_tokens": 33,
         "output_tokens": 44,
     }
+
+@pytest.mark.asyncio
+async def test_stream_sdk_emits_completed_when_no_terminal_result(
+    monkeypatch, clean_sessions
+):
+    session = make_session(session_id="stream-no-result", mock_mode=False)
+    runtime_sdk._sessions[session.id] = session
+
+    emitted = []
+
+    async def fake_emit(_session, env):
+        emitted.append(env)
+
+    class FakeClient:
+        async def connect(self):
+            return None
+
+        async def query(self, prompt):
+            return None
+
+        async def receive_response(self):
+            if False:
+                yield None
+
+    session._client = FakeClient()
+    monkeypatch.setattr(runtime_sdk, "_emit", fake_emit)
+
+    await _stream_sdk(session, "hello")
+
+    assert session.status != "failed"
+    assert session.status != "interrupted"
+    assert emitted[-1].type == "assistant.completed"
+    assert emitted[-1].payload["stop_reason"] == "end_turn"
+    assert emitted[-1].payload["usage"] == {}
 
