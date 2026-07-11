@@ -249,52 +249,52 @@ function bindRuntimeMetaCopyHandlers() {
 
 
 function buildSessionConfigSummary() {
- const requested = {
-   sessionId: state.sessionId || null,
-   model: state.model || null,
-   provider: state.provider || null,
-   providerBaseUrl: state.providerBaseUrl || null,
-   permissionMode: state.permissionMode || null,
-   sdkPermissionMode: state.sdkPermissionMode || 'default',
-   toolSearchMode: state.toolSearchMode || null,
-   toolSearchActive: typeof state.toolSearchActive === 'boolean' ? state.toolSearchActive : null,
-   cwd: state.cwd || state.cwdSelected || null,
-   runtimeMode: state.runtimeMode || null,
- };
+  const requested = {
+    sessionId: state.sessionId || null,
+    model: state.model || null,
+    provider: state.provider || null,
+    providerBaseUrl: state.providerBaseUrl || null,
+    permissionMode: state.permissionMode || null,
+    sdkPermissionMode: state.sdkPermissionMode || 'default',
+    toolSearchMode: state.toolSearchMode || null,
+    toolSearchActive: typeof state.toolSearchActive === 'boolean' ? state.toolSearchActive : null,
+    cwd: state.cwd || state.cwdSelected || null,
+    runtimeMode: state.runtimeMode || null,
+  };
 
- const effective = {
-   sessionId: state.effectiveSessionConfig?.sessionId || requested.sessionId,
-   model: state.effectiveSessionConfig?.model || requested.model,
-   provider: state.effectiveSessionConfig?.provider || requested.provider,
-   providerBaseUrl: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'providerBaseUrl')
-     ? state.effectiveSessionConfig.providerBaseUrl
-     : requested.providerBaseUrl,
-   permissionMode: state.effectiveSessionConfig?.permissionMode || requested.permissionMode,
-   sdkPermissionMode: state.effectiveSessionConfig?.sdkPermissionMode || requested.sdkPermissionMode,
-   toolSearchMode: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'toolSearchMode')
-     ? state.effectiveSessionConfig.toolSearchMode
-     : requested.toolSearchMode,
-   toolSearchActive: typeof state.effectiveSessionConfig?.toolSearchActive === 'boolean'
-     ? state.effectiveSessionConfig.toolSearchActive
-     : requested.toolSearchActive,
-   cwd: state.effectiveSessionConfig?.cwd || requested.cwd,
-   runtimeMode: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'runtimeMode')
-     ? state.effectiveSessionConfig.runtimeMode
-     : requested.runtimeMode,
- };
+  const effective = {
+    sessionId: state.effectiveSessionConfig?.sessionId || requested.sessionId,
+    model: state.effectiveSessionConfig?.model || requested.model,
+    provider: state.effectiveSessionConfig?.provider || requested.provider,
+    providerBaseUrl: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'providerBaseUrl')
+      ? state.effectiveSessionConfig.providerBaseUrl
+      : requested.providerBaseUrl,
+    permissionMode: state.effectiveSessionConfig?.permissionMode || requested.permissionMode,
+    sdkPermissionMode: state.effectiveSessionConfig?.sdkPermissionMode || requested.sdkPermissionMode,
+    toolSearchMode: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'toolSearchMode')
+      ? state.effectiveSessionConfig.toolSearchMode
+      : requested.toolSearchMode,
+    toolSearchActive: typeof state.effectiveSessionConfig?.toolSearchActive === 'boolean'
+      ? state.effectiveSessionConfig.toolSearchActive
+      : requested.toolSearchActive,
+    cwd: state.effectiveSessionConfig?.cwd || requested.cwd,
+    runtimeMode: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'runtimeMode')
+      ? state.effectiveSessionConfig.runtimeMode
+      : requested.runtimeMode,
+  };
 
- const diff = Object.fromEntries(
-   Object.keys(requested)
-     .filter((key) => JSON.stringify(requested[key]) !== JSON.stringify(effective[key]))
-     .map((key) => [key, { requested: requested[key], effective: effective[key] }])
- );
+  const diff = Object.fromEntries(
+    Object.keys(requested)
+      .filter((key) => JSON.stringify(requested[key]) !== JSON.stringify(effective[key]))
+      .map((key) => [key, { requested: requested[key], effective: effective[key] }])
+  );
 
- return JSON.stringify({
-   capturedAt: new Date().toISOString(),
-   requested,
-   effective,
-   diff,
- }, null, 2);
+  return JSON.stringify({
+    capturedAt: new Date().toISOString(),
+    requested,
+    effective,
+    diff,
+  }, null, 2);
 }
 
 function renderProviderRuntimeMeta() {
@@ -1371,25 +1371,25 @@ function bindStableUiHandlers() {
         ? Boolean(evt.payload.tool_search_active)
         : null;
       state.effectiveSessionConfig = {
-     sessionId: state.sessionId || null,
-     model: evt.payload?.model || state.model || null,
-     provider: evt.payload?.provider || state.provider || null,
-     providerBaseUrl: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'provider_base_url')
-       ? evt.payload.provider_base_url
-       : null,
-     permissionMode: state.permissionMode || null,
-     sdkPermissionMode: state.sdkPermissionMode || 'default',
-     toolSearchMode: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'tool_search_mode')
-       ? evt.payload.tool_search_mode
-       : null,
-     toolSearchActive: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'tool_search_active')
-       ? Boolean(evt.payload.tool_search_active)
-       : null,
-     cwd: state.cwd || state.cwdSelected || null,
-     runtimeMode: typeof evt.payload?.mock_mode === 'boolean'
-       ? (evt.payload.mock_mode ? 'mock' : 'live')
-       : null,
-   };
+      sessionId: state.sessionId || null,
+      model: evt.payload?.model || state.model || null,
+      provider: evt.payload?.provider || state.provider || null,
+      providerBaseUrl: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'provider_base_url')
+        ? evt.payload.provider_base_url
+        : null,
+      permissionMode: state.permissionMode || null,
+      sdkPermissionMode: state.sdkPermissionMode || 'default',
+      toolSearchMode: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'tool_search_mode')
+        ? evt.payload.tool_search_mode
+        : null,
+      toolSearchActive: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'tool_search_active')
+        ? Boolean(evt.payload.tool_search_active)
+        : null,
+      cwd: state.cwd || state.cwdSelected || null,
+      runtimeMode: typeof evt.payload?.mock_mode === 'boolean'
+        ? (evt.payload.mock_mode ? 'mock' : 'live')
+        : null,
+    };
    renderProviderRuntimeMeta();
         const mockMode = Boolean(evt.payload?.mock_mode);
       appendSystemMessage(`${mockMode ? 'Mock session ready' : 'Live session ready'} (${evt.payload?.model || state.model})`);
