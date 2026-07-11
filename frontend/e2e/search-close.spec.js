@@ -1,17 +1,16 @@
 import { test, expect } from '@playwright/test';
+import { gotoCanonicalUi, openSearchModal } from './helpers/canonical-ui.js';
 
 test('search close button closes the search modal', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await gotoCanonicalUi(page);
 
-  const openSearch = page.locator('#open-search');
-  const searchModal = page.locator('#search-modal');
+  const { searchModal } = await openSearchModal(page);
   const searchClose = page.locator('#search-close');
 
-  await expect(openSearch).toBeVisible();
-
-  await openSearch.click();
   await expect(searchModal).toHaveAttribute('aria-hidden', 'false');
+  await expect(searchClose).toBeVisible();
 
   await searchClose.click();
+
   await expect(searchModal).toHaveAttribute('aria-hidden', 'true');
 });

@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { gotoCanonicalUi, openSearchModal } from './helpers/canonical-ui.js';
 
 test('opening search modal moves focus to the modal search input', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await gotoCanonicalUi(page);
 
-  const openSearch = page.locator('#open-search');
-  const searchInput = page.locator('#search-input-modal');
+  const { searchModal, searchInput } = await openSearchModal(page);
 
-  await expect(openSearch).toBeVisible();
-  await openSearch.click();
+  await expect(searchModal).toBeVisible();
   await expect(searchInput).toBeFocused();
 });

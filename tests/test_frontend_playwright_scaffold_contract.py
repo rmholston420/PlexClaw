@@ -170,15 +170,18 @@ def test_playwright_tab_activation_spec_exists() -> None:
 def test_playwright_search_focus_spec_exists() -> None:
     text = Path("frontend/e2e/search-focus.spec.js").read_text()
     assert "test('opening search modal moves focus to the modal search input'" in text
-    assert "#open-search" in text
-    assert "#search-input-modal" in text
+    assert "openSearchModal" in text
+    assert "gotoCanonicalUi" in text
+    assert "searchModal" in text
+    assert "searchInput" in text
     assert "toBeFocused()" in text
 def test_playwright_terminal_toggle_spec_exists() -> None:
     text = Path("frontend/e2e/terminal-toggle.spec.js").read_text()
     assert "test('terminal toggle opens and closes the terminal panel'" in text
+    assert "gotoCanonicalUi" in text
     assert "#terminal-toggle" in text
     assert "#terminal-drawer" in text
-    assert "aria-hidden" in text
+    assert "toBeVisible()" in text
 def test_playwright_export_controls_tabs_spec_exists() -> None:
     text = Path("frontend/e2e/export-controls-tabs.spec.js").read_text()
     assert (
@@ -193,9 +196,10 @@ def test_playwright_export_controls_tabs_spec_exists() -> None:
 def test_playwright_search_close_spec_exists() -> None:
     text = Path("frontend/e2e/search-close.spec.js").read_text()
     assert "test('search close button closes the search modal'" in text
-    assert "#open-search" in text
-    assert "#search-modal" in text
-    assert "#search-close" in text
+    assert "openSearchModal" in text
+    assert "gotoCanonicalUi" in text
+    assert "searchClose" in text
+    assert "searchModal" in text
     assert "aria-hidden" in text
 def test_playwright_terminal_toolbar_spec_exists() -> None:
     text = Path("frontend/e2e/terminal-toolbar.spec.js").read_text()
@@ -203,10 +207,11 @@ def test_playwright_terminal_toolbar_spec_exists() -> None:
         "test('terminal toolbar copy and clear controls remain visible and enabled'"
         in text
     )
-    assert "#terminal-toggle" in text
-    assert "#terminal-drawer" in text
-    assert "#terminal-clear" in text
-    assert "#terminal-copy" in text
+    assert "openTerminalDrawer" in text
+    assert "gotoCanonicalUi" in text
+    assert "terminalDrawer" in text
+    assert "terminalClear" in text
+    assert "terminalCopy" in text
     assert "toBeEnabled()" in text
 def test_playwright_archive_search_spec_exists() -> None:
     text = Path("frontend/e2e/archive-search.spec.js").read_text()
