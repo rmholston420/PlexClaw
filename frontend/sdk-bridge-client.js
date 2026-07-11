@@ -1963,6 +1963,7 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
   }
 
   async function init() {
+  openNewTab();
     await initCwd();
     renderPermissionMode();
     el.cwdPill?.addEventListener('click', openCwdModal);
