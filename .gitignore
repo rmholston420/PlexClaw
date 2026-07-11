@@ -12,3 +12,6 @@ REPLACE_WITH_REAL_DB_PATH
 *.db-shm
 *.db-wal
 .coverage
+frontend/node_modules/
+frontend/test-results/
+frontend/package-lock.json
