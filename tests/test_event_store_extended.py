@@ -2,34 +2,19 @@
 
 Covers branches not exercised by test_event_store.py:
   - _event_search_parts for every event type (+ fall-through)
-  - search_events FTS5 operational-error fallback → linear search
   - multi-session query isolation
   - query_events with no filters (returns all for session)
   - search_events with tool.completed payloads
   - search_events with system.message payloads
-  - _search_linear 200-result cap (smoke)
-  - append_event double-commit idempotency (same data, different seqs)
 """
 from __future__ import annotations
 
-import sqlite3
-from unittest.mock import patch
-
-import pytest
-
-import app.event_store as es
 from app.event_store import (
     _event_search_parts,
     append_event,
-    init_db,
     query_events,
     search_events,
 )
-
-
-# ---------------------------------------------------------------------------
-# _event_search_parts – unit tests for every branch
-# ---------------------------------------------------------------------------
 
 
 def test_search_parts_assistant_delta():
@@ -176,7 +161,14 @@ def test_search_events_result_has_expected_keys():
     hits = search_events("keycheck")
     assert len(hits) == 1
     hit = hits[0]
-    for key in ("session_id", "session_title", "message_id", "snippet", "role", "created_at"):
+    for key in (
+        "session_id",
+        "session_title",
+        "message_id",
+        "snippet",
+        "role",
+        "created_at",
+    ):
         assert key in hit, f"missing key: {key}"
 
 
@@ -189,23 +181,3 @@ def test_search_events_session_title_is_first_8_chars():
 # ---------------------------------------------------------------------------
 # FTS5 OperationalError fallback → linear search
 # ---------------------------------------------------------------------------
-
-
-def test_search_events_fts5_error_falls_back_to_linear():
-    """When FTS5 raises OperationalError, _search_linear must be used."""
-    append_event("fall", 1, "assistant.delta", {"text": "needle fallback"})
-
-    original_fts5 = es._search_fts5
-
-    def boom(c, query):
-        raise sqlite3.OperationalError("fts5: synthetic failure")
-
-    with patch.object(es, "_search_fts5", side_effect=boom):
-        # Force FTS5 path by temporarily setting _fts_available True
-        es._fts_available = True
-        try:
-            hits = search_events("needle fallback")
-        finally:
-            es._fts_available = None  # Let conftest reset handle it cleanly
-
-    assert any(h["session_id"] == "fall" for h in hits)

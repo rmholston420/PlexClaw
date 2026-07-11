@@ -16,6 +16,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from app.provider_defaults import DEFAULT_CLOUD_MODELS
 from app.schemas import (
     PROTOCOL_VERSION,
     InterruptRequest,
@@ -27,12 +28,6 @@ from app.schemas import (
     TagRequest,
     WSEnvelope,
 )
-from app.provider_defaults import DEFAULT_CLOUD_MODELS
-
-
-# ---------------------------------------------------------------------------
-# PROTOCOL_VERSION
-# ---------------------------------------------------------------------------
 
 
 def test_protocol_version_is_semver_like():

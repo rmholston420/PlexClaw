@@ -15,13 +15,12 @@ import pytest
 
 from app.hooks import (
     HookContext,
+    _hooks,
     register_hook,
     reset_hooks,
     run_hooks,
     unregister_hook,
-    _hooks,
 )
-
 
 # conftest already calls reset_hooks() after each test via the autouse fixture
 

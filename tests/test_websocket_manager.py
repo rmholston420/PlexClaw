@@ -13,13 +13,8 @@ from __future__ import annotations
 
 import pytest
 
-from app.websocket_manager import WebSocketManager
 from app.schemas import WSEnvelope
-
-
-# ---------------------------------------------------------------------------
-# Minimal WebSocket stub
-# ---------------------------------------------------------------------------
+from app.websocket_manager import WebSocketManager
 
 
 class _FakeWS:
