@@ -97,3 +97,12 @@ def test_playwright_composer_spec_exists() -> None:
     assert "#send-btn" in text
     assert "#attach-file-btn" in text
     assert "#attach-file-input" in text
+
+
+def test_playwright_archive_spec_exists() -> None:
+    text = Path("frontend/e2e/archive.spec.js").read_text()
+    assert "test('archive controls are exposed in the current DOM'" in text
+    assert "#archive-list" in text
+    assert "#archive-search" in text
+    assert "#archive-sort" in text
+    assert "#refresh-archive" in text
