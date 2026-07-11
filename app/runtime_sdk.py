@@ -760,13 +760,11 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                         _current_tool_json = ""
 
                 elif etype == "message_delta":
-                    delta = event.get("delta", {})
-                    usage = event.get("usage", {})
-                    stop_reason = delta.get("stop_reason", "end_turn")
-                    env = normalize_assistant_completed(
-                        session.id, session.next_seq(), stop_reason, usage
-                    )
-                    await _emit(session, env)
+                    # Do not emit assistant.completed here.
+                    # With include_partial_messages=True, message_delta can carry
+                    # stop_reason before the later ResultMessage arrives. The
+                    # ResultMessage is the single end-of-turn completion signal.
+                    pass
 
                 # message_start / message_stop / content_block_stop (text) are no-ops
                 continue
