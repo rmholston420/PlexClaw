@@ -260,3 +260,13 @@ def test_playwright_tab_scroll_spec_exists() -> None:
     assert "#tab-scroll-right" in text
     assert "#tabbar" in text
     assert ".session-tab" in text
+def test_playwright_archive_refresh_spec_exists() -> None:
+    text = Path("frontend/e2e/archive-refresh.spec.js").read_text()
+    assert (
+        "test('archive refresh control remains usable with archive surface visible'"
+        in text
+    )
+    assert "#refresh-archive" in text
+    assert "#archive-list" in text
+    assert "#archive-search" in text
+    assert "toBeEnabled()" in text
