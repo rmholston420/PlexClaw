@@ -306,7 +306,7 @@ function renderProviderRuntimeMeta() {
     } else if (mode === 'false') {
       toolText = 'Tools disabled';
       toolTitle = 'Tool search is explicitly disabled for this session';
-    } else if (active === false && base) {
+    } else if (active === false && baseUrl) {
       toolText = 'Tools disabled';
       toolTitle = 'Tools: off (custom route)';
     } else if (active === false) {
