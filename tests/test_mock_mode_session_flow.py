@@ -424,3 +424,57 @@ def test_normalize_tool_delta_includes_tool_name_and_input() -> None:
         "partial": "",
         "tool_input": {"query": "hello"},
     }
+
+
+
+def test_interrupt_session_emits_drained_assistant_message() -> None:
+    from app.schemas import SessionCreateRequest
+
+    async def _run() -> list[str]:
+        req = SessionCreateRequest(
+            model="claude-sonnet-4-5",
+            provider="cloud",
+            permission_mode="auto",
+        )
+        session = await rs.create_session(req)
+        session.mock_mode = False
+
+        class _TextBlock:
+            type = "text"
+
+            def __init__(self, text: str) -> None:
+                self.text = text
+
+        class _AssistantMessage:
+            def __init__(self, text: str) -> None:
+                self.content = [_TextBlock(text)]
+
+        class _Client:
+            async def interrupt(self) -> None:
+                return None
+
+            async def receive_response(self):
+                yield _AssistantMessage("late text after interrupt")
+
+        seen: list[str] = []
+        original_emit = rs._emit
+        original_assistant_message = rs.AssistantMessage
+
+        async def _capture_emit(session, env):
+            seen.append(env.type)
+            await original_emit(session, env)
+
+        rs._emit = _capture_emit
+        rs.AssistantMessage = _AssistantMessage
+        try:
+            session._client = _Client()
+            await rs.interrupt_session(session.id)
+        finally:
+            rs._emit = original_emit
+            rs.AssistantMessage = original_assistant_message
+
+        return seen
+
+    event_types = asyncio.run(_run())
+    assert "assistant.delta" in event_types
+    assert "session.interrupted" in event_types

@@ -832,6 +832,34 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
                 session.status = "ready"
 
 
+async def _emit_interrupt_drained_message(session: LiveSession, message: Any) -> None:
+    """Emit best-effort events drained after interrupt()."""
+    if AssistantMessage is not None and isinstance(message, AssistantMessage):
+        blocks = getattr(message, "content", None) or []
+        for block in blocks:
+            btype = getattr(block, "type", None)
+            if btype == "text":
+                text = getattr(block, "text", "") or ""
+                if text:
+                    await _emit(
+                        session,
+                        normalize_text_delta(session.id, session.next_seq(), text),
+                    )
+
+    if ResultMessage is not None and isinstance(message, ResultMessage):
+        stop_reason = getattr(message, "stop_reason", None) or "interrupted"
+        usage = getattr(message, "usage", None) or {}
+        await _emit(
+            session,
+            normalize_assistant_completed(
+                session.id,
+                session.next_seq(),
+                stop_reason,
+                usage,
+            ),
+        )
+
+
 async def interrupt_session(session_id: str) -> None:
     session = _sessions.get(session_id)
     if not session:
@@ -840,9 +868,9 @@ async def interrupt_session(session_id: str) -> None:
         try:
             await session._client.interrupt()
             if not session.mock_mode:
-                # Only drain the real SDK response queue
-                async for _ in session._client.receive_response():
-                    pass
+                # Only drain the real SDK response queue, but do not drop late events.
+                async for message in session._client.receive_response():
+                    await _emit_interrupt_drained_message(session, message)
         except Exception as exc:
             log.warning("Interrupt drain error: %s", exc)
     session.status = "interrupted"
