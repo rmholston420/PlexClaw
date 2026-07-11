@@ -1,3 +1,5 @@
+import pytest
+
 from app.config import (
     DEFAULT_ALLOWED_HOSTS,
     DEFAULT_ALLOWED_ORIGINS,
@@ -70,6 +72,23 @@ def test_get_provider_env_for_vllm(monkeypatch):
 
 def test_get_provider_env_for_cloud():
     assert get_provider_env("cloud") == {}
+
+
+
+@pytest.mark.parametrize("provider", ["ollama", "vllm"])
+def test_get_provider_env_base_url_override_short_circuits(provider, monkeypatch):
+    monkeypatch.setattr(
+        "app.config.get_ollama_base_url",
+        lambda: "http://should-not-be-used:11434",
+    )
+    monkeypatch.setattr(
+        "app.config.get_vllm_base_url",
+        lambda: "http://should-not-be-used:8000",
+    )
+
+    assert get_provider_env(provider, "  http://override.local:9999/  ") == {
+        "ANTHROPIC_BASE_URL": "http://override.local:9999"
+    }
 
 
 def test_get_tool_search_env_empty():
