@@ -721,40 +721,68 @@ async function setSdkPermissionMode(mode) {
   }
 }
 
+function preferredProviderOrder() {
+  return ['ollama', 'vllm', 'cloud'];
+}
+
+function providerDisplayLabel(name, info = {}) {
+  const base = info.label || name;
+  if (name === 'ollama') return `${base} (primary)`;
+  if (name === 'vllm') return `${base} (backup)`;
+  return base;
+}
+
+function chooseBestProvider(preferred) {
+  const explicit = preferred || state.provider || null;
+  const health = state.providerHealth || {};
+
+  if (explicit) {
+    if (explicit === 'ollama' && health.ollama?.ok !== false) return 'ollama';
+    if (explicit === 'vllm' && health.vllm?.ok !== false) return 'vllm';
+    if (explicit === 'cloud') return 'cloud';
+  }
+
+  if (health.ollama?.ok) return 'ollama';
+  if (health.vllm?.ok) return 'vllm';
+  return explicit || 'ollama';
+}
+
 function renderProviderSwitcher() {
     if (!el.providerSwitcher) return;
     el.providerSwitcher.innerHTML = '';
-    ['cloud', 'ollama', 'vllm'].forEach((name) => {
+    preferredProviderOrder().forEach((name) => {
       const info = state.providers[name] || { label: name };
       const health = state.providerHealth[name] || {};
+      const label = providerDisplayLabel(name, info);
+      const isOffline = name !== 'cloud' && health.ok === false;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'badge' + (state.provider === name ? ' accent' : '');
-      btn.title = health.ok === false ? `${info.label || name} offline` : `${info.label || name} online`;
+      btn.title = isOffline ? `${label} offline` : `${label} online`;
       btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">
-        <span style="width:8px;height:8px;border-radius:999px;background:${health.ok === false ? '#6b7280' : '#22c55e'}"></span>
-        <span>${info.label || name}</span>
+        <span style="width:8px;height:8px;border-radius:999px;background:${isOffline ? '#6b7280' : '#22c55e'}"></span>
+        <span>${label}</span>
       </span>`;
-      btn.disabled = (name !== 'cloud' && health.ok === false);
-    btn.addEventListener('click', () => {
-      const previousProvider = state.provider;
-      if (previousProvider === name) return;
+      btn.disabled = isOffline;
+      btn.addEventListener('click', () => {
+        const previousProvider = state.provider;
+        if (previousProvider === name) return;
 
-      state.provider = name;
+        state.provider = name;
 
-      const tab = currentTab();
-      if (state.sessionId && tab) {
-        tab.sessionId = null;
-        state.sessionId = null;
-        setSessionLabel(null);
-        appendSystemMessage(`Provider changed from ${previousProvider} to ${name}. Start a new session to use the new route.`);
-      }
+        const tab = currentTab();
+        if (state.sessionId && tab) {
+          tab.sessionId = null;
+          state.sessionId = null;
+          setSessionLabel(null);
+          appendSystemMessage(`Provider changed from ${previousProvider} to ${name}. Start a new session to use the new local route.`);
+        }
 
-      syncStateToActiveTab();
-      renderProviderSwitcher();
-      renderProviderRuntimeMeta();
-      renderModelOptions();
-    });
+        syncStateToActiveTab();
+        renderProviderSwitcher();
+        renderProviderRuntimeMeta();
+        renderModelOptions();
+      });
       el.providerSwitcher.appendChild(btn);
     });
   }
@@ -777,19 +805,23 @@ function renderProviderSwitcher() {
    try {
      const data = await api('/api/providers');
      state.providers = data.providers || {};
-     state.provider = data.default_provider || state.provider || 'cloud';
+     state.provider = data.default_provider || state.provider || 'ollama';
+     await loadProviderHealth();
+     state.provider = chooseBestProvider(state.provider);
      renderModelOptions();
      renderProviderRuntimeMeta();
    } catch (err) {
      console.warn('Provider load error', err);
      state.providers = {
+       ollama: { label: 'Ollama', base_url: 'http://127.0.0.1:11434', models: [] },
+       vllm: { label: 'vLLM', base_url: 'http://127.0.0.1:30000', models: [] },
        cloud: { label: 'Cloud', models: ['claude-sonnet-4-5-20250929', 'claude-opus-4-5-20251101', 'claude-haiku-4-5-20251001'] },
      };
-     state.provider = 'cloud';
+     await loadProviderHealth();
+     state.provider = chooseBestProvider('ollama');
      renderModelOptions();
      renderProviderRuntimeMeta();
    }
-   await loadProviderHealth();
    renderProviderSwitcher();
    renderProviderRuntimeMeta();
  }

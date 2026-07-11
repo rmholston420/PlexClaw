@@ -13,9 +13,22 @@ def test_provider_change_resets_live_session():
     text = Path("frontend/sdk-bridge-client.js").read_text()
     assert (
         "Provider changed from ${previousProvider} to ${name}. "
-        "Start a new session to use the new route."
+        "Start a new session to use the new local route."
     ) in text
     assert "tab.sessionId = null;" in text
     assert "state.sessionId = null;" in text
     assert "syncStateToActiveTab();" in text
     assert "renderProviderRuntimeMeta();" in text
+
+
+def test_provider_switcher_prefers_local_routes():
+    text = Path("frontend/sdk-bridge-client.js").read_text()
+    assert "function preferredProviderOrder()" in text
+    assert "return ['ollama', 'vllm', 'cloud'];" in text
+    assert "function chooseBestProvider(preferred)" in text
+    assert "if (health.ollama?.ok) return 'ollama';" in text
+    assert "if (health.vllm?.ok) return 'vllm';" in text
+    assert (
+        "state.provider = data.default_provider || state.provider || "
+        "'ollama';"
+    ) in text
