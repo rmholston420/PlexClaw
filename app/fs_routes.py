@@ -156,8 +156,13 @@ async def git_roots(
         default=None, description="Optional live session id"
     ),
 ) -> dict:
+    """Return the nearest containing Git repository root for a start path.
+
+    This endpoint walks upward from ``start`` toward the active filesystem root.
+    For frontend compatibility it returns a ``roots`` array, but at most one
+    containing repository root can be returned from this ancestor search.
+    """
     current, root = _resolve_safe_path(start, session_id=session_id)
-    roots: list[str] = []
     depth = 0
 
     while True:
@@ -168,7 +173,7 @@ async def git_roots(
 
         git_dir = current / ".git"
         if git_dir.exists() and git_dir.is_dir():
-            roots.append(str(current))
+            return {"root": str(root), "roots": [str(current)]}
 
         parent = current.parent
         if parent == current or not _is_within_root(parent, root):
@@ -176,4 +181,4 @@ async def git_roots(
         current = parent
         depth += 1
 
-    return {"root": str(root), "roots": sorted(set(roots))}
+    return {"root": str(root), "roots": []}
