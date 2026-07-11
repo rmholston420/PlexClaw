@@ -179,3 +179,14 @@ def test_playwright_terminal_toggle_spec_exists() -> None:
     assert "#terminal-toggle" in text
     assert "#terminal-drawer" in text
     assert "aria-hidden" in text
+def test_playwright_export_controls_tabs_spec_exists() -> None:
+    text = Path("frontend/e2e/export-controls-tabs.spec.js").read_text()
+    assert (
+        "test('export controls remain visible and enabled across tab changes'"
+        in text
+    )
+    assert "#new-tab-btn" in text
+    assert "#export-session" in text
+    assert "#export-session-json" in text
+    assert ".session-tab" in text
+    assert "toBeEnabled()" in text
