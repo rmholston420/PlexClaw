@@ -150,3 +150,11 @@ def test_playwright_modal_escape_spec_exists() -> None:
     assert "#cwd-pill" in text
     assert "#cwd-modal" in text
     assert "keyboard.press('Escape')" in text
+def test_playwright_modal_backdrop_spec_exists() -> None:
+    text = Path("frontend/e2e/modal-backdrop.spec.js").read_text()
+    assert "test('backdrop click closes search and cwd modals'" in text
+    assert "#open-search" in text
+    assert "#search-modal" in text
+    assert "#cwd-pill" in text
+    assert "#cwd-modal" in text
+    assert "click({ position: { x: 5, y: 5 } })" in text
