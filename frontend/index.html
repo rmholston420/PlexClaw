@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300..700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
   <style>
     /* =====================================================================
        DESIGN TOKENS — PlexClaw Dark Console (Nexus-derived, coding-optimised)
@@ -245,30 +245,9 @@
     .sort-select { background-image: none; }
 
     /* ===== TRANSCRIPT + TOOL CARDS ===== */
-  .transcript {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s3);
-    padding: var(--s4);
-    overflow-y: auto;
-    min-height: 0;
-    background:
-      radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 7%, transparent), transparent 28%),
-      linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg)), var(--bg));
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
+  
 
-  .msg {
-    max-width: min(88ch, 92%);
-    padding: var(--s3) var(--s4);
-    border-radius: var(--radius-lg);
-    line-height: 1.55;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid transparent;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
+  
 
   .msg.assistant {
     align-self: flex-start;
@@ -277,12 +256,7 @@
     color: var(--text);
   }
 
-  .msg.user {
-    align-self: flex-end;
-    background: color-mix(in srgb, var(--primary-hl) 72%, var(--surface));
-    border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
-    color: var(--text);
-  }
+  
 
   .msg.system {
     align-self: center;
@@ -1057,15 +1031,22 @@
     cursor: default;
   }
 /* ===== TRANSCRIPT ===== */
-    .transcript {
-      overflow-y: auto;
-      padding: var(--s4) var(--s6);
-      display: flex;
-      flex-direction: column;
-      gap: var(--s3);
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-    }
+   /* ===== TRANSCRIPT ===== */
+   .transcript {
+     overflow-y: auto;
+     padding: var(--s4) var(--s6);
+     display: flex;
+     flex-direction: column;
+     gap: var(--s3);
+     background:
+       radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 7%, transparent), transparent 28%),
+       linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg)), var(--bg));
+     scrollbar-width: thin;
+     scrollbar-color: var(--border) transparent;
+   }
+
+
+    
 
     /* Welcome */
     .welcome {
@@ -1108,12 +1089,16 @@
 
     /* Message bubbles */
     .msg {
+      max-width: min(88ch, 92%);
       border-radius: var(--radius-lg);
       padding: var(--s3) var(--s4);
       font-size: var(--text-sm);
       line-height: 1.7;
+      box-shadow: var(--shadow-sm);
       border: 1px solid var(--border);
-    }
+      white-space: pre-wrap;
+      word-break: break-word;
+   }
     .msg.user {
       background: var(--surface-offset);
       border-color: var(--border);
@@ -1390,7 +1375,7 @@
       .app { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .app.sidebar-open .sidebar { display: flex; position: fixed; left: 0; top: 0; bottom: 0; width: min(300px, 85vw); z-index: 100; }
-      .transcript { padding: var(--s3) var(--s3); }
+      
       .composer { padding: var(--s3) var(--s3) var(--s4); }
     }
   .terminal-toggle.active { color: var(--text); border-color: var(--primary); background: var(--primary-hl); }
@@ -1581,7 +1566,7 @@
 </div>
 </div>
 <div class="runtime-meta-help" id="runtime-meta-help">
-   Use this panel for the true working directory and runtime state. PlexClaw approval and Claude SDK mode are separate controls.
+  Use this panel for the true working directory and runtime state. PlexClaw approval and Claude SDK mode are separate controls.
 </div>
 <div class="runtime-select-row">
   <label class="runtime-select-label" for="tool-search-select">Tool mode</label>
@@ -1593,14 +1578,14 @@
     <option value="true">Tool search: On</option>
   </select>
 </div>
- <div class="runtime-select-row">
-   <label class="runtime-select-label" for="sdk-permission-mode-select">Claude SDK mode</label>
-   <select class="model-select" id="sdk-permission-mode-select" title="Claude SDK permission mode" aria-label="Claude SDK permission mode">
-     <option value="default">SDK mode: Default</option>
-     <option value="acceptEdits">SDK mode: Accept edits</option>
-     <option value="bypassPermissions">SDK mode: Bypass permissions</option>
-   </select>
- </div>
+<div class="runtime-select-row">
+  <label class="runtime-select-label" for="sdk-permission-mode-select">Claude SDK mode</label>
+  <select class="model-select" id="sdk-permission-mode-select" title="Claude SDK permission mode" aria-label="Claude SDK permission mode">
+    <option value="default">SDK mode: Default</option>
+    <option value="acceptEdits">SDK mode: Accept edits</option>
+    <option value="bypassPermissions">SDK mode: Bypass permissions</option>
+  </select>
+</div>
 </div>
         <div class="mode-toggle" id="mode-toggle" aria-label="PlexClaw approval policy">
           <button class="mode-toggle-btn" id="mode-manual-btn" type="button">Ask each tool</button>
