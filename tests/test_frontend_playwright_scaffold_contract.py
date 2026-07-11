@@ -127,3 +127,11 @@ def test_playwright_search_modal_spec_exists() -> None:
     assert "#search-close" in text
     assert "aria-hidden" in text
 
+
+
+def test_playwright_search_modal_diagnostic_spec_exists() -> None:
+    text = Path("frontend/e2e/search-modal-diagnostic.spec.js").read_text()
+    assert "test('diagnose search modal wiring'" in text
+    assert "BEFORE=" in text
+    assert "AFTER_CLICK=" in text
+    assert "AFTER_DOM_CLICK=" in text
