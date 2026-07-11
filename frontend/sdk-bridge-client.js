@@ -262,24 +262,25 @@ function buildSessionConfigSummary() {
     runtimeMode: state.runtimeMode || null,
   };
 
+  const effectiveConfig = state.effectiveSessionConfig || {};
   const effective = {
-    sessionId: state.effectiveSessionConfig?.sessionId || requested.sessionId,
-    model: state.effectiveSessionConfig?.model || requested.model,
-    provider: state.effectiveSessionConfig?.provider || requested.provider,
-    providerBaseUrl: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'providerBaseUrl')
-      ? state.effectiveSessionConfig.providerBaseUrl
+    sessionId: effectiveConfig.sessionId || requested.sessionId,
+    model: effectiveConfig.model || requested.model,
+    provider: effectiveConfig.provider || requested.provider,
+    providerBaseUrl: Object.prototype.hasOwnProperty.call(effectiveConfig, 'providerBaseUrl')
+      ? effectiveConfig.providerBaseUrl
       : requested.providerBaseUrl,
-    permissionMode: state.effectiveSessionConfig?.permissionMode || requested.permissionMode,
-    sdkPermissionMode: state.effectiveSessionConfig?.sdkPermissionMode || requested.sdkPermissionMode,
-    toolSearchMode: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'toolSearchMode')
-      ? state.effectiveSessionConfig.toolSearchMode
+    permissionMode: effectiveConfig.permissionMode || requested.permissionMode,
+    sdkPermissionMode: effectiveConfig.sdkPermissionMode || requested.sdkPermissionMode,
+    toolSearchMode: Object.prototype.hasOwnProperty.call(effectiveConfig, 'toolSearchMode')
+      ? effectiveConfig.toolSearchMode
       : requested.toolSearchMode,
-    toolSearchActive: typeof state.effectiveSessionConfig?.toolSearchActive === 'boolean'
-      ? state.effectiveSessionConfig.toolSearchActive
+    toolSearchActive: typeof effectiveConfig.toolSearchActive === 'boolean'
+      ? effectiveConfig.toolSearchActive
       : requested.toolSearchActive,
-    cwd: state.effectiveSessionConfig?.cwd || requested.cwd,
-    runtimeMode: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'runtimeMode')
-      ? state.effectiveSessionConfig.runtimeMode
+    cwd: effectiveConfig.cwd || requested.cwd,
+    runtimeMode: Object.prototype.hasOwnProperty.call(effectiveConfig, 'runtimeMode')
+      ? effectiveConfig.runtimeMode
       : requested.runtimeMode,
   };
 
@@ -289,44 +290,48 @@ function buildSessionConfigSummary() {
       .map((key) => [key, { requested: requested[key], effective: effective[key] }])
   );
 
-  return JSON.stringify({
-    capturedAt: new Date().toISOString(),
-    requested,
-    effective,
-    diff,
-  }, null, 2);
+  return JSON.stringify(
+    {
+      capturedAt: new Date().toISOString(),
+      requested,
+      effective,
+      diff,
+    },
+    null,
+    2
+  );
 }
 
 function renderProviderRuntimeMeta() {
   const provider = state.providers[state.provider] || {};
   const label = provider.label || state.provider || 'Cloud';
   const baseUrl = state.providerBaseUrl || provider.base_url || null;
+
   setCopyableValue(
     el.providerRuntimeMeta,
     label,
     label,
     `Click to copy provider route: ${label}`
   );
+
   setCopyableValue(
     el.providerBaseUrlMeta,
     baseUrl || 'Default',
     baseUrl || 'Default',
     `Click to copy provider base URL: ${baseUrl || 'Default'}`
   );
+
   if (el.providerBaseUrlInput) {
     el.providerBaseUrlInput.value = baseUrl || '';
     el.providerBaseUrlInput.placeholder =
-      provider.base_url || (
-        state.provider === 'ollama'
-          ? 'http://127.0.0.1:11434'
-          : state.provider === 'vllm'
-            ? 'http://127.0.0.1:30000'
-            : 'Provider default'
-      );
+      provider.base_url ||
+      (state.provider === 'ollama'
+        ? 'http://127.0.0.1:11434'
+        : state.provider === 'vllm'
+          ? 'http://127.0.0.1:30000'
+          : 'Provider default');
     el.providerBaseUrlInput.disabled = state.provider === 'cloud';
   }
-}
-
 
   if (el.sessionCwdMeta) {
     const cwdText = state.cwd || state.cwdSelected || '~';
@@ -339,11 +344,12 @@ function renderProviderRuntimeMeta() {
   }
 
   if (el.sessionRuntimeMeta) {
-    const runtimeText = state.runtimeMode === 'mock'
-      ? 'Mock runtime'
-      : state.runtimeMode === 'live'
-        ? 'Live runtime'
-        : 'Unknown runtime';
+    const runtimeText =
+      state.runtimeMode === 'mock'
+        ? 'Mock runtime'
+        : state.runtimeMode === 'live'
+          ? 'Live runtime'
+          : 'Unknown runtime';
     setRuntimeMetaCopyValue(
       el.sessionRuntimeMeta,
       runtimeText,
@@ -367,6 +373,7 @@ function renderProviderRuntimeMeta() {
     const active = state.toolSearchActive;
     let toolText = 'Default tools';
     let toolTitle = 'Tools: default';
+
     if (mode === 'auto') {
       toolText = 'Auto tools';
       toolTitle = 'Tool search is explicitly enabled in auto mode';
@@ -386,6 +393,7 @@ function renderProviderRuntimeMeta() {
       toolText = 'Tools disabled';
       toolTitle = 'Tool search is disabled by backend configuration';
     }
+
     setRuntimeMetaCopyValue(
       el.toolRuntimeMeta,
       toolText,
@@ -396,14 +404,14 @@ function renderProviderRuntimeMeta() {
 
   bindRuntimeMetaCopyHandlers();
 
- if (el.toolSearchSelect) {
-   el.toolSearchSelect.value = state.toolSearchMode || '';
-   const selected = el.toolSearchSelect.options[el.toolSearchSelect.selectedIndex];
-   el.toolSearchSelect.title = `Tool search mode: ${selected ? selected.textContent : 'Tool search: Default'}`;
- }
+  if (el.toolSearchSelect) {
+    el.toolSearchSelect.value = state.toolSearchMode || '';
+    const selected = el.toolSearchSelect.options[el.toolSearchSelect.selectedIndex];
+    el.toolSearchSelect.title = `Tool search mode: ${selected ? selected.textContent : 'Tool search: Default'}`;
+  }
 }
 
-  function setConnection(status) {
+function setConnection(status) {
     // status: 'disconnected' | 'connecting' | 'connected' | 'error'
     el.statusDot.className = 'status-dot ' + status;
     const labels = {
