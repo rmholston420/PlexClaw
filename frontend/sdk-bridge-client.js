@@ -41,6 +41,18 @@ const Bridge = (() => {
     firstToolExpanded: false,
     copiedRuntimeMetaTimeouts: new Map(),
    sdkPermissionMode: 'default',
+  effectiveSessionConfig: {
+    sessionId: null,
+    model: null,
+    provider: null,
+    providerBaseUrl: null,
+    permissionMode: null,
+    sdkPermissionMode: null,
+    toolSearchMode: null,
+    toolSearchActive: null,
+    cwd: null,
+    runtimeMode: null,
+  },
   };
 
   const el = {
@@ -237,19 +249,39 @@ function bindRuntimeMetaCopyHandlers() {
 
 
 function buildSessionConfigSummary() {
-  const summary = {
-    sessionId: state.sessionId || null,
-    model: state.model || null,
-    provider: state.provider || null,
-    providerBaseUrl: state.providerBaseUrl || null,
-    permissionMode: state.permissionMode || null,
-    sdkPermissionMode: state.sdkPermissionMode || 'default',
-    toolSearchMode: state.toolSearchMode || null,
-    toolSearchActive: typeof state.toolSearchActive === 'boolean' ? state.toolSearchActive : null,
-    cwd: state.cwd || state.cwdSelected || null,
-    runtimeMode: state.runtimeMode || null,
-  };
-  return JSON.stringify(summary, null, 2);
+ const requested = {
+   sessionId: state.sessionId || null,
+   model: state.model || null,
+   provider: state.provider || null,
+   providerBaseUrl: state.providerBaseUrl || null,
+   permissionMode: state.permissionMode || null,
+   sdkPermissionMode: state.sdkPermissionMode || 'default',
+   toolSearchMode: state.toolSearchMode || null,
+   toolSearchActive: typeof state.toolSearchActive === 'boolean' ? state.toolSearchActive : null,
+   cwd: state.cwd || state.cwdSelected || null,
+   runtimeMode: state.runtimeMode || null,
+ };
+
+ const effective = {
+   sessionId: state.effectiveSessionConfig?.sessionId || requested.sessionId,
+   model: state.effectiveSessionConfig?.model || requested.model,
+   provider: state.effectiveSessionConfig?.provider || requested.provider,
+   providerBaseUrl: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'providerBaseUrl')
+     ? state.effectiveSessionConfig.providerBaseUrl
+     : requested.providerBaseUrl,
+   permissionMode: state.effectiveSessionConfig?.permissionMode || requested.permissionMode,
+   sdkPermissionMode: state.effectiveSessionConfig?.sdkPermissionMode || requested.sdkPermissionMode,
+   toolSearchMode: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'toolSearchMode')
+     ? state.effectiveSessionConfig.toolSearchMode
+     : requested.toolSearchMode,
+   toolSearchActive: typeof state.effectiveSessionConfig?.toolSearchActive === 'boolean'
+     ? state.effectiveSessionConfig.toolSearchActive
+     : requested.toolSearchActive,
+   cwd: state.effectiveSessionConfig?.cwd || requested.cwd,
+   runtimeMode: state.effectiveSessionConfig?.runtimeMode || requested.runtimeMode,
+ };
+
+ return JSON.stringify({ requested, effective }, null, 2);
 }
 
 function renderProviderRuntimeMeta() {
@@ -1325,7 +1357,25 @@ function bindStableUiHandlers() {
       state.toolSearchActive = Object.prototype.hasOwnProperty.call(evt.payload || {}, 'tool_search_active')
         ? Boolean(evt.payload.tool_search_active)
         : null;
-      renderProviderRuntimeMeta();
+      state.effectiveSessionConfig = {
+     sessionId: state.sessionId || null,
+     model: evt.payload?.model || state.model || null,
+     provider: evt.payload?.provider || state.provider || null,
+     providerBaseUrl: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'provider_base_url')
+       ? evt.payload.provider_base_url
+       : null,
+     permissionMode: state.permissionMode || null,
+     sdkPermissionMode: state.sdkPermissionMode || 'default',
+     toolSearchMode: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'tool_search_mode')
+       ? evt.payload.tool_search_mode
+       : null,
+     toolSearchActive: Object.prototype.hasOwnProperty.call(evt.payload || {}, 'tool_search_active')
+       ? Boolean(evt.payload.tool_search_active)
+       : null,
+     cwd: state.cwd || state.cwdSelected || null,
+     runtimeMode: Boolean(evt.payload?.mock_mode) ? 'mock' : 'live',
+   };
+   renderProviderRuntimeMeta();
         const mockMode = Boolean(evt.payload?.mock_mode);
       appendSystemMessage(`${mockMode ? 'Mock session ready' : 'Live session ready'} (${evt.payload?.model || state.model})`);
       setRuntimeMode(mockMode);
@@ -1667,6 +1717,20 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_mode')) state.toolSe
 if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.toolSearchActive = Boolean(data.tool_search_active);
   if (data.permission_mode) state.permissionMode = data.permission_mode;
  if (data.sdk_permission_mode) state.sdkPermissionMode = data.sdk_permission_mode;
+state.effectiveSessionConfig = {
+  sessionId: data.session_id || state.sessionId || null,
+  model: data.model || state.model || null,
+  provider: data.provider || state.provider || null,
+  providerBaseUrl: Object.prototype.hasOwnProperty.call(data, 'provider_base_url') ? data.provider_base_url : null,
+  permissionMode: data.permission_mode || state.permissionMode || null,
+  sdkPermissionMode: data.sdk_permission_mode || state.sdkPermissionMode || 'default',
+  toolSearchMode: Object.prototype.hasOwnProperty.call(data, 'tool_search_mode') ? data.tool_search_mode : null,
+  toolSearchActive: Object.prototype.hasOwnProperty.call(data, 'tool_search_active') ? Boolean(data.tool_search_active) : null,
+  cwd: body.cwd || state.cwd || state.cwdSelected || null,
+  runtimeMode: typeof data.mock_mode === 'boolean'
+    ? (data.mock_mode ? 'mock' : 'live')
+    : (state.runtimeMode || null),
+};
   if (Object.prototype.hasOwnProperty.call(data, 'cwd')) setCwd(data.cwd);
   if (typeof data.mock_mode === 'boolean') setRuntimeMode(data.mock_mode);
   renderModelOptions();
