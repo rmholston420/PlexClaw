@@ -566,18 +566,32 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
     try:
         while True:
             text = await websocket.receive_text()
-            data = json.loads(text)
+            try:
+                data = json.loads(text)
+            except json.JSONDecodeError:
+                await websocket.send_json({"type": "error", "detail": "invalid JSON"})
+                continue
 
             msg_type = data.get("type")
             if msg_type == "approve":
                 tool_id = data.get("tool_id")
                 if tool_id:
-                    await runtime.approve_tool_call(session_id, tool_id)
+                    try:
+                        await runtime.approve_tool_call(session_id, tool_id)
+                    except KeyError:
+                        await websocket.send_json(
+                            {"type": "error", "detail": f"no pending tool {tool_id}"}
+                        )
                 continue
             if msg_type == "reject":
                 tool_id = data.get("tool_id")
                 if tool_id:
-                    await runtime.reject_tool_call(session_id, tool_id)
+                    try:
+                        await runtime.reject_tool_call(session_id, tool_id)
+                    except KeyError:
+                        await websocket.send_json(
+                            {"type": "error", "detail": f"no pending tool {tool_id}"}
+                        )
                 continue
 
             prompt = data.get("prompt", "")
