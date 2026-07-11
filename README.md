@@ -48,7 +48,7 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 
 1. Install dependencies:
    - `python -m pip install -e .[dev]`
-2. Optional: install and configure the Claude Agent SDK / API credentials for live use.
+2. Start your local model runtime, preferably Ollama on port 11434; vLLM on port 30000 is supported as a backup.
 3. Run:
    - `bash run.sh`
 4. Open:
@@ -94,16 +94,17 @@ Filesystem behavior notes:
 - The frontend browser now passes the active `session_id` for cwd browsing and Git root discovery, so the UI follows the active session context.
 - Legacy `FS_ROOT` compatibility remains in place for tests and non-session fallback behavior.
 
-## Cloud model configuration
+## Local model configuration
 
-Cloud provider models are now configurable through the backend environment and share a single default source of truth.
+PlexClaw is intended to run local-first, with Ollama as the primary provider and vLLM as the backup.
 
 Configuration behavior:
 
-- `PLEXCLAW_CLOUD_MODELS` overrides the default cloud model list exposed by `GET /api/providers`.
-- The variable is parsed as a comma-separated list; empty entries are ignored.
-- Shared defaults now live in `app/provider_defaults.py`.
-- `SessionCreateRequest.model` derives its default from `DEFAULT_CLOUD_MODELS[0]`, keeping the session schema aligned with provider defaults.
+- `OLLAMA_BASE_URL` defaults to `http://127.0.0.1:11434`.
+- `VLLM_BASE_URL` defaults to `http://127.0.0.1:30000`.
+- `PLEXCLAW_OLLAMA_MODEL` sets the default Ollama model for new sessions.
+- `PLEXCLAW_VLLM_MODEL` sets the default vLLM model when the provider is switched to vLLM.
+- `GET /api/providers` exposes both local provider routes and their discovered model lists.
 
 ## Runtime routing & tool search
 

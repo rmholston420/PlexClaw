@@ -32,6 +32,8 @@ def get_allowed_hosts() -> list[str]:
 
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_VLLM_BASE_URL = "http://127.0.0.1:30000"
+DEFAULT_OLLAMA_MODEL = "qwen3:latest"
+DEFAULT_VLLM_MODEL = "Qwen/Qwen3-Coder-30B-A3B-Instruct"
 
 
 def get_ollama_base_url() -> str:
@@ -56,6 +58,15 @@ def get_provider_env(
     elif provider == "vllm":
         env["ANTHROPIC_BASE_URL"] = get_vllm_base_url()
     return env
+
+
+def get_default_local_model(provider: str) -> str:
+    if provider == "vllm":
+        value = os.getenv("PLEXCLAW_VLLM_MODEL", DEFAULT_VLLM_MODEL).strip()
+        return value or DEFAULT_VLLM_MODEL
+
+    value = os.getenv("PLEXCLAW_OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL).strip()
+    return value or DEFAULT_OLLAMA_MODEL
 
 
 def get_tool_search_env(mode: str | None) -> dict[str, str]:
