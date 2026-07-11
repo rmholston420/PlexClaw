@@ -302,16 +302,39 @@ function buildSessionConfigSummary() {
   );
 }
 
+function providerSelectionReason() {
+  const health = state.providerHealth || {};
+  const provider = state.provider || 'ollama';
+
+  if (provider === 'ollama') {
+    if (health.ollama?.ok === false && health.vllm?.ok) {
+      return 'Ollama unavailable; vLLM fallback preferred';
+    }
+    return 'Ollama primary selected';
+  }
+
+  if (provider === 'vllm') {
+    if (health.ollama?.ok === false) {
+      return 'vLLM fallback selected because Ollama is offline';
+    }
+    return 'vLLM selected explicitly';
+  }
+
+  return 'Cloud selected explicitly';
+}
+
 function renderProviderRuntimeMeta() {
   const provider = state.providers[state.provider] || {};
   const label = provider.label || state.provider || 'Cloud';
   const baseUrl = state.providerBaseUrl || provider.base_url || null;
 
+  const selectionReason = providerSelectionReason();
+
   setCopyableValue(
     el.providerRuntimeMeta,
     label,
-    label,
-    `Click to copy provider route: ${label}`
+    `${label} — ${selectionReason}`,
+    `Click to copy provider route: ${label} (${selectionReason})`
   );
 
   setCopyableValue(

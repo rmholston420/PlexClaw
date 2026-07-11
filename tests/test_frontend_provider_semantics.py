@@ -32,3 +32,12 @@ def test_provider_switcher_prefers_local_routes():
         "state.provider = data.default_provider || state.provider || "
         "'ollama';"
     ) in text
+
+
+def test_provider_runtime_meta_exposes_selection_reason():
+    text = Path("frontend/sdk-bridge-client.js").read_text()
+    assert "function providerSelectionReason()" in text
+    assert "return 'Ollama primary selected';" in text
+    assert "return 'vLLM fallback selected because Ollama is offline';" in text
+    assert "return 'Cloud selected explicitly';" in text
+    assert "const selectionReason = providerSelectionReason();" in text
