@@ -40,6 +40,7 @@ const Bridge = (() => {
     toolEls: new Map(),
     firstToolExpanded: false,
     copiedRuntimeMetaTimeouts: new Map(),
+   sdkPermissionMode: 'default',
   };
 
   const el = {
@@ -84,6 +85,7 @@ const Bridge = (() => {
  sessionRuntimeMeta: document.getElementById('session-runtime-meta'),
 sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
   toolSearchSelect: document.getElementById('tool-search-select'),
+ sdkPermissionModeSelect: document.getElementById('sdk-permission-mode-select'),
     modelSelect: document.getElementById('model-select'),
     openSearchBtn: document.getElementById('open-search'),
     exportSessionBtn: document.getElementById('export-session'),
@@ -228,21 +230,94 @@ function bindRuntimeMetaCopyHandlers() {
   });
 }
 
-function renderProviderRuntimeMeta() {
-  const provider = state.provider || 'cloud';
-  const providerInfo = state.providers?.[provider] || {};
-  const providerLabel = providerInfo.label || provider;
-  const base = state.providerBaseUrl;
 
-  if (el.providerRuntimeMeta) {
-    const providerText = base
-      ? `${providerLabel} via ${base}`
-      : `${providerLabel} (default route)`;
-    const providerTitle = base
-      ? `Click to copy provider route: ${providerLabel} via ${base}`
-      : `Click to copy provider route: ${providerLabel} using default backend routing`;
-    setRuntimeMetaCopyValue(el.providerRuntimeMeta, providerText, providerText, providerTitle);
-  }
+function renderProviderRuntimeMeta() {
+ const provider = state.provider || 'cloud';
+ const providerInfo = state.providers?.[provider] || {};
+ const providerLabel = providerInfo.label || provider;
+ const base = state.providerBaseUrl;
+
+ if (el.providerRuntimeMeta) {
+   const providerText = base
+     ? `${providerLabel} via ${base}`
+     : `${providerLabel} (default route)`;
+   const providerTitle = base
+     ? `Click to copy provider route: ${providerLabel} via ${base}`
+     : `Click to copy provider route: ${providerLabel} using default backend routing`;
+   setRuntimeMetaCopyValue(el.providerRuntimeMeta, providerText, providerText, providerTitle);
+ }
+
+ if (el.sessionCwdMeta) {
+   const cwdText = state.cwd || state.cwdSelected || '~';
+   setRuntimeMetaCopyValue(
+     el.sessionCwdMeta,
+     shortenPath(cwdText),
+     cwdText,
+     `Click to copy working directory: ${cwdText}`
+   );
+ }
+
+ if (el.sessionRuntimeMeta) {
+   const runtimeText = state.runtimeMode === 'mock'
+     ? 'Mock runtime'
+     : state.runtimeMode === 'live'
+       ? 'Live runtime'
+       : 'Unknown runtime';
+   const sdkText = state.sdkPermissionMode || 'default';
+   const combinedRuntimeText = `${runtimeText} · SDK: ${sdkText}`;
+   setRuntimeMetaCopyValue(
+     el.sessionRuntimeMeta,
+     combinedRuntimeText,
+     combinedRuntimeText,
+     `Click to copy runtime mode: ${runtimeText}; Claude SDK mode: ${sdkText}`
+   );
+ }
+
+ if (el.toolRuntimeMeta) {
+   const mode = state.toolSearchMode;
+   const active = state.toolSearchActive;
+   let toolText = 'Default tools';
+   let toolTitle = 'Tools: default';
+   if (mode === 'auto') {
+     toolText = 'Auto tools';
+     toolTitle = 'Tool search is explicitly enabled in auto mode';
+   } else if (mode === 'auto:5') {
+     toolText = 'Auto tools 5%';
+     toolTitle = 'Tool search is explicitly enabled in auto 5% mode';
+   } else if (mode === 'true') {
+     toolText = 'Tools enabled';
+     toolTitle = 'Tool search is explicitly enabled for this session';
+   } else if (mode === 'false') {
+     toolText = 'Tools disabled';
+     toolTitle = 'Tool search is explicitly disabled for this session';
+   } else if (active === false && base) {
+     toolText = 'Tools disabled';
+     toolTitle = 'Tools: off (custom route)';
+   } else if (active === false) {
+     toolText = 'Tools disabled';
+     toolTitle = 'Tool search is disabled by backend configuration';
+   }
+   setRuntimeMetaCopyValue(
+     el.toolRuntimeMeta,
+     toolText,
+     toolText,
+     `Click to copy tool search state: ${toolTitle}`
+   );
+ }
+
+ bindRuntimeMetaCopyHandlers();
+
+ if (el.toolSearchSelect) {
+  el.toolSearchSelect.value = state.toolSearchMode || '';
+  const selected = el.toolSearchSelect.options[el.toolSearchSelect.selectedIndex];
+  el.toolSearchSelect.title = `Tool search mode: ${selected ? selected.textContent : 'Tool search: Default'}`;
+ }
+
+ if (el.sdkPermissionModeSelect) {
+  el.sdkPermissionModeSelect.value = state.sdkPermissionMode || 'default';
+ }
+}
+
 
   if (el.sessionCwdMeta) {
     const cwdText = state.cwd || state.cwdSelected || '~';
@@ -351,6 +426,10 @@ function renderProviderRuntimeMeta() {
       cwdSelected: state.cwdSelected,
       model: state.model,
       provider: state.provider,
+     providerBaseUrl: state.providerBaseUrl,
+     toolSearchMode: state.toolSearchMode,
+     toolSearchActive: state.toolSearchActive,
+     sdkPermissionMode: state.sdkPermissionMode,
     };
   }
 
@@ -402,6 +481,7 @@ function renderProviderRuntimeMeta() {
    state.providerBaseUrl = Object.prototype.hasOwnProperty.call(tab, 'providerBaseUrl') ? tab.providerBaseUrl : state.providerBaseUrl;
    state.toolSearchMode = Object.prototype.hasOwnProperty.call(tab, 'toolSearchMode') ? tab.toolSearchMode : state.toolSearchMode;
    state.toolSearchActive = Object.prototype.hasOwnProperty.call(tab, 'toolSearchActive') ? tab.toolSearchActive : state.toolSearchActive;
+  state.sdkPermissionMode = Object.prototype.hasOwnProperty.call(tab, 'sdkPermissionMode') ? tab.sdkPermissionMode : (state.sdkPermissionMode || 'default');
 
     setSessionLabel(state.sessionId);
     setReplayMode(state.replayMode);
@@ -559,10 +639,13 @@ function renderProviderRuntimeMeta() {
   }
 
 
-  function renderPermissionMode() {
-    if (el.modeManualBtn) el.modeManualBtn.classList.toggle('active', state.permissionMode === 'manual');
-    if (el.modeAutoBtn) el.modeAutoBtn.classList.toggle('active', state.permissionMode === 'auto');
-  }
+
+function renderPermissionMode() {
+  if (el.modeManualBtn) el.modeManualBtn.classList.toggle('active', state.permissionMode === 'manual');
+  if (el.modeAutoBtn) el.modeAutoBtn.classList.toggle('active', state.permissionMode === 'auto');
+  if (el.sdkPermissionModeSelect) el.sdkPermissionModeSelect.value = state.sdkPermissionMode || 'default';
+}
+
 
   async function setPermissionMode(mode) {
     if (!['auto', 'manual'].includes(mode)) return;
@@ -576,8 +659,34 @@ function renderProviderRuntimeMeta() {
       try {
         await api(`/api/sessions/${state.sessionId}`, {
           method: 'PATCH',
-          body: JSON.stringify({ permission_mode: mode }),
-        });
+          body: JSON.stringify({ permission_mode: mode, sdk_permission_mode: state.sdkPermissionMode || 'default' }),
+        }
+
+async function setSdkPermissionMode(mode) {
+  const allowed = ['default', 'acceptEdits', 'bypassPermissions'];
+  if (!allowed.includes(mode)) return;
+  if (state.sdkPermissionMode === mode) return;
+
+  state.sdkPermissionMode = mode;
+  syncStateToActiveTab();
+  renderPermissionMode();
+  renderProviderRuntimeMeta();
+
+  if (state.sessionId) {
+    try {
+      await api(`/api/sessions/${state.sessionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          permission_mode: state.permissionMode,
+          sdk_permission_mode: mode,
+        }),
+      });
+    } catch (err) {
+      appendSystemMessage('Failed to update Claude SDK mode.', 'error');
+    }
+  }
+}
+);
       } catch (err) {
         appendSystemMessage('Failed to update approval mode.', 'error');
       }
@@ -782,11 +891,56 @@ function closeSearchModal() {
 
 
   
-  function bindStableUiHandlers() {
-    if (el.newTabBtn && !el.newTabBtn.dataset.bound) {
-      el.newTabBtn.addEventListener('click', () => openNewTab());
-      el.newTabBtn.dataset.bound = 'true';
-    }
+
+function bindStableUiHandlers() {
+   if (el.newTabBtn && !el.newTabBtn.dataset.bound) {
+     el.newTabBtn.addEventListener('click', () => openNewTab());
+     el.newTabBtn.dataset.bound = 'true';
+   }
+
+   if (el.cwdPill && !el.cwdPill.dataset.bound) {
+     el.cwdPill.addEventListener('click', () => openCwdModal());
+     el.cwdPill.dataset.bound = 'true';
+   }
+
+   if (el.cwdClose && !el.cwdClose.dataset.bound) {
+     el.cwdClose.addEventListener('click', () => closeCwdModal());
+     el.cwdClose.dataset.bound = 'true';
+   }
+
+   if (el.cwdCancel && !el.cwdCancel.dataset.bound) {
+     el.cwdCancel.addEventListener('click', () => closeCwdModal());
+     el.cwdCancel.dataset.bound = 'true';
+   }
+
+   if (el.cwdBackdrop && !el.cwdBackdrop.dataset.bound) {
+     el.cwdBackdrop.addEventListener('click', () => closeCwdModal());
+     el.cwdBackdrop.dataset.bound = 'true';
+   }
+
+   if (el.openSearchBtn && !el.openSearchBtn.dataset.bound) {
+     el.openSearchBtn.addEventListener('click', () => openSearchModal());
+     el.openSearchBtn.dataset.bound = 'true';
+   }
+
+   if (el.searchClose && !el.searchClose.dataset.bound) {
+     el.searchClose.addEventListener('click', () => closeSearchModal());
+     el.searchClose.dataset.bound = 'true';
+   }
+
+   if (el.searchBackdrop && !el.searchBackdrop.dataset.bound) {
+     el.searchBackdrop.addEventListener('click', () => closeSearchModal());
+     el.searchBackdrop.dataset.bound = 'true';
+   }
+
+   if (el.sdkPermissionModeSelect && !el.sdkPermissionModeSelect.dataset.bound) {
+     el.sdkPermissionModeSelect.addEventListener('change', (e) => {
+       setSdkPermissionMode(e.target.value);
+     });
+     el.sdkPermissionModeSelect.dataset.bound = 'true';
+   }
+}
+
 
     if (el.cwdPill && !el.cwdPill.dataset.bound) {
       el.cwdPill.addEventListener('click', () => openCwdModal());
@@ -1836,6 +1990,9 @@ if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.tool
       renderProviderRuntimeMeta();
       syncStateToActiveTab();
     });
+   el.sdkPermissionModeSelect?.addEventListener('change', () => {
+     setSdkPermissionMode(el.sdkPermissionModeSelect?.value || 'default');
+   });
     el.composer?.addEventListener('dragover', (e) => {
       e.preventDefault();
       el.composer.classList.add('dragover');
