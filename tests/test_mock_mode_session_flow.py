@@ -135,3 +135,56 @@ def test_stream_sdk_emits_single_assistant_completed_when_result_message_arrives
     emitted = asyncio.run(_collect_emitted_types_for_real_result_path())
     assert emitted.count("assistant.completed") == 1
     assert emitted.count("assistant.delta") == 1
+
+
+class _FakeClientThatFails:
+    async def connect(self) -> None:
+        return None
+
+    async def query(self, prompt: str) -> None:
+        return None
+
+    async def receive_response(self):
+        if False:
+            yield None
+        raise RuntimeError("boom")
+
+
+async def _collect_emitted_types_for_failed_result_path() -> tuple[list[str], str]:
+    session = rs.LiveSession(
+        id="failed-session",
+        model="claude-sonnet-4-5",
+        cwd=None,
+        provider="cloud",
+        permission_mode="manual",
+        resume_session_id=None,
+        fork_session=False,
+        mock_mode=False,
+    )
+    session._client = _FakeClientThatFails()
+
+    emitted: list[str] = []
+
+    async def _fake_emit(_session, env) -> None:
+        emitted.append(env.type)
+
+    original_emit = rs._emit
+    try:
+        rs._emit = _fake_emit
+        try:
+            await rs._stream_sdk(session, "hello")
+        except RuntimeError as exc:
+            assert str(exc) == "boom"
+        else:
+            raise AssertionError("Expected _stream_sdk to re-raise RuntimeError")
+    finally:
+        rs._emit = original_emit
+
+    return emitted, session.status
+
+
+def test_stream_sdk_failed_session_emits_failed_without_completed() -> None:
+    emitted, status = asyncio.run(_collect_emitted_types_for_failed_result_path())
+    assert "session.failed" in emitted
+    assert "assistant.completed" not in emitted
+    assert status == "failed"
