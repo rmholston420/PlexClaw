@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 import app.main as main
+from app.schemas import SessionUpdateRequest
 
 client = TestClient(main.app)
 
@@ -129,5 +130,35 @@ def test_export_session_invalid_format_raises_http_400():
             assert exc.detail == "format must be 'json' or 'md'"
         else:
             raise AssertionError("Expected HTTPException for invalid format")
+
+    asyncio.run(run())
+
+
+
+def test_update_session_returns_payload_direct(monkeypatch):
+    import asyncio
+
+    class Session:
+        id = "s1"
+        status = "ready"
+        permission_mode = "manual"
+
+    async def fake_update_session(session_id, permission_mode=None):
+        assert session_id == "s1"
+        assert permission_mode == "manual"
+        return Session()
+
+    monkeypatch.setattr(main.runtime, "update_session", fake_update_session)
+
+    async def run():
+        result = await main.update_session(
+            "s1",
+            SessionUpdateRequest(permission_mode="manual"),
+        )
+        assert result == {
+            "session_id": "s1",
+            "status": "ready",
+            "permission_mode": "manual",
+        }
 
     asyncio.run(run())
