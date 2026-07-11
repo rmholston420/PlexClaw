@@ -801,7 +801,7 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
         # In mock mode (and any path where ResultMessage is never delivered),
         # the async-for loop exits without emitting assistant.completed.
         # Emit it here so the protocol is always complete on success.
-        if not _completed_emitted and session.status != "failed":
+        if not _completed_emitted and session.status not in {"failed", "interrupted"}:
             _completed_env = normalize_assistant_completed(
                 session.id, session.next_seq(), "end_turn", {}
             )
@@ -838,7 +838,7 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
             prompt_with_context = _inject_context_into_prompt(session, prompt)
             await _stream_sdk(session, prompt_with_context)
         finally:
-            if session.status != "failed":
+            if session.status not in {"failed", "interrupted"}:
                 session.status = "ready"
 
 

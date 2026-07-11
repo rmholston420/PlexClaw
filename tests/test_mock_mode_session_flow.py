@@ -188,3 +188,80 @@ def test_stream_sdk_failed_session_emits_failed_without_completed() -> None:
     assert "session.failed" in emitted
     assert "assistant.completed" not in emitted
     assert status == "failed"
+
+
+
+class _FakeInterruptibleClient:
+    def __init__(self) -> None:
+        self._interrupted = False
+
+    async def connect(self) -> None:
+        return None
+
+    async def query(self, prompt: str) -> None:
+        return None
+
+    async def interrupt(self) -> None:
+        self._interrupted = True
+
+    async def receive_response(self):
+        yield rs.MockStreamEvent(
+            {
+                "type": "content_block_delta",
+                "delta": {"type": "text_delta", "text": "partial"},
+            }
+        )
+        while not self._interrupted:
+            await asyncio.sleep(0.01)
+
+
+async def _collect_emitted_types_for_interrupted_turn() -> tuple[list[str], str]:
+    session = rs.LiveSession(
+        id="interrupted-session",
+        model="claude-sonnet-4-5",
+        cwd=None,
+        provider="cloud",
+        permission_mode="manual",
+        resume_session_id=None,
+        fork_session=False,
+        mock_mode=True,
+    )
+    session._client = _FakeInterruptibleClient()
+    rs._sessions[session.id] = session
+
+    emitted: list[str] = []
+
+    async def _fake_emit(_session, env) -> None:
+        emitted.append(env.type)
+
+    original_emit = rs._emit
+    try:
+        rs._emit = _fake_emit
+        stream_task = asyncio.create_task(rs.submit_prompt(session.id, "hello"))
+
+        for _ in range(50):
+            if "assistant.delta" in emitted:
+                break
+            await asyncio.sleep(0.01)
+        else:
+            raise AssertionError(
+                "Timed out waiting for assistant.delta before "
+                "interrupt"
+            )
+
+        await rs.interrupt_session(session.id)
+        await stream_task
+    finally:
+        rs._emit = original_emit
+        rs._sessions.pop(session.id, None)
+
+    return emitted, session.status
+
+
+def test_interrupt_session_emits_interrupted_without_completed_for_cancelled_turn(
+) -> None:
+    emitted, status = asyncio.run(_collect_emitted_types_for_interrupted_turn())
+    assert "assistant.delta" in emitted
+    assert "session.interrupted" in emitted
+    assert "assistant.completed" not in emitted
+    assert status == "interrupted"
