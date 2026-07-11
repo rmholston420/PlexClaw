@@ -40,10 +40,12 @@ def test_playwright_tabs_spec_exists() -> None:
 
 def test_playwright_controls_spec_exists() -> None:
     text = Path("frontend/e2e/controls.spec.js").read_text()
-    assert "test('observable controls respond in the DOM'" in text
+    assert "test('observable controls are present in the DOM'" in text
     assert "#mode-manual-btn" in text
     assert "#mode-auto-btn" in text
     assert "#cwd-pill" in text
-    assert "#cwd-modal" in text
-    assert "#cwd-close" in text
-    assert "#cwd-cancel" in text
+    assert "#export-session" in text
+    assert "#export-session-json" in text
+    assert "#provider-switcher" in text
+    assert "#model-select" in text
+    assert "#terminal-errors-only" in text
