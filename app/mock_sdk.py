@@ -38,6 +38,7 @@ class MockSDKClient:
         self._prompt: str = ""
         self._interrupted = False
         self._response_queue: asyncio.Queue[str | None] = asyncio.Queue()
+        self._producer_task: asyncio.Task[None] | None = None
 
     # ------------------------------------------------------------------
     # Interface mirroring ClaudeSDKClient
@@ -51,13 +52,20 @@ class MockSDKClient:
         """Stage the mock response for the given prompt."""
         self._prompt = prompt
         self._interrupted = False
+        if self._producer_task and not self._producer_task.done():
+            self._producer_task.cancel()
+            try:
+                await self._producer_task
+            except asyncio.CancelledError:
+                pass
         # Drain any stale items
         while not self._response_queue.empty():
             try:
                 self._response_queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
-        asyncio.create_task(self._produce_tokens())
+        self._producer_task = asyncio.create_task(self._produce_tokens())
+        self._producer_task.add_done_callback(self._on_producer_done)
 
     async def receive_response(self):  # noqa: ANN201
         """Yield MockStreamEvent objects until sentinel None."""
@@ -73,7 +81,21 @@ class MockSDKClient:
         await self._response_queue.put(None)
 
     async def close(self) -> None:
+        if self._producer_task and not self._producer_task.done():
+            self._producer_task.cancel()
+            try:
+                await self._producer_task
+            except asyncio.CancelledError:
+                pass
         await self._response_queue.put(None)
+
+    def _on_producer_done(self, task: asyncio.Task[None]) -> None:
+        if self._producer_task is task:
+            self._producer_task = None
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
 
     # ------------------------------------------------------------------
     # Token production

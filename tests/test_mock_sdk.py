@@ -5,6 +5,8 @@ Verifies mock mode works end-to-end without the real SDK.
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from app.mock_sdk import MockSDKClient, MockStreamEvent
@@ -101,3 +103,18 @@ async def test_mock_mode_indicator_in_text() -> None:
 
     full = "".join(chunks)
     assert "mock mode" in full.lower() or "PlexClaw mock mode" in full
+
+@pytest.mark.asyncio
+async def test_query_stores_and_clears_producer_task() -> None:
+    client = MockSDKClient(options=None)
+    await client.connect()
+
+    await client.query(prompt="hello")
+    assert client._producer_task is not None
+
+    async for _event in client.receive_response():
+        pass
+
+    await asyncio.sleep(0)
+    assert client._producer_task is None
+
