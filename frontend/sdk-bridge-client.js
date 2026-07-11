@@ -692,7 +692,10 @@ function renderProviderRuntimeMeta() {
       });
       el.cwdBrowser.appendChild(row);
     });
-    if (window.lucide && typeof window.lucide.createIcons === 'function') window.if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons({ nodes: el.cwdBrowser.querySelectorAll('[data-lucide]') });
+    const cwdIconNodes = el.cwdBrowser.querySelectorAll('[data-lucide]');
+    if (window.lucide && typeof window.lucide.createIcons === 'function' && cwdIconNodes.length) {
+      window.lucide.createIcons({ nodes: cwdIconNodes });
+    }
   }
 
   async function loadGitRoots() {
