@@ -646,21 +646,28 @@ function renderPermissionMode() {
   if (el.sdkPermissionModeSelect) el.sdkPermissionModeSelect.value = state.sdkPermissionMode || 'default';
 }
 
+async function setPermissionMode(mode) {
+  if (!['auto', 'manual'].includes(mode)) return;
+  if (state.permissionMode === mode) return;
 
-  async function setPermissionMode(mode) {
-    if (!['auto', 'manual'].includes(mode)) return;
-    if (state.permissionMode === mode) return;
+  state.permissionMode = mode;
+  syncStateToActiveTab();
+  renderPermissionMode();
 
-    state.permissionMode = mode;
-    syncStateToActiveTab();
-    renderPermissionMode();
-
-    if (state.sessionId) {
-      try {
-        await api(`/api/sessions/${state.sessionId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ permission_mode: mode, sdk_permission_mode: state.sdkPermissionMode || 'default' }),
-        }
+  if (state.sessionId) {
+    try {
+      await api(`/api/sessions/${state.sessionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          permission_mode: mode,
+          sdk_permission_mode: state.sdkPermissionMode || 'default',
+        }),
+      });
+    } catch (err) {
+      appendSystemMessage('Failed to update approval mode.', 'error');
+    }
+  }
+}
 
 async function setSdkPermissionMode(mode) {
   const allowed = ['default', 'acceptEdits', 'bypassPermissions'];
@@ -686,13 +693,8 @@ async function setSdkPermissionMode(mode) {
     }
   }
 }
-);
-      } catch (err) {
-        appendSystemMessage('Failed to update approval mode.', 'error');
-      }
-    }
-  }
-  function renderProviderSwitcher() {
+
+function renderProviderSwitcher() {
     if (!el.providerSwitcher) return;
     el.providerSwitcher.innerHTML = '';
     ['cloud', 'ollama', 'vllm'].forEach((name) => {
