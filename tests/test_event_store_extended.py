@@ -1,20 +1,45 @@
 """Extended unit tests for app/event_store.py.
 
 Covers branches not exercised by test_event_store.py:
-  - _event_search_parts for every event type (+ fall-through)
-  - multi-session query isolation
-  - query_events with no filters (returns all for session)
-  - search_events with tool.completed payloads
-  - search_events with system.message payloads
+- _event_search_parts for every event type (+ fall-through)
+- multi-session query isolation
+- query_events with no filters (returns all for session)
+- search_events with tool.completed payloads
+- search_events with system.message payloads
 """
 from __future__ import annotations
 
+import pytest
+
+import app.event_store as es
 from app.event_store import (
     _event_search_parts,
     append_event,
     query_events,
     search_events,
 )
+
+
+@pytest.fixture(autouse=True)
+def _fresh_event_store_db(tmp_path, monkeypatch):
+    conn = getattr(es, "_conn", None)
+    if conn is not None:
+        try:
+            conn.close()
+        except Exception:
+            pass
+    monkeypatch.setattr(es, "DB_PATH", tmp_path / "events_extended.db")
+    monkeypatch.setattr(es, "_conn", None)
+    monkeypatch.setattr(es, "_conn_path", None)
+    monkeypatch.setattr(es, "_fts_available", None)
+    monkeypatch.setattr(es, "_db_initialized", False)
+    yield
+    conn = getattr(es, "_conn", None)
+    if conn is not None:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def test_search_parts_assistant_delta():
@@ -36,7 +61,6 @@ def test_search_parts_system_message_text_key():
 
 
 def test_search_parts_system_message_message_key():
-    # Falls back to 'message' when 'text' is absent/falsy
     role, body = _event_search_parts("system.message", {"message": "hello"})
     assert role == "system"
     assert body == "hello"
@@ -88,11 +112,6 @@ def test_search_parts_unknown_event_type():
     assert body == ""
 
 
-# ---------------------------------------------------------------------------
-# query_events – isolation and filter edge cases
-# ---------------------------------------------------------------------------
-
-
 def test_query_events_multi_session_isolation():
     append_event("alpha", 1, "assistant.delta", {"text": "a"})
     append_event("beta", 1, "assistant.delta", {"text": "b"})
@@ -118,7 +137,6 @@ def test_query_events_since_seq_inclusive_edge():
     for i in range(1, 4):
         append_event("s", i, "assistant.delta", {"text": str(i)})
 
-    # since_seq=2 → only seq=3
     rows = query_events("s", since_seq=2)
     assert len(rows) == 1
     assert rows[0]["seq"] == 3
@@ -134,12 +152,7 @@ def test_query_events_returns_created_at_field():
     append_event("s", 1, "assistant.delta", {"text": "hi"})
     rows = query_events("s")
     assert "created_at" in rows[0]
-    assert rows[0]["created_at"]  # non-empty
-
-
-# ---------------------------------------------------------------------------
-# search_events – tool.completed and system.message
-# ---------------------------------------------------------------------------
+    assert rows[0]["created_at"]
 
 
 def test_search_events_tool_completed_output():
@@ -176,8 +189,3 @@ def test_search_events_session_title_is_first_8_chars():
     append_event("abcdefghij", 1, "assistant.delta", {"text": "trunc-test"})
     hits = search_events("trunc-test")
     assert hits[0]["session_title"] == "abcdefgh"
-
-
-# ---------------------------------------------------------------------------
-# FTS5 OperationalError fallback → linear search
-# ---------------------------------------------------------------------------

@@ -6,10 +6,17 @@ from app.event_store import append_event, init_db, query_events, search_events
 
 def _reset_conn(path: Path, monkeypatch):
     """Point event_store at a fresh temp DB and force connection re-open."""
+    conn = getattr(es, "_conn", None)
+    if conn is not None:
+        try:
+            conn.close()
+        except Exception:
+            pass
     monkeypatch.setattr(es, "DB_PATH", path)
     monkeypatch.setattr(es, "_conn", None)
     monkeypatch.setattr(es, "_conn_path", None)
     monkeypatch.setattr(es, "_fts_available", None)
+    monkeypatch.setattr(es, "_db_initialized", False)
 
 
 def test_event_store_append_and_query(tmp_path, monkeypatch):
