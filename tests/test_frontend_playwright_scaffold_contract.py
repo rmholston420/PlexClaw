@@ -249,3 +249,14 @@ def test_playwright_search_shortcut_spec_exists() -> None:
     assert "Control" in text
     assert "Meta" in text
     assert "toBeFocused()" in text
+def test_playwright_tab_scroll_spec_exists() -> None:
+    text = Path("frontend/e2e/tab-scroll.spec.js").read_text()
+    assert (
+        "test('tab scroll controls remain visible after creating multiple tabs'"
+        in text
+    )
+    assert "#new-tab-btn" in text
+    assert "#tab-scroll-left" in text
+    assert "#tab-scroll-right" in text
+    assert "#tabbar" in text
+    assert ".session-tab" in text
