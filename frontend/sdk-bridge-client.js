@@ -1357,11 +1357,6 @@ function renderProviderRuntimeMeta() {
         : `~${promptTokens} tok · ${chars} ch · ${words} wd`;
     }
 
-    if (el.tokenCounter) {
-      el.tokenCounter.textContent = attachmentTokens > 0
-        ? `~${total} tokens (${promptTokens} prompt + ${attachmentTokens} files)`
-        : `~${promptTokens} tokens`;
-    }
   }
 
   function renderAttachments() {
@@ -1453,7 +1448,6 @@ function renderProviderRuntimeMeta() {
 
   async function createSession({ resumeSessionId = null, forkSession = false } = {}) {
     state.model = el.modelSelect?.value || state.model;
-    state.provider = el.providerSelect?.value || state.provider;
     state.toolSearchMode = el.toolSearchSelect?.value || null;
 
     const manualCwd = (el.cwdManualInput?.value || '').trim();
