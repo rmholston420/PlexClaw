@@ -262,3 +262,44 @@ async def test_stream_sdk_invalid_tool_json_emits_raw_tool_input(
     assert tool_delta_events[-1].payload["tool_name"] == "bash"
     assert tool_delta_events[-1].payload["tool_input"] == {"_raw": "{bad json"}
 
+@pytest.mark.asyncio
+async def test_stream_sdk_message_delta_is_noop_until_stream_exit(
+    monkeypatch, clean_sessions
+):
+    session = make_session(
+        session_id="message-delta-noop",
+        mock_mode=True,
+        permission_mode="auto",
+    )
+    runtime_sdk._sessions[session.id] = session
+
+    emitted = []
+
+    async def fake_emit(_session, env):
+        emitted.append(env)
+
+    class FakeMessageDeltaClient:
+        async def connect(self):
+            return None
+
+        async def query(self, prompt):
+            return None
+
+        async def receive_response(self):
+            yield runtime_sdk.MockStreamEvent(
+                {
+                    "type": "message_delta",
+                    "delta": {"stop_reason": "end_turn"},
+                }
+            )
+
+    session._client = FakeMessageDeltaClient()
+    monkeypatch.setattr(runtime_sdk, "_emit", fake_emit)
+
+    await _stream_sdk(session, "hello")
+
+    completed_events = [env for env in emitted if env.type == "assistant.completed"]
+    assert len(completed_events) == 1
+    assert completed_events[0].payload["stop_reason"] == "end_turn"
+    assert completed_events[0].payload["usage"] == {}
+
