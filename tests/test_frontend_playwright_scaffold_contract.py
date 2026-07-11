@@ -141,3 +141,12 @@ def test_playwright_cwd_modal_spec_exists() -> None:
     assert "#cwd-modal" in text
     assert "#cwd-close" in text
     assert "aria-hidden" in text
+
+def test_playwright_modal_escape_spec_exists() -> None:
+    text = Path("frontend/e2e/modal-escape.spec.js").read_text()
+    assert "test('Escape closes search and cwd modals'" in text
+    assert "#open-search" in text
+    assert "#search-modal" in text
+    assert "#cwd-pill" in text
+    assert "#cwd-modal" in text
+    assert "keyboard.press('Escape')" in text
