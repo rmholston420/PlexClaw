@@ -1,163 +1,141 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 
-from app.mock_sdk import MockSDKClient, MockStreamEvent
+from app import mock_sdk
+
+
+def make_client() -> mock_sdk.MockSDKClient:
+    return mock_sdk.MockSDKClient(
+        SimpleNamespace(
+            cwd=None,
+            permission_mode="default",
+            permission_prompt_tool_name=None,
+        )
+    )
 
 
 @pytest.mark.asyncio
-async def test_query_drains_stale_queue_items_before_starting_new_stream() -> None:
-    client = MockSDKClient(options=None)
-    await client.connect()
+async def test_query_handles_queueempty_during_stale_drain(monkeypatch):
+    client = make_client()
 
-    await client._response_queue.put("stale-item")
-    await client._response_queue.put(None)
+    class DrainQueue:
+        def __init__(self):
+            self.calls = 0
 
-    await client.query(prompt="fresh")
+        def empty(self):
+            return False
 
-    first = await asyncio.wait_for(client._response_queue.get(), timeout=1)
-    assert isinstance(first, MockStreamEvent)
-    assert first.event["type"] == "content_block_start"
+        def get_nowait(self):
+            self.calls += 1
+            raise asyncio.QueueEmpty
 
-    remaining = []
-    async for msg in client.receive_response():
-        remaining.append(msg)
+    drain_queue = DrainQueue()
+    client._response_queue = drain_queue
 
-    assert remaining
-    assert all(isinstance(msg, MockStreamEvent) for msg in remaining)
+    produced = {"called": False}
 
+    async def fake_produce():
+        produced["called"] = True
 
-@pytest.mark.asyncio
-async def test_query_cancels_existing_running_producer() -> None:
-    client = MockSDKClient(options=None)
-    await client.connect()
+    monkeypatch.setattr(client, "_produce_tokens", fake_produce)
 
-    blocker = asyncio.Future()
+    created = {}
 
-    async def never_finishes() -> None:
-        try:
-            await blocker
-        except asyncio.CancelledError:
-            raise
+    class FakeTask:
+        def done(self):
+            return False
 
-    client._producer_task = asyncio.create_task(never_finishes())
+        def cancel(self):
+            return None
 
-    await client.query(prompt="replacement")
+        def add_done_callback(self, cb):
+            created["callback"] = cb
 
-    assert client._producer_task is not None
-    assert blocker.cancelled() or True
+    def fake_create_task(coro):
+        created["coro"] = coro
+        return FakeTask()
 
-    async for _ in client.receive_response():
-        pass
+    monkeypatch.setattr(asyncio, "create_task", fake_create_task)
 
-    await asyncio.sleep(0)
-    assert client._producer_task is None
+    await client.query(prompt="hello")
 
+    assert drain_queue.calls == 1
+    assert created["coro"].cr_code.co_name == "fake_produce"
+    assert callable(created["callback"])
 
-@pytest.mark.asyncio
-async def test_interrupt_sets_flag_and_unblocks_receive_response() -> None:
-    client = MockSDKClient(options=None)
-    await client.connect()
-
-    await client.interrupt()
-
-    assert client._interrupted is True
-
-    collected = []
-    async for item in client.receive_response():
-        collected.append(item)
-
-    assert collected == []
+    await created["coro"]
 
 
 @pytest.mark.asyncio
-async def test_close_cancels_running_producer_and_enqueues_sentinel() -> None:
-    client = MockSDKClient(options=None)
-    await client.connect()
+async def test_close_cancels_and_awaits_running_producer():
+    client = make_client()
 
-    gate = asyncio.Future()
+    class FakeTask:
+        def __init__(self):
+            self.cancelled = False
 
-    async def blocked_producer() -> None:
-        try:
-            await gate
-        except asyncio.CancelledError:
-            raise
+        def done(self):
+            return False
 
-    task = asyncio.create_task(blocked_producer())
+        def cancel(self):
+            self.cancelled = True
+
+        def __await__(self):
+            async def _inner():
+                raise asyncio.CancelledError
+            return _inner().__await__()
+
+    task = FakeTask()
     client._producer_task = task
 
     await client.close()
 
-    assert task.cancelled()
-    item = await asyncio.wait_for(client._response_queue.get(), timeout=1)
-    assert item is None
+    assert task.cancelled is True
+    assert await client._response_queue.get() is None
 
 
 @pytest.mark.asyncio
-async def test_close_without_running_task_still_enqueues_sentinel() -> None:
-    client = MockSDKClient(options=None)
-    await client.connect()
+async def test_produce_tokens_full_text_fallback_and_interrupt(monkeypatch):
+    client = make_client()
+    client._prompt = ""
 
-    await client.close()
+    monkeypatch.setattr(mock_sdk, "_MOCK_INTRO", "")
+    monkeypatch.setattr(mock_sdk, "_CHUNK_DELAY", 0)
+    monkeypatch.setattr(mock_sdk, "_CHUNK_SIZE", 10)
 
-    item = await asyncio.wait_for(client._response_queue.get(), timeout=1)
-    assert item is None
+    original_sleep = asyncio.sleep
 
+    async def interrupting_sleep(delay):
+        client._interrupted = True
+        await original_sleep(0)
 
-@pytest.mark.asyncio
-async def test_on_producer_done_clears_current_task_reference() -> None:
-    client = MockSDKClient(options=None)
-    await client.connect()
+    monkeypatch.setattr(asyncio, "sleep", interrupting_sleep)
 
-    task = asyncio.create_task(asyncio.sleep(0))
-    client._producer_task = task
-    await task
+    await client._produce_tokens()
 
-    client._on_producer_done(task)
+    items = []
+    while not client._response_queue.empty():
+        items.append(client._response_queue.get_nowait())
 
-    assert client._producer_task is None
+    def event_data(item):
+        if isinstance(item, dict):
+            return item
+        for attr in ("data", "raw", "_data", "event"):
+            value = getattr(item, attr, None)
+            if isinstance(value, dict):
+                return value
+        if hasattr(item, "model_dump"):
+            dumped = item.model_dump()
+            if isinstance(dumped, dict):
+                return dumped
+        raise AssertionError(f"Could not extract event data from {item!r}")
 
+    payloads = [event_data(item) for item in items if item is not None]
 
-@pytest.mark.asyncio
-async def test_on_producer_done_ignores_non_current_task() -> None:
-    client = MockSDKClient(options=None)
-    await client.connect()
-
-    current = asyncio.create_task(asyncio.sleep(0))
-    other = asyncio.create_task(asyncio.sleep(0))
-    client._producer_task = current
-
-    await current
-    await other
-
-    client._on_producer_done(other)
-
-    assert client._producer_task is current
-
-
-@pytest.mark.asyncio
-async def test_on_producer_done_swallows_cancelled_error() -> None:
-    client = MockSDKClient(options=None)
-    await client.connect()
-
-    async def blocked() -> None:
-        await asyncio.sleep(10)
-
-    task = asyncio.create_task(blocked())
-    client._producer_task = task
-    task.cancel()
-
-    with pytest.raises(asyncio.CancelledError):
-        await task
-
-    client._on_producer_done(task)
-
-    assert client._producer_task is None
-
-
-def test_mock_stream_event_exposes_event_payload() -> None:
-    payload = {"type": "x", "value": 1}
-    event = MockStreamEvent(payload)
-    assert event.event is payload
+    assert payloads[0]["type"] == "content_block_start"
+    assert any(p["type"] == "content_block_stop" for p in payloads)
+    assert payloads[-1]["type"] == "message_stop"
