@@ -219,3 +219,11 @@ def test_playwright_archive_search_spec_exists() -> None:
     assert "#refresh-archive" in text
     assert "toHaveValue('session')" in text
     assert "toHaveValue('terminal')" in text
+def test_playwright_cwd_actions_spec_exists() -> None:
+    text = Path("frontend/e2e/cwd-actions.spec.js").read_text()
+    assert "test('cwd modal cancel and confirm controls close the modal'" in text
+    assert "#cwd-pill" in text
+    assert "#cwd-modal" in text
+    assert "#cwd-cancel" in text
+    assert "#cwd-confirm" in text
+    assert "aria-hidden" in text
