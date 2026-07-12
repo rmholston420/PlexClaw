@@ -4,6 +4,16 @@ PlexClaw is a full-featured browser GUI for Claude Code and the Claude Agent SDK
 
 It provides a browser-native workstation for live Claude sessions, tool streaming, permissions, archive and replay workflows, resume/fork lineage, hook-ready runtime behavior, and Anthropic-compatible local model routing through providers such as Ollama and vLLM.
 
+## Visual tour
+
+README visuals should live under `assets/readme/` so screenshots and short demo GIFs can be referenced with stable repo-relative paths.
+
+Planned visuals:
+- Main live session workspace
+- Git explorer with diff and branch controls
+- Filesystem explorer with inline preview
+- MCP control plane in the runtime panel
+
 ## Workstation surfaces
 
 PlexClaw exposes several browser-native workstation panels around Claude sessions:
@@ -11,6 +21,13 @@ PlexClaw exposes several browser-native workstation panels around Claude session
 - Git explorer — shows repo path, current branch, staged/unstaged counts, and unified diffs, plus branch selection/creation and commit message controls.
 - Filesystem explorer — browses the session-aware working directory, highlights git roots, and previews text file contents side by side with the directory tree.
 - MCP control plane — lists Claude Desktop MCP servers, shows the config path, and lets you add, test, enable/disable, and delete MCP server entries directly from the runtime panel.
+
+## Documentation map
+
+- Contributor and workflow conventions: `AGENTS.md`
+- Claude-native runtime and project memory: `CLAUDE.md`
+- Changelog and release history: `CHANGELOG.md`
+- Extended planning and architecture docs: `docs/README.md`
 
 ## Product direction
 
