@@ -22,6 +22,15 @@ PlexClaw exposes several browser-native workstation panels around Claude session
 - Filesystem explorer — browses the session-aware working directory, highlights git roots, and previews text file contents side by side with the directory tree.
 - MCP control plane — lists Claude Desktop MCP servers, shows the config path, and lets you add, test, enable/disable, and delete MCP server entries directly from the runtime panel.
 
+## Runtime telemetry
+
+PlexClaw also exposes Claude-native runtime telemetry directly in the browser UI:
+
+- Hook activity inspector — shows normalized lifecycle and hook events such as session transitions, tool activity, permission requests, notifications, and completion outcomes.
+- Completion status panel — shows the latest assistant stop reason plus token usage counters from normalized runtime events.
+- Permission controls — exposes Claude permission mode and tool approval / rejection flow as first-class browser controls rather than hidden backend state.
+- Runtime routing metadata — shows the effective provider route, provider endpoint, tool mode, working directory, runtime mode, and configuration summary.
+
 ## Documentation map
 
 - Contributor and workflow conventions: `AGENTS.md`
