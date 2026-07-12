@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:e2e": "playwright test -c playwright.config.mjs"
+    "test:e2e": "playwright test -c playwright.config.mjs",
+    "test:e2e:live": "playwright test -c playwright.live.config.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2"

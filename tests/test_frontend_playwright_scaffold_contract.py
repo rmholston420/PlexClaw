@@ -330,3 +330,17 @@ def test_playwright_terminal_clear_spec_exists() -> None:
     assert "terminalClear" in text
     assert "terminalCopy" in text
     assert "toBeEnabled()" in text
+
+def test_playwright_live_config_exists() -> None:
+    text = _read_required("frontend/playwright.live.config.mjs")
+    assert "baseURL: 'http://127.0.0.1:8020'" in text
+    assert "command: 'bash ./run.sh'" in text
+    assert "chromium-live" in text
+
+
+def test_playwright_runtime_telemetry_live_spec_exists() -> None:
+    text = _read_required("frontend/e2e/runtime-telemetry-live.spec.js")
+    assert "#runtime-meta-toggle" in text
+    assert "#hook-list" in text
+    assert "#completion-stop-reason" in text
+
