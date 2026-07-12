@@ -70,4 +70,4 @@ bash run.sh
 
 Backend: [http://127.0.0.1:8020](http://127.0.0.1:8020)
 Frontend root: [http://127.0.0.1:5555](http://127.0.0.1:5555)
-Canonical UI: [http://127.0.0.1:5555/plexclaw-ui-canonical.html](http://127.0.0.1:5555/plexclaw-ui-canonical.html)
+Primary UI: [http://127.0.0.1:5555/](http://127.0.0.1:5555/) | Legacy redirect: [http://127.0.0.1:5555/plexclaw-ui-canonical.html](http://127.0.0.1:5555/plexclaw-ui-canonical.html)

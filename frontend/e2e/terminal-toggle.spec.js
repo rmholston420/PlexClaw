@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { gotoCanonicalUi } from './helpers/canonical-ui.js';
+import { gotoMainUi } from './helpers/canonical-ui.js';
 
 test('terminal toggle opens and closes the terminal panel', async ({ page }) => {
-  await gotoCanonicalUi(page);
+  await gotoMainUi(page);
 
   const terminalToggle = page.locator('#terminal-toggle');
   const terminalDrawer = page.locator('#terminal-drawer');

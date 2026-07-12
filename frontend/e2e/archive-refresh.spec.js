@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { gotoCanonicalUi } from './helpers/canonical-ui.js';
+import { gotoMainUi } from './helpers/canonical-ui.js';
 
 test('archive refresh control remains usable with archive surface visible', async ({ page }) => {
-  await gotoCanonicalUi(page);
+  await gotoMainUi(page);
 
   const refreshArchive = page.locator('#refresh-archive');
   const archiveList = page.locator('#archive-list');

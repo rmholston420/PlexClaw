@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { gotoCanonicalUi, openTerminalDrawer } from './helpers/canonical-ui.js';
+import { gotoMainUi, openTerminalDrawer } from './helpers/canonical-ui.js';
 
 test('terminal copy control remains usable after opening the drawer', async ({ page }) => {
-  await gotoCanonicalUi(page);
+  await gotoMainUi(page);
 
   const { terminalDrawer, terminalCopy, terminalClear } = await openTerminalDrawer(page);
 

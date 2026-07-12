@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { gotoCanonicalUi, createAdditionalTabs } from './helpers/canonical-ui.js';
+import { gotoMainUi, createAdditionalTabs } from './helpers/canonical-ui.js';
 
 test('tab scroll controls remain visible after creating multiple tabs', async ({ page }) => {
-  await gotoCanonicalUi(page);
+  await gotoMainUi(page);
 
   const { newTabBtn, tabs, tabbar, scrollLeft, scrollRight } = await createAdditionalTabs(page, 6);
 

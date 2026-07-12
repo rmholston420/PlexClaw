@@ -171,14 +171,14 @@ def test_playwright_search_focus_spec_exists() -> None:
     text = Path("frontend/e2e/search-focus.spec.js").read_text()
     assert "test('opening search modal moves focus to the modal search input'" in text
     assert "openSearchModal" in text
-    assert "gotoCanonicalUi" in text
+    assert "gotoMainUi" in text
     assert "searchModal" in text
     assert "searchInput" in text
     assert "toBeFocused()" in text
 def test_playwright_terminal_toggle_spec_exists() -> None:
     text = Path("frontend/e2e/terminal-toggle.spec.js").read_text()
     assert "test('terminal toggle opens and closes the terminal panel'" in text
-    assert "gotoCanonicalUi" in text
+    assert "gotoMainUi" in text
     assert "#terminal-toggle" in text
     assert "#terminal-drawer" in text
     assert "toBeVisible()" in text
@@ -197,7 +197,7 @@ def test_playwright_search_close_spec_exists() -> None:
     text = Path("frontend/e2e/search-close.spec.js").read_text()
     assert "test('search close button closes the search modal'" in text
     assert "openSearchModal" in text
-    assert "gotoCanonicalUi" in text
+    assert "gotoMainUi" in text
     assert "searchClose" in text
     assert "searchModal" in text
     assert "aria-hidden" in text
@@ -208,7 +208,7 @@ def test_playwright_terminal_toolbar_spec_exists() -> None:
         in text
     )
     assert "openTerminalDrawer" in text
-    assert "gotoCanonicalUi" in text
+    assert "gotoMainUi" in text
     assert "terminalDrawer" in text
     assert "terminalClear" in text
     assert "terminalCopy" in text
@@ -261,7 +261,7 @@ def test_playwright_tab_scroll_spec_exists() -> None:
         in text
     )
     assert "createAdditionalTabs" in text
-    assert "gotoCanonicalUi" in text
+    assert "gotoMainUi" in text
     assert "scrollLeft" in text
     assert "scrollRight" in text
     assert "tabs" in text
@@ -282,7 +282,7 @@ def test_playwright_terminal_copy_spec_exists() -> None:
         in text
     )
     assert "openTerminalDrawer" in text
-    assert "gotoCanonicalUi" in text
+    assert "gotoMainUi" in text
     assert "terminalDrawer" in text
     assert "terminalCopy" in text
     assert "terminalClear" in text
@@ -294,7 +294,7 @@ def test_playwright_terminal_clear_spec_exists() -> None:
         in text
     )
     assert "openTerminalDrawer" in text
-    assert "gotoCanonicalUi" in text
+    assert "gotoMainUi" in text
     assert "terminalDrawer" in text
     assert "terminalClear" in text
     assert "terminalCopy" in text

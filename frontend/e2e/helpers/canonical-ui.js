@@ -1,4 +1,4 @@
-export async function gotoCanonicalUi(page) {
+export async function gotoMainUi(page) {
   await page.goto('/');
 }
 

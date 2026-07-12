@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { gotoCanonicalUi } from './helpers/canonical-ui.js';
+import { gotoMainUi } from './helpers/canonical-ui.js';
 
 test('Ctrl/Cmd+F opens the search modal and focuses the search input', async ({ page }) => {
-  await gotoCanonicalUi(page);
+  await gotoMainUi(page);
 
   const searchModal = page.locator('#search-modal');
   const searchInput = page.locator('#search-input-modal');

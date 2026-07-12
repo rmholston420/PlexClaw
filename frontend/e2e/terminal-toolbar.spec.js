@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { gotoCanonicalUi, openTerminalDrawer } from './helpers/canonical-ui.js';
+import { gotoMainUi, openTerminalDrawer } from './helpers/canonical-ui.js';
 
 test('terminal toolbar copy and clear controls remain visible and enabled', async ({ page }) => {
-  await gotoCanonicalUi(page);
+  await gotoMainUi(page);
 
   const { terminalDrawer, terminalClear, terminalCopy } = await openTerminalDrawer(page);
 

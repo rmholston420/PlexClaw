@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { gotoCanonicalUi, openSearchModal } from './helpers/canonical-ui.js';
+import { gotoMainUi, openSearchModal } from './helpers/canonical-ui.js';
 
 test('search close button closes the search modal', async ({ page }) => {
-  await gotoCanonicalUi(page);
+  await gotoMainUi(page);
 
   const { searchModal } = await openSearchModal(page);
   const searchClose = page.locator('#search-close');
