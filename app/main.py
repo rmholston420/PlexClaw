@@ -31,7 +31,10 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
+from app import analytics_routes
 from app import fs_routes
+from app import git_routes
+from app import mcp_routes
 from app import runtime_sdk as runtime
 from app.archive_normalizer import normalize_session, normalize_session_list
 from app.config import (
@@ -99,7 +102,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(analytics_routes.router)
 app.include_router(fs_routes.router)
+app.include_router(git_routes.router)
+app.include_router(mcp_routes.router)
 
 FRONTEND_DIR = Path(os.environ.get("FRONTEND_TMP_DIR", "frontend")).resolve()
 INDEX_HTML = FRONTEND_DIR / "index.html"
