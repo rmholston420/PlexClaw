@@ -45,3 +45,10 @@ sessions still work but use the echo-back mock, not real Claude.
   changing provider or session schema fields.
 - mock_mode and model are frontend-visible contract fields — treat as API surface.
 - Do not edit generated or unrelated files as cleanup.
+
+## Claude Code local configuration
+PlexClaw expects Claude Code CLI and the Claude Agent SDK to share one configuration surface.
+Prefer project-local `.claude/settings.local.json` for non-secret defaults and `.env` for operator overrides.
+For local Anthropic-compatible backends, keep `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`,
+and the default model mapping variables aligned between Claude Code, the SDK, and PlexClaw.
+

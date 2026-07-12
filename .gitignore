@@ -15,3 +15,4 @@ frontend/node_modules/
 frontend/test-results/
 frontend/package-lock.json
 .env
+.claude/settings.local.json
