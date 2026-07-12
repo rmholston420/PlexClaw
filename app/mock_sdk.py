@@ -77,7 +77,17 @@ class MockSDKClient:
 
     async def interrupt(self) -> None:
         self._interrupted = True
-        # Push sentinel to unblock receive_response
+        if self._producer_task and not self._producer_task.done():
+            self._producer_task.cancel()
+            try:
+                await self._producer_task
+            except asyncio.CancelledError:
+                pass
+        while not self._response_queue.empty():
+            try:
+                self._response_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
         await self._response_queue.put(None)
 
     async def close(self) -> None:
@@ -153,9 +163,7 @@ class MockSDKClient:
         )
 
         # message_stop
-        await self._response_queue.put(
-            MockStreamEvent({"type": "message_stop"})
-        )
+        await self._response_queue.put(MockStreamEvent({"type": "message_stop"}))
 
         # sentinel
         await self._response_queue.put(None)

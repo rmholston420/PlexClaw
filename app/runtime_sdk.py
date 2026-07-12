@@ -216,6 +216,7 @@ class LiveSession:
     context_files: dict[str, str] = field(default_factory=dict, repr=False)
     _context_injected: bool = field(default=False, repr=False)
     mock_mode: bool = field(default=False, repr=False)
+    interrupt_requested: bool = field(default=False, repr=False)
 
     @property
     def pending_tool_id(self) -> str | None:
@@ -565,7 +566,6 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
     return session
 
 
-
 def _iter_message_blocks(message: Any) -> Iterable[Any]:
     content = getattr(message, "content", None)
     if isinstance(content, list):
@@ -631,7 +631,6 @@ async def _emit_tool_completed_from_message(
         await _emit(session, env)
 
 
-
 def _is_mock_event(message: Any) -> bool:
     """Return True if message is a MockStreamEvent.
 
@@ -674,9 +673,8 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
             # ------------------------------------------------------------------
             # StreamEvent / MockStreamEvent: token-level incremental updates
             # ------------------------------------------------------------------
-            is_stream = (
-                _is_mock_event(message)
-                or (StreamEvent is not None and isinstance(message, StreamEvent))
+            is_stream = _is_mock_event(message) or (
+                StreamEvent is not None and isinstance(message, StreamEvent)
             )
             if is_stream:
                 event: dict = message.event
@@ -777,7 +775,6 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
                     # ResultMessage is the single end-of-turn completion signal.
                     pass
 
-
                 # message_start / message_stop / content_block_stop (text) are no-ops
                 continue
 
@@ -798,7 +795,11 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
         # In mock mode (and any path where ResultMessage is never delivered),
         # the async-for loop exits without emitting assistant.completed.
         # Emit it here so the protocol is always complete on success.
-        if not _completed_emitted and session.status not in {"failed", "interrupted"}:
+        if (
+            not _completed_emitted
+            and not session.interrupt_requested
+            and session.status not in {"failed", "interrupted"}
+        ):
             _completed_env = normalize_assistant_completed(
                 session.id, session.next_seq(), "end_turn", {}
             )
@@ -873,6 +874,7 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
         if session._client is None:
             raise RuntimeError("Session client is not initialized")
 
+        session.interrupt_requested = False
         session.status = "running"
         sys_env = normalize_system_message(
             session.id,
@@ -893,6 +895,8 @@ async def interrupt_session(session_id: str) -> None:
     session = _sessions.get(session_id)
     if not session:
         raise KeyError(f"Session {session_id} not found")
+    session.interrupt_requested = True
+    session.status = "interrupted"
     if session._client:
         try:
             await session._client.interrupt()
@@ -907,7 +911,6 @@ async def interrupt_session(session_id: str) -> None:
                     )
         except Exception as exc:
             log.warning("Interrupt drain error: %s", exc)
-    session.status = "interrupted"
     env = WSEnvelope(
         type="session.interrupted",
         session_id=session_id,
