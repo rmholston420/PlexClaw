@@ -732,15 +732,52 @@ async def update_session(
     return session
 
 
+
+SENSITIVE_HOME_SUBDIRS = {
+    ".ssh",
+    ".gnupg",
+    ".config/ssh",
+}
+
+
+def _is_sensitive_home_path(path: Path) -> bool:
+    """Return True if path is inside a sensitive home-directory subtree."""
+    home = Path.home().resolve()
+    try:
+        rel = path.resolve().relative_to(home)
+    except ValueError:
+        return False
+
+    rel_str = rel.as_posix()
+    return any(
+        rel_str == subdir or rel_str.startswith(f"{subdir}/")
+        for subdir in SENSITIVE_HOME_SUBDIRS
+    )
+
+
+def _normalize_session_cwd(raw_cwd: str | None) -> str | None:
+    """Expand ~, resolve to an absolute path, and reject sensitive jail roots."""
+    if not raw_cwd:
+        return None
+
+    resolved = Path(raw_cwd).expanduser().resolve()
+
+    if _is_sensitive_home_path(resolved):
+        raise ValueError(
+            "cwd cannot be a sensitive home directory subtree "
+            "(for example ~/.ssh, ~/.gnupg, or ~/.config/ssh)"
+        )
+
+    if not resolved.exists():
+        raise ValueError(f"cwd does not exist: {resolved}")
+    if not resolved.is_dir():
+        raise ValueError(f"cwd is not a directory: {resolved}")
+
+    return str(resolved)
+
+
 async def create_session(req: SessionCreateRequest) -> LiveSession:
-    normalized_cwd = None
-    if req.cwd:
-        normalized_cwd = str(Path(req.cwd).expanduser().resolve())
-        p = Path(normalized_cwd)
-        if not p.exists():
-            raise ValueError(f"cwd does not exist: {p}")
-        if not p.is_dir():
-            raise ValueError(f"cwd is not a directory: {p}")
+    normalized_cwd = _normalize_session_cwd(req.cwd)
 
     session_id = str(uuid.uuid4())
     mock_mode = not _SDK_AVAILABLE
