@@ -17,7 +17,8 @@ if TYPE_CHECKING:
     pass
 
 _MOCK_INTRO = (
-    "\u26a0\ufe0f  **PlexClaw mock mode** — `claude-agent-sdk` is not installed.\n\n"
+    "\u26a0\ufe0f  **Claude bridge mock mode** — "
+    "`claude-agent-sdk` is not installed.\n\n"
     "To enable real Claude Code sessions:\n"
     "1. `pip install claude-agent-sdk`\n"
     "2. Set `ANTHROPIC_API_KEY=<your-key>`\n"
