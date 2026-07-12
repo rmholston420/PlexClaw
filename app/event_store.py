@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import atexit
 import json
 import logging
 import sqlite3
@@ -144,6 +145,9 @@ def _ensure_initialized() -> None:
     if _db_initialized:
         return
     init_db()
+
+
+atexit.register(close_db)
 
 
 # ── Blocking helpers (run inside asyncio.to_thread) ──────────────────────────
