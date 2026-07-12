@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PlexClaw App Shell Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f14;
+      --panel: #11161d;
+      --panel2: #161d26;
+      --border: #263241;
+      --text: #d7e0ea;
+      --muted: #8ea0b5;
+      --accent: #4da3ff;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; }
+    .app { display: grid; grid-template-columns: 320px 1fr; grid-template-rows: 64px 1fr 132px; grid-template-areas: "sidebar topbar" "sidebar main" "sidebar composer"; height: 100vh; }
+    .sidebar { grid-area: sidebar; border-right: 1px solid var(--border); background: #0f141b; padding: 16px; }
+    .topbar { grid-area: topbar; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding: 0 20px; background: rgba(11,15,20,.92); }
+    .main { grid-area: main; padding: 24px; overflow:auto; }
+    .composer { grid-area: composer; border-top: 1px solid var(--border); padding: 16px 20px; background: var(--panel); }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h2 style="margin-top:0;">PlexClaw</h2>
+      <p class="muted">Experimental app shell for future modular frontend work.</p>
+    </aside>
+    <header class="topbar">
+      <strong>App shell prototype</strong>
+      <span class="muted">Non-production</span>
+    </header>
+    <main class="main">
+      <div class="card">
+        <h1 style="margin-top:0;">Parallel frontend scaffold</h1>
+        <p class="muted">This prototype exists for Phase 4 prep only. The production UI remains frontend/index.html.</p>
+      </div>
+    </main>
+    <section class="composer">
+      <div class="card">Composer placeholder</div>
+    </section>
+  </div>
+</body>
+</html>
