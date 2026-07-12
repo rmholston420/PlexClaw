@@ -1,4 +1,4 @@
-"""Protocol schemas for PlexClaw WebSocket bridge."""
+"""Protocol schemas for the Claude bridge WebSocket API."""
 
 from __future__ import annotations
 

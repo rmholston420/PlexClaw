@@ -54,7 +54,7 @@
     return rootId === item?.id ? 'Root' : 'Branch';
   }
 
-  global.PlexClawArchiveUtils = {
+  const api = {
     normalizeArchiveText,
     archiveSearchHaystack,
     sortArchiveItems,
@@ -62,4 +62,7 @@
     archiveLineageLabel,
     archiveRoleLabel,
   };
+
+  global.ClaudeArchiveUtils = api;
+  global.PlexClawArchiveUtils = api;
 })(window);

@@ -1,4 +1,4 @@
-"""PlexClaw FastAPI backend – port 8020."""
+"""Claude bridge FastAPI backend – port 8020."""
 
 from __future__ import annotations
 
@@ -94,7 +94,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="PlexClaw Bridge",
+    title="Claude Bridge",
     version="0.2.0",
     lifespan=lifespan,
 )

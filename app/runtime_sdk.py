@@ -55,7 +55,7 @@ from app.websocket_manager import ws_manager
 log = logging.getLogger(__name__)
 
 DEFAULT_SYSTEM_PROMPT = """
-You are PlexClaw, a repo-aware coding assistant running inside
+You are Claude Code, a repo-aware coding assistant running inside
 the user's current working directory.
 
 Core behavior:

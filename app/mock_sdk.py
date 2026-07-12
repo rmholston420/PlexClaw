@@ -1,4 +1,4 @@
-"""Mock SDK driver for PlexClaw.
+"""Mock SDK driver for the Claude bridge.
 
 Used when `claude-agent-sdk` is not installed.  Every session
 created in mock mode gets a MockSDKClient that streams a realistic
