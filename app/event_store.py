@@ -132,6 +132,7 @@ def _ensure_initialized() -> None:
 
 # ── Blocking helpers (run inside asyncio.to_thread) ──────────────────────────
 
+
 def _blocking_append(
     session_id: str,
     seq: int,
@@ -197,6 +198,7 @@ def _blocking_search(needle: str) -> list[dict[str, Any]]:
 
 # ── Public async API ─────────────────────────────────────────────────────────
 
+
 async def append_event(
     session_id: str,
     seq: int,
@@ -229,6 +231,7 @@ async def search_events(query: str) -> list[dict[str, Any]]:
 
 # ── Search internals (called only inside _db_lock, safe to stay sync) ────────
 
+
 def _event_search_parts(event_type: str, payload: dict[str, Any]) -> tuple[str, str]:
     if event_type == "assistant.delta":
         return "assistant", str(payload.get("text", ""))
@@ -250,7 +253,7 @@ _event_search_text = _event_search_parts
 
 
 def _search_fts5(c: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
-    escaped = query.replace('"', '""'  )
+    escaped = query.replace('"', '""')
     fts_query = f'"{escaped}"'
     try:
         rows = c.execute(
@@ -286,8 +289,14 @@ def _search_fts5(c: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
 
 
 def _search_linear(c: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
+    rows = c.execute(
+        "SELECT * FROM events ORDER BY created_at DESC, id DESC"
+    ).fetchall()
+    return _search_linear_rows(rows, query)
+
+
+def _search_linear_rows(rows: list[sqlite3.Row], query: str) -> list[dict[str, Any]]:
     needle = query.lower()
-    rows = c.execute("SELECT * FROM events ORDER BY created_at DESC, id DESC")
 
     results: list[dict[str, Any]] = []
     seen: set[tuple[str, int]] = set()
