@@ -23,7 +23,7 @@ class DummyClient:
 
 
 @pytest.mark.asyncio
-async def test_maybe_handle_literal_shell_prompt_pwd_ls_ls_l(tmp_path):
+async def test_maybe_handle_literal_shell_prompt_pwd_ls_ls_l_git(tmp_path):
     cwd = tmp_path
     (cwd / "a.txt").write_text("a")
     (cwd / "b.txt").write_text("b")
@@ -54,6 +54,14 @@ async def test_maybe_handle_literal_shell_prompt_pwd_ls_ls_l(tmp_path):
     assert any(line.endswith("a.txt") for line in ls_l_lines)
     assert any(line.endswith("b.txt") for line in ls_l_lines)
     assert any(line.endswith("subdir") for line in ls_l_lines)
+
+    git_status_output = _maybe_handle_literal_shell_prompt(session, "git status")
+    assert git_status_output is not None
+    assert "not a git repository" in git_status_output.lower() or git_status_output
+
+    git_branch_output = _maybe_handle_literal_shell_prompt(session, "git branch")
+    assert git_branch_output is not None
+    assert "not a git repository" in git_branch_output.lower() or git_branch_output
 
 
 @pytest.mark.asyncio

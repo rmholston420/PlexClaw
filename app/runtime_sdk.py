@@ -23,6 +23,7 @@ import inspect
 import json
 import logging
 import os
+import subprocess
 import time
 import uuid
 from collections.abc import Iterable
@@ -491,6 +492,34 @@ def _maybe_handle_literal_shell_prompt(session: LiveSession, prompt: str) -> str
         except Exception as exc:
             return f"Unable to list directory: {exc}"
         return "\n".join(lines) if lines else "(empty directory)"
+
+    if lowered == "git status":
+        try:
+            result = subprocess.run(
+                ["git", "status", "--short", "--branch"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception as exc:
+            return f"Unable to run git status: {exc}"
+        output = (result.stdout or result.stderr).strip()
+        return output or "(no git status output)"
+
+    if lowered == "git branch":
+        try:
+            result = subprocess.run(
+                ["git", "branch", "--list"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception as exc:
+            return f"Unable to run git branch: {exc}"
+        output = (result.stdout or result.stderr).strip()
+        return output or "(no git branches found)"
 
     return None
 
