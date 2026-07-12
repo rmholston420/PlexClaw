@@ -1989,7 +1989,7 @@ state.effectiveSessionConfig = {
         const summary = item.summary || 'No summary available.';
         const rootId = item.root_session_id || item.id;
         const isRoot = rootId === item.id;
-        const lineageLabel = isRoot ? 'Lineage root' : `Branch of ${rootId.slice(0, 8)}`;
+        const lineageLabel = window.PlexClawArchiveUtils.archiveLineageLabel(item);
         const cwdLabel = item.cwd || '~';
         const modelLabel = item.model || 'Unknown model';
         const tagChip = item.tag ? `<span class="chip accent">${escapeHtml(item.tag)}</span>` : '';
@@ -2004,7 +2004,7 @@ state.effectiveSessionConfig = {
             </div>
             <div class="session-card-chips">
               ${tagChip}
-              <span class="chip">${isRoot ? 'Root' : 'Branch'}</span>
+              <span class="chip">${window.PlexClawArchiveUtils.archiveRoleLabel(item)}</span>
             </div>
           </div>
 
