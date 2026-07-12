@@ -41,10 +41,23 @@ def test_session_create_request_defaults_to_ollama_provider():
     assert req.provider == "ollama"
 
 
-def test_session_create_request_defaults_to_ollama_model():
+def test_session_create_request_defaults_to_ollama_model(monkeypatch):
+    monkeypatch.delenv("PLEXCLAW_OLLAMA_MODEL", raising=False)
     req = SessionCreateRequest()
     assert req.model == DEFAULT_OLLAMA_MODEL
 
 
-def test_get_default_local_model_uses_vllm_default():
+def test_session_create_request_uses_env_ollama_model(monkeypatch):
+    monkeypatch.setenv("PLEXCLAW_OLLAMA_MODEL", "qwen3:test")
+    req = SessionCreateRequest()
+    assert req.model == "qwen3:test"
+
+
+def test_get_default_local_model_uses_vllm_default(monkeypatch):
+    monkeypatch.delenv("PLEXCLAW_VLLM_MODEL", raising=False)
     assert get_default_local_model("vllm") == DEFAULT_VLLM_MODEL
+
+
+def test_get_default_local_model_uses_env_vllm_model(monkeypatch):
+    monkeypatch.setenv("PLEXCLAW_VLLM_MODEL", "Qwen/Override-Model")
+    assert get_default_local_model("vllm") == "Qwen/Override-Model"
