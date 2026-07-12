@@ -4,7 +4,7 @@ All 10 slices from the build spec are implemented and committed, with additional
 
 ## Completed
 
-- **Slice 1** — FastAPI backend on port 8020, static frontend on port 5555, stable protocol envelope `0.2.0`, live session creation, WebSocket prompt streaming
+- **Slice 1** — Single FastAPI-served PlexClaw app on port 8020, stable protocol envelope `0.2.0`, live session creation, WebSocket prompt streaming
 - **Slice 2** — Tool stream rendering: `tool.started` / `tool.delta` / `tool.completed` normalizer + expandable tool blocks
 - **Slice 3** — Interrupts and session continuity: `POST /api/sessions/{id}/interrupt`, drain-after-interrupt pattern, per-session `ClaudeSDKClient` + async lock
 - **Slice 4** — Replayable event store: SQLite-backed append-only log, `GET /api/sessions/{id}/events` (filterable), `GET /api/sessions/{id}/replay`
@@ -59,7 +59,7 @@ All 10 slices from the build spec are implemented and committed, with additional
 
 - `frontend/index.html` is the single canonical UI entrypoint; `plexclaw-ui-canonical.html` is a backward-compat redirect shim
 - `run.sh` auto-enables repo-tracked hooks for the current clone when needed
-- `run.sh` fails fast with a clear error if port 8020 or 5555 are already occupied
+- `run.sh` fails fast with a clear error if port 8020 is already occupied
 - `scripts/setup-git-hooks.sh` can be run manually to configure `core.hooksPath` to `.githooks`
 
 ## Quick start
@@ -68,6 +68,5 @@ All 10 slices from the build spec are implemented and committed, with additional
 bash run.sh
 ```
 
-Backend: [http://127.0.0.1:8020](http://127.0.0.1:8020)
-Frontend root: [http://127.0.0.1:5555](http://127.0.0.1:5555)
-Primary UI: [http://127.0.0.1:5555/](http://127.0.0.1:5555/) | Legacy redirect: [http://127.0.0.1:5555/plexclaw-ui-canonical.html](http://127.0.0.1:5555/plexclaw-ui-canonical.html)
+App: [http://127.0.0.1:8020](http://127.0.0.1:8020)
+Primary UI: [http://127.0.0.1:8020/](http://127.0.0.1:8020/) | Legacy redirect: [http://127.0.0.1:8020/plexclaw-ui-canonical.html](http://127.0.0.1:8020/plexclaw-ui-canonical.html)

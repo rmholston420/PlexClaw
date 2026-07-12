@@ -7,7 +7,9 @@ from app.port_check import DEFAULT_PORTS, blocked_ports, format_blocked_ports
 
 def test_default_ports_shape():
     assert isinstance(DEFAULT_PORTS, tuple)
-    assert DEFAULT_PORTS
+    assert DEFAULT_PORTS == (
+        (8020, "plexclaw"),
+    )
     assert all(
         isinstance(item, tuple) and len(item) == 2 for item in DEFAULT_PORTS
     )
@@ -15,8 +17,6 @@ def test_default_ports_shape():
         isinstance(port, int) and isinstance(name, str)
         for port, name in DEFAULT_PORTS
     )
-    assert any(name == "backend" for _, name in DEFAULT_PORTS)
-    assert any(name == "frontend" for _, name in DEFAULT_PORTS)
 
 
 def test_blocked_ports_empty_iterable():

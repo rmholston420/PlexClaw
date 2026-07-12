@@ -4,8 +4,7 @@ import socket
 from collections.abc import Iterable
 
 DEFAULT_PORTS: tuple[tuple[int, str], ...] = (
-    (8020, "backend"),
-    (5555, "frontend"),
+    (8020, "plexclaw"),
 )
 
 

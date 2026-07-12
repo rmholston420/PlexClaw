@@ -20,11 +20,11 @@ def test_get_allowed_origins_defaults(monkeypatch):
 def test_get_allowed_origins_parses_csv(monkeypatch):
     monkeypatch.setenv(
         "PLEXCLAW_ALLOWED_ORIGINS",
-        " http://frontend.local , http://localhost:5555 ",
+        " http://frontend.local , http://localhost:8020 ",
     )
     assert get_allowed_origins() == [
         "http://frontend.local",
-        "http://localhost:5555",
+        "http://localhost:8020",
     ]
 
 

@@ -15,7 +15,7 @@ def load_app_with_origins(monkeypatch, origins: str):
 def test_cors_respects_env_allowed_origins(monkeypatch):
     app = load_app_with_origins(
         monkeypatch,
-        "http://frontend.local,http://localhost:5555",
+        "http://frontend.local,http://localhost:8020",
     )
     client = TestClient(app)
 

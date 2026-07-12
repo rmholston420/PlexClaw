@@ -57,4 +57,3 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$FRONTEND_TMP_DIR"
-python -m http.server 5555 --bind 127.0.0.1

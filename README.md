@@ -28,7 +28,7 @@ PlexClaw aims to be:
 - `app/event_store.py`: Append-only SQLite event log for replay and filtered event queries.
 - `app/normalizer.py`: Maps runtime events into stable protocol envelopes.
 - `app/archive_normalizer.py`: Converts variable archive metadata into a stable canonical shape.
-- `frontend/plexclaw-ui-canonical.html`: Backward-compat redirect shim to the main UI.
+- `/plexclaw-ui-canonical.html`: Backward-compat redirect route to the main UI.
 - `frontend/sdk-bridge-client.js`: Browser client, replay renderer, archive controls, and tool block rendering.
 - `app/port_check.py`: Launcher port preflight helper used by `run.sh`.
 - `.githooks/pre-push`: Repo-tracked pre-push test gate.
@@ -52,8 +52,8 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 3. Run:
    - `bash run.sh`
 4. Open:
-   - `http://127.0.0.1:5555/` (primary UI)
-  - `http://127.0.0.1:5555/plexclaw-ui-canonical.html` (legacy redirect)
+   - `http://127.0.0.1:8020/` (primary UI)
+  - `http://127.0.0.1:8020/plexclaw-ui-canonical.html` (legacy redirect)
 
 ## Backend routes
 
@@ -76,7 +76,7 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 - The frontend consumes only normalized protocol events and canonical archive metadata.
 - If the Claude SDK is unavailable, the runtime uses a mock streaming mode so the UI remains runnable.
 - `run.sh` auto-configures repo-tracked Git hooks for the current clone when needed.
-- `run.sh` performs a fail-fast preflight check for ports 8020 and 5555 before launching.
+- `run.sh` performs a fail-fast preflight check for port 8020 before launching.
 - The local test gate runs automatically on `git push` through `.githooks/pre-push`.
 
 ## Current status

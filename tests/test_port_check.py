@@ -24,29 +24,25 @@ def test_blocked_ports_returns_empty_when_all_ports_are_free(monkeypatch) -> Non
 
     monkeypatch.setattr(socket, "socket", fake_socket)
 
-    assert port_check.blocked_ports(((8020, "backend"), (5555, "frontend"))) == []
+    assert port_check.blocked_ports(((8020, "plexclaw"),)) == []
 
 
 def test_blocked_ports_reports_occupied_ports(monkeypatch) -> None:
-    calls = {"count": 0}
-
     def fake_socket(*args, **kwargs):
-        calls["count"] += 1
-        return _FakeSocket(should_fail=calls["count"] == 2)
+        return _FakeSocket(should_fail=True)
 
     monkeypatch.setattr(socket, "socket", fake_socket)
 
-    assert port_check.blocked_ports(((8020, "backend"), (5555, "frontend"))) == [
-        (5555, "frontend")
+    assert port_check.blocked_ports(((8020, "plexclaw"),)) == [
+        (8020, "plexclaw")
     ]
 
 
 def test_format_blocked_ports_includes_summary_line() -> None:
-    lines = port_check.format_blocked_ports([(8020, "backend"), (5555, "frontend")])
+    lines = port_check.format_blocked_ports([(8020, "plexclaw")])
 
     assert lines == [
-        "[run.sh] Port 8020 already in use (backend).",
-        "[run.sh] Port 5555 already in use (frontend).",
+        "[run.sh] Port 8020 already in use (plexclaw).",
         "[run.sh] Stop the existing process or free the port, then retry.",
     ]
 
