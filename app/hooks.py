@@ -75,14 +75,36 @@ def reset_hooks() -> None:
 
 def describe_hook_event(event_type: str, payload: dict[str, Any]) -> str:
     tool_name = payload.get("tool_name") or payload.get("tool") or "tool"
+    decision = payload.get("decision") or "unknown"
+    stop_reason = payload.get("stop_reason") or payload.get("reason") or "unknown"
+    level = payload.get("level") or "info"
+    text = payload.get("text") or payload.get("message")
+
     if event_type == "session.start":
         return "Hook observed session start."
     if event_type == "session.end":
         return "Hook observed session end."
+    if event_type == "session.interrupted":
+        return f"Stop observed ({stop_reason})."
+    if event_type == "assistant.completed":
+        return f"Assistant completed with stop reason: {stop_reason}."
     if event_type == "pre_tool":
         return f"Hook observed pre-tool event for {tool_name}."
     if event_type == "post_tool":
         return f"Hook observed post-tool event for {tool_name}."
+    if event_type == "tool.permission_required":
+        return f"PermissionRequest observed for {tool_name}."
+    if event_type == "tool.permission_decided":
+        return f"PermissionDecision observed for {tool_name}: {decision}."
+    if event_type == "tool.completed":
+        return f"Tool completed: {tool_name}."
+    if event_type == "system.message":
+        if text:
+            return f"Notification ({level}): {text}"
+        return f"Notification observed ({level})."
+    if event_type == "session.failed":
+        return "Session failure observed."
+
     return f"Hook observed {event_type}."
 
 def hook_system_message(ctx: HookContext) -> dict[str, Any]:
