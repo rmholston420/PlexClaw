@@ -18,18 +18,23 @@ def main() -> None:
         ) from exc
 
     version = getattr(claude_agent_sdk, "__version__", "unknown")
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    base_url = os.getenv("ANTHROPIC_BASE_URL", "")
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "")
+
     print("claude_agent_sdk_version=", version)
-    print("ANTHROPIC_API_KEY_present=", bool(os.getenv("ANTHROPIC_API_KEY")))
-    print("ANTHROPIC_BASE_URL=", os.getenv("ANTHROPIC_BASE_URL", ""))
-    print("OLLAMA_BASE_URL=", os.getenv("OLLAMA_BASE_URL", ""))
+    print("ANTHROPIC_API_KEY_present=", bool(api_key))
+    print("ANTHROPIC_BASE_URL=", base_url)
+    print("OLLAMA_BASE_URL=", ollama_url)
     print("cwd=", os.getcwd())
 
-    required = ["ANTHROPIC_API_KEY"]
-    missing = [key for key in required if not os.getenv(key)]
-    if missing:
-        joined = ", ".join(missing)
+    local_mode = bool(base_url)
+    print("local_mode=", local_mode)
+
+    if not api_key:
         raise SystemExit(
-            f"FAIL: missing required environment variables: {joined}"
+            "FAIL: ANTHROPIC_API_KEY must be non-empty. "
+            "For local mode, use a placeholder like local-dev-token."
         )
 
     opts = ClaudeAgentOptions(
@@ -39,6 +44,11 @@ def main() -> None:
     )
     print("options_ok=", isinstance(opts, ClaudeAgentOptions))
     print("client_class=", ClaudeSDKClient)
+
+    if local_mode:
+        print("mode_ok= local-compatible-endpoint")
+    else:
+        print("mode_ok= cloud-default")
 
 
 if __name__ == "__main__":
