@@ -467,12 +467,12 @@ def _render_session_markdown(session_id: str, events: list[dict]) -> str:
 
 @app.get("/api/search")
 async def search_api(q: str = Query(..., min_length=1)) -> list:
-    return search_events(q)
+    return await search_events(q)
 
 
 @app.get("/api/sessions/{session_id}/export")
 async def export_session(session_id: str, format: Literal["json", "md"] = "json"):
-    events = query_events(session_id)
+    events = await query_events(session_id)
     if format == "json":
         return JSONResponse(content={"session_id": session_id, "events": events})
     if format == "md":
@@ -489,12 +489,12 @@ async def get_events(
     event_type: str | None = None,
     since_seq: int | None = None,
 ) -> list:
-    return query_events(session_id, event_type=event_type, since_seq=since_seq)
+    return await query_events(session_id, event_type=event_type, since_seq=since_seq)
 
 
 @app.get("/api/sessions/{session_id}/replay")
 async def get_replay(session_id: str) -> list:
-    return query_events(session_id)
+    return await query_events(session_id)
 
 
 # ---------------------------------------------------------------------------

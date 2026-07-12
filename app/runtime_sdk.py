@@ -436,7 +436,7 @@ async def _emit(session: LiveSession, envelope: WSEnvelope) -> None:
     """Broadcast, persist to event store, and run hooks."""
     touch_session(session)
     await ws_manager.broadcast(envelope)
-    append_event(
+    await append_event(
         session.id,
         envelope.seq,
         envelope.type,
