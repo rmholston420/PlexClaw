@@ -360,7 +360,7 @@ function renderProviderRuntimeMeta() {
 
   const selectionReason = providerSelectionReason();
 
-  setCopyableValue(
+  setRuntimeMetaCopyValue(
     el.providerRuntimeMeta,
     label,
     `${label} — ${selectionReason}`,
@@ -368,7 +368,7 @@ function renderProviderRuntimeMeta() {
   );
 
   if (el.providerReasonMeta) {
-    setCopyableValue(
+    setRuntimeMetaCopyValue(
       el.providerReasonMeta,
       selectionReason,
       selectionReason,
@@ -376,7 +376,7 @@ function renderProviderRuntimeMeta() {
     );
   }
 
-  setCopyableValue(
+  setRuntimeMetaCopyValue(
     el.providerBaseUrlMeta,
     baseUrl || 'Default',
     baseUrl || 'Default',
