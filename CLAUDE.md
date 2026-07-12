@@ -46,6 +46,18 @@ sessions still work but use the echo-back mock, not real Claude.
 - mock_mode and model are frontend-visible contract fields — treat as API surface.
 - Do not edit generated or unrelated files as cleanup.
 
+## Claude-native capabilities to preserve
+
+When changing backend, protocol, or frontend behavior, preserve these Claude-native concepts as first-class product features rather than flattening them into generic chat UX:
+
+- Multi-turn Claude session continuity
+- Resume and fork by session lineage
+- Tool-use streaming and permission semantics
+- Hook-ready lifecycle interception
+- Archive browsing and deterministic replay
+- Anthropic-compatible local routing via `ANTHROPIC_BASE_URL`
+- Clear exposure of runtime metadata in the browser UI
+
 ## Claude Code local configuration
 PlexClaw expects Claude Code CLI and the Claude Agent SDK to share one configuration surface.
 Prefer project-local `.claude/settings.local.json` for non-secret defaults and `.env` for operator overrides.

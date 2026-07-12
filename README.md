@@ -1,9 +1,8 @@
 # PlexClaw
 
+PlexClaw is a full-featured browser GUI for Claude Code and the Claude Agent SDK, designed to surface Claude-native capabilities clearly while adding high-value browser UX, local-model routing, and Perplexity Computer-style interaction.
 
-PlexClaw is a browser-native GUI for **Claude Code** and the **Claude Agent SDK**.
-
-It is designed to expose Claude-native sessions, permissions, tools, runtime state, repo context, and useful local LLM settings as clearly and completely as possible in a modern browser interface. While the UI may borrow visual ideas from products like Perplexity Computer, PlexClaw is ultimately optimized for Claude Code and Claude Agent SDK workflows first.
+It provides a browser-native workstation for live Claude sessions, tool streaming, permissions, archive and replay workflows, resume/fork lineage, hook-ready runtime behavior, and Anthropic-compatible local model routing through providers such as Ollama and vLLM.
 
 ## Product direction
 
@@ -153,3 +152,14 @@ PlexClaw should selectively match or exceed the strongest ideas from existing Cl
 - Useful local LLM controls including provider route, base URL, model selection, and runtime inspection.
 - A frontend architecture that can evolve from standalone app to Rigpa-LMS plugin.
 
+
+## Product pillars
+
+- Claude-native session model: live multi-turn sessions, interrupts, resume, fork, archive browsing, and replay.
+- Claude-native runtime visibility: tool streams, permission state, runtime metadata, and hook-ready event handling.
+- Browser UX beyond the terminal: persistent sidebar, replay mode, session lineage, search/sort/tag flows, and Perplexity Computer-style transcript inspection.
+- Local-model routing: Anthropic cloud, Ollama, and vLLM routing exposed through one browser UI and one backend contract.
+
+## Positioning
+
+PlexClaw is not just a chat wrapper around Claude. It is a browser GUI for Claude Code and the Claude Agent SDK that keeps Claude-native concepts visible instead of hiding them behind generic chat abstractions.
