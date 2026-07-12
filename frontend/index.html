@@ -1599,28 +1599,28 @@
 </div>
 <div class="runtime-meta-group runtime-meta-panel" id="runtime-meta-panel" aria-label="Provider and tool runtime" hidden>
 <div class="runtime-meta-header">
-  <div class="runtime-meta-title">Runtime routing</div>
+  <div class="runtime-meta-title">Effective runtime routing</div>
 </div>
 <div class="runtime-meta-grid">
   <div class="runtime-meta-card">
-    <span class="runtime-meta-label">Provider route</span>
+    <span class="runtime-meta-label">Effective provider route</span>
     <button class="runtime-meta-value runtime-meta-copy" id="provider-runtime-meta" type="button" title="Click to copy provider route" aria-label="Copy provider route">Cloud</button>
   </div>
   <div class="runtime-meta-card">
-    <span class="runtime-meta-label">Tool search</span>
+    <span class="runtime-meta-label">Effective tool mode</span>
     <button class="runtime-meta-value runtime-meta-copy" id="tool-runtime-meta" type="button" title="Click to copy tool search state" aria-label="Copy tool search state">Default tools</button>
   </div>
   <div class="runtime-meta-card">
-    <span class="runtime-meta-label">Provider base URL</span>
+    <span class="runtime-meta-label">Effective provider endpoint</span>
     <button class="runtime-meta-value runtime-meta-copy" id="provider-base-url-meta" type="button" title="Click to copy provider base URL" aria-label="Copy provider base URL">Default</button>
   </div>
   <div class="runtime-meta-card">
-    <span class="runtime-meta-label">Provider reason</span>
+    <span class="runtime-meta-label">Route selection reason</span>
     <button class="runtime-meta-value runtime-meta-copy" id="provider-reason-meta" type="button" title="Click to copy provider selection reason" aria-label="Copy provider selection reason">Ollama primary selected</button>
   </div>
 </div>
 <div class="runtime-select-row">
-  <label class="runtime-select-label" for="provider-base-url-input">Provider endpoint</label>
+  <label class="runtime-select-label" for="provider-base-url-input">Requested provider endpoint override</label>
   <input class="cwd-input" id="provider-base-url-input" type="text" placeholder="http://127.0.0.1:11434" />
   <button class="icon-btn" id="provider-settings-btn" aria-label="Apply provider endpoint" title="Apply provider endpoint">
     <i data-lucide="plug" style="width:16px;height:16px"></i>
@@ -1632,7 +1632,7 @@
    <button class="runtime-meta-value runtime-meta-copy" id="session-cwd-meta" type="button" title="Click to copy working directory" aria-label="Copy working directory">~</button>
  </div>
  <div class="runtime-meta-card">
-   <span class="runtime-meta-label">Runtime mode</span>
+   <span class="runtime-meta-label">Claude runtime mode</span>
    <button class="runtime-meta-value runtime-meta-copy" id="session-runtime-meta" type="button" title="Click to copy runtime mode" aria-label="Copy runtime mode">Unknown runtime</button>
  </div>
 <div class="runtime-meta-card">
@@ -1640,15 +1640,15 @@
   <button class="runtime-meta-value runtime-meta-copy" id="session-elapsed-meta" type="button" title="Click to copy elapsed session time" aria-label="Copy elapsed session time">--:--</button>
 </div>
 <div class="runtime-meta-card">
-  <span class="runtime-meta-label">Session config</span>
+  <span class="runtime-meta-label">Requested vs effective config</span>
   <button class="runtime-meta-value runtime-meta-copy" id="session-config-meta" type="button" title="Click to copy session config" aria-label="Copy session config">Copy config</button>
 </div>
 </div>
 <div class="runtime-meta-help" id="runtime-meta-help">
-  Use this panel for the true working directory and runtime state. PlexClaw approval and Claude SDK mode are separate controls.
+  This panel shows the effective runtime state returned by PlexClaw and the Claude bridge. Claude SDK mode controls Claude-native permission behavior; PlexClaw approval prompts are a separate UI workflow layered on top.
 </div>
 <div class="runtime-select-row">
-  <label class="runtime-select-label" for="tool-search-select">Tool mode</label>
+  <label class="runtime-select-label" for="tool-search-select">Requested tool mode</label>
   <select class="model-select" id="tool-search-select" title="Tool search mode" aria-label="Tool search mode">
     <option value="">Tool search: Default</option>
     <option value="false">Tool search: Off</option>
@@ -1658,7 +1658,7 @@
   </select>
 </div>
 <div class="runtime-select-row">
-  <label class="runtime-select-label" for="sdk-permission-mode-select">Claude SDK mode</label>
+  <label class="runtime-select-label" for="sdk-permission-mode-select">Requested Claude SDK mode</label>
   <select class="model-select" id="sdk-permission-mode-select" title="Claude SDK permission mode" aria-label="Claude SDK permission mode">
     <option value="default">SDK mode: Default</option>
     <option value="acceptEdits">SDK mode: Accept edits</option>

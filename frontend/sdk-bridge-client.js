@@ -280,56 +280,28 @@ function bindRuntimeMetaCopyHandlers() {
 
 function buildSessionConfigSummary() {
   const requested = {
-    sessionId: state.sessionId || null,
     model: state.model || null,
     provider: state.provider || null,
     providerBaseUrl: state.providerBaseUrl || null,
     permissionMode: state.permissionMode || null,
-    sdkPermissionMode: state.sdkPermissionMode || 'default',
+    sdkPermissionMode: state.sdkPermissionMode || null,
     toolSearchMode: state.toolSearchMode || null,
-    toolSearchActive: typeof state.toolSearchActive === 'boolean' ? state.toolSearchActive : null,
-    cwd: state.cwd || state.cwdSelected || null,
-    runtimeMode: state.runtimeMode || null,
+    cwd: state.cwdSelected || state.cwd || null,
   };
-
-  const effectiveConfig = state.effectiveSessionConfig || {};
   const effective = {
-    sessionId: effectiveConfig.sessionId || requested.sessionId,
-    model: effectiveConfig.model || requested.model,
-    provider: effectiveConfig.provider || requested.provider,
-    providerBaseUrl: Object.prototype.hasOwnProperty.call(effectiveConfig, 'providerBaseUrl')
-      ? effectiveConfig.providerBaseUrl
+    model: state.effectiveSessionConfig?.model || requested.model,
+    provider: state.effectiveSessionConfig?.provider || requested.provider,
+    providerBaseUrl: Object.prototype.hasOwnProperty.call(state.effectiveSessionConfig || {}, 'providerBaseUrl')
+      ? state.effectiveSessionConfig.providerBaseUrl
       : requested.providerBaseUrl,
-    permissionMode: effectiveConfig.permissionMode || requested.permissionMode,
-    sdkPermissionMode: effectiveConfig.sdkPermissionMode || requested.sdkPermissionMode,
-    toolSearchMode: Object.prototype.hasOwnProperty.call(effectiveConfig, 'toolSearchMode')
-      ? effectiveConfig.toolSearchMode
-      : requested.toolSearchMode,
-    toolSearchActive: typeof effectiveConfig.toolSearchActive === 'boolean'
-      ? effectiveConfig.toolSearchActive
-      : requested.toolSearchActive,
-    cwd: effectiveConfig.cwd || requested.cwd,
-    runtimeMode: Object.prototype.hasOwnProperty.call(effectiveConfig, 'runtimeMode')
-      ? effectiveConfig.runtimeMode
-      : requested.runtimeMode,
+    permissionMode: state.effectiveSessionConfig?.permissionMode || requested.permissionMode,
+    sdkPermissionMode: state.effectiveSessionConfig?.sdkPermissionMode || requested.sdkPermissionMode,
+    toolSearchMode: state.effectiveSessionConfig?.toolSearchMode || requested.toolSearchMode,
+    toolSearchActive: state.effectiveSessionConfig?.toolSearchActive,
+    cwd: state.effectiveSessionConfig?.cwd || requested.cwd,
+    runtimeMode: state.effectiveSessionConfig?.runtimeMode || state.runtimeMode || null,
   };
-
-  const diff = Object.fromEntries(
-    Object.keys(requested)
-      .filter((key) => JSON.stringify(requested[key]) !== JSON.stringify(effective[key]))
-      .map((key) => [key, { requested: requested[key], effective: effective[key] }])
-  );
-
-  return JSON.stringify(
-    {
-      capturedAt: new Date().toISOString(),
-      requested,
-      effective,
-      diff,
-    },
-    null,
-    2
-  );
+  return JSON.stringify({ requested, effective }, null, 2);
 }
 
 function providerSelectionReason() {
@@ -393,6 +365,9 @@ function renderProviderRuntimeMeta() {
           ? 'http://127.0.0.1:30000'
           : 'Provider default');
     el.providerBaseUrlInput.disabled = state.provider === 'cloud';
+  el.providerBaseUrlInput.title = state.provider === 'cloud'
+    ? 'Cloud provider uses the Anthropic route configured by the backend; endpoint override is disabled here.'
+    : 'Override the provider endpoint for this frontend session.';
   }
 
   if (el.sessionCwdMeta) {
