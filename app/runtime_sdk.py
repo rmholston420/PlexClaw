@@ -435,6 +435,74 @@ def remove_context_file(session_id: str, filename: str) -> None:
     session._context_injected = False
 
 
+def _rewrite_prompt_for_local_agent(prompt: str) -> str:
+    raw = prompt.strip()
+    lowered = raw.lower()
+
+    shell_like = {
+        "pwd",
+        "ls",
+        "ls -l",
+        "ls -la",
+        "git status",
+        "git branch",
+    }
+    repo_like = {
+        "describe the current repo",
+        "describe this repo",
+        "list the files in the current directory",
+        "list the current directory",
+    }
+
+    if lowered in shell_like or lowered in repo_like:
+        return (
+            "Treat the user's request as a literal repo/shell inspection task.\n"
+            "User request: " + raw + "\n\n"
+            "Rules:\n"
+            "- Do not create, edit, or propose files or workflows.\n"
+            "- Do not use write/edit tools first.\n"
+            "- Prefer read-only inspection of the current working directory and repo.\n"
+            "- If a shell tool is unavailable, say that briefly\n"
+            "  and answer only from inspected context.\n"
+            "- Keep the answer short and directly responsive to the literal request."
+        )
+
+    return prompt
+
+
+def _maybe_handle_literal_shell_prompt(session: LiveSession, prompt: str) -> str | None:
+    raw = prompt.strip()
+    lowered = raw.lower()
+
+    cwd = session.cwd or str(Path.cwd())
+
+    if lowered == "pwd":
+        return cwd
+
+    if lowered == "ls":
+        try:
+            entries = sorted(p.name for p in Path(cwd).iterdir())
+        except Exception as exc:
+            return f"Unable to list directory: {exc}"
+        return "\n".join(entries) if entries else "(empty directory)"
+
+    if lowered == "ls -l" or lowered == "ls -la":
+        try:
+            lines: list[str] = []
+            for p in sorted(Path(cwd).iterdir(), key=lambda item: item.name):
+                kind = "d" if p.is_dir() else "-"
+                try:
+                    size = p.stat().st_size
+                except Exception:
+                    size = 0
+                lines.append(f"{kind} {size:>8} {p.name}")
+        except Exception as exc:
+            return f"Unable to list directory: {exc}"
+        return "\n".join(lines) if lines else "(empty directory)"
+
+    return None
+
+
 def _inject_context_into_prompt(session: LiveSession, prompt: str) -> str:
     """Inject attached context files once per unchanged context set.
 
@@ -442,6 +510,8 @@ def _inject_context_into_prompt(session: LiveSession, prompt: str) -> str:
     removed. After that first injection, subsequent prompts are passed through
     unchanged until the context file set changes again.
     """
+    prompt = _rewrite_prompt_for_local_agent(prompt)
+
     if not session.context_files:
         return prompt
     if session._context_injected:
@@ -911,6 +981,27 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
         await _emit(session, sys_env)
 
         try:
+            literal_shell_response = _maybe_handle_literal_shell_prompt(session, prompt)
+            if literal_shell_response is not None:
+                await _emit(
+                    session,
+                    normalize_text_delta(
+                        session.id,
+                        session.next_seq(),
+                        literal_shell_response,
+                    ),
+                )
+                await _emit(
+                    session,
+                    normalize_assistant_completed(
+                        session.id,
+                        session.next_seq(),
+                        "end_turn",
+                        {},
+                    ),
+                )
+                return
+
             prompt_with_context = _inject_context_into_prompt(session, prompt)
             await _stream_sdk(session, prompt_with_context)
         finally:
