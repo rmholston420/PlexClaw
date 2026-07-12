@@ -906,6 +906,35 @@
     line-height: 1.45;
   }
 
+
+  .completion-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--s3);
+  }
+
+  .completion-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    padding: var(--s3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .completion-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  .completion-value {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text);
+    word-break: break-word;
+  }
+
   .hook-empty {
     font-size: var(--text-xs);
     color: var(--text-muted);
@@ -2104,6 +2133,27 @@
   </div>
 </div>
 
+
+
+<div class="runtime-meta-group" aria-label="Completion status">
+  <div class="runtime-meta-header">
+    <div class="runtime-meta-title">Completion status</div>
+  </div>
+  <div class="completion-panel">
+    <div class="completion-card">
+      <div class="completion-label">Last stop reason</div>
+      <div class="completion-value" id="completion-stop-reason">No completion yet</div>
+    </div>
+    <div class="completion-card">
+      <div class="completion-label">Input tokens</div>
+      <div class="completion-value" id="completion-input-tokens">--</div>
+    </div>
+    <div class="completion-card">
+      <div class="completion-label">Output tokens</div>
+      <div class="completion-value" id="completion-output-tokens">--</div>
+    </div>
+  </div>
+</div>
 
 <div class="runtime-meta-group" aria-label="Hook activity">
   <div class="runtime-meta-header">

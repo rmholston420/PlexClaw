@@ -36,6 +36,7 @@ const Bridge = (() => {
    mcpServers: [],
    mcpConfigPath: null,
    hookEvents: [],
+  lastCompletion: null,
     bridgeUrl: bridgeOrigin,
     wsBase: derivedWsBase,
     protocolVersion: '0.2.0',
@@ -169,6 +170,9 @@ const Bridge = (() => {
   mcpCommandInput: document.getElementById('mcp-command-input'),
   mcpAddBtn: document.getElementById('mcp-add-btn'),
   hookList: document.getElementById('hook-list'),
+  completionStopReason: document.getElementById('completion-stop-reason'),
+  completionInputTokens: document.getElementById('completion-input-tokens'),
+  completionOutputTokens: document.getElementById('completion-output-tokens'),
  sessionCwdMeta: document.getElementById('session-cwd-meta'),
  sessionRuntimeMeta: document.getElementById('session-runtime-meta'),
 sessionConfigMeta: document.getElementById('session-config-meta'),
@@ -1211,6 +1215,7 @@ function setConnection(status) {
     state.attachments = [];
     state.rawLogLines = [];
   state.hookEvents = [];
+  state.lastCompletion = null;
     state.replayMode = false;
     clearTranscript();
     renderAttachments();
@@ -2277,7 +2282,13 @@ function bindStableUiHandlers() {
       scrollBottom();
       break;
     }
-    case 'system.message':
+ 
+    case 'assistant.completed': {
+      finalizeAssistant();
+      setCompletionStatus(evt.payload?.stop_reason || 'end_turn', evt.payload?.usage || {});
+      break;
+    }
+   case 'system.message':
         appendSystemMessage(evt.payload?.text || '', evt.payload?.level || 'info');
         break;
       case 'session.interrupted':
@@ -3073,6 +3084,7 @@ function syncCapabilityPills(state) {
   setCapabilityPill("cap-replay-pill", hasReplay, hasReplay ? "Replay mode active" : "Replayable events");
   setCapabilityPill("cap-hooks-pill", true, "Hook-ready runtime");
   renderHookActivity();
+  renderCompletionStatus();
   setCapabilityPill("cap-routing-pill", hasRouting, hasRouting ? `Route: ${state.provider || "configured"}` : "Local model routing");
   setCapabilityPill("cap-tools-pill", hasTools, hasTools ? "Tool streaming active" : "Tool streaming");
 }
@@ -3096,6 +3108,37 @@ function syncProviderHealthPills(state) {
 }
 
 
+
+
+
+function formatUsageValue(value) {
+  return Number.isFinite(Number(value)) ? Number(value).toLocaleString() : '--';
+}
+
+function renderCompletionStatus() {
+  const completion = state.lastCompletion || {};
+  if (el.completionStopReason) {
+    el.completionStopReason.textContent = completion.stopReason || 'No completion yet';
+  }
+  if (el.completionInputTokens) {
+    el.completionInputTokens.textContent = formatUsageValue(
+      completion.usage?.input_tokens ?? completion.usage?.inputTokens
+    );
+  }
+  if (el.completionOutputTokens) {
+    el.completionOutputTokens.textContent = formatUsageValue(
+      completion.usage?.output_tokens ?? completion.usage?.outputTokens
+    );
+  }
+}
+
+function setCompletionStatus(stopReason, usage = {}) {
+  state.lastCompletion = {
+    stopReason: stopReason || 'unknown',
+    usage: usage || {},
+  };
+  renderCompletionStatus();
+}
 
 
 function hookEventLabel(eventType) {
