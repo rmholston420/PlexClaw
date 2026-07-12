@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('export controls remain visible and enabled across tab changes', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const newTabBtn = page.locator('#new-tab-btn');
   const markdownExport = page.locator('#export-session');

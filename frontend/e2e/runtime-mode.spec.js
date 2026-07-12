@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('runtime mode controls are exposed in the current DOM', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const modeLabel = page.locator('#runtime-mode-label');
   const manualBtn = page.locator('#mode-manual-btn');

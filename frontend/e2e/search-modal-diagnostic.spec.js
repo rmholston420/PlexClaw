@@ -5,7 +5,7 @@ test('diagnose search modal wiring', async ({ page }) => {
   page.on('console', msg => logs.push(`console:${msg.type()}:${msg.text()}`));
   page.on('pageerror', err => logs.push(`pageerror:${err.message}`));
 
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const before = await page.evaluate(() => {
     const btn = document.getElementById('open-search');

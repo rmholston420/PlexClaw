@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('archive search input remains editable and archive surface stays visible', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const archiveSearch = page.locator('#archive-search');
   const archiveList = page.locator('#archive-list');

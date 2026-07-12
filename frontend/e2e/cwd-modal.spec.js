@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('cwd modal opens and closes from stable controls', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const openBtn = page.locator('#cwd-pill');
   const modal = page.locator('#cwd-modal');

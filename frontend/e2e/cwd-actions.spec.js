@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('cwd modal cancel and confirm controls close the modal', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const cwdPill = page.locator('#cwd-pill');
   const cwdModal = page.locator('#cwd-modal');

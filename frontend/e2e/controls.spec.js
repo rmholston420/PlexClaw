@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('observable controls match current DOM exposure', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   await expect(page.locator('#mode-manual-btn')).toBeVisible();
   await expect(page.locator('#mode-auto-btn')).toBeVisible();

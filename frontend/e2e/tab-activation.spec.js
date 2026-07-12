@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('clicking a session tab activates it after creating a new tab', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const newTabBtn = page.locator('#new-tab-btn');
   const tabButtons = page.locator('.session-tab');

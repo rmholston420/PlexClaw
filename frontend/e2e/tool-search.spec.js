@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('tool search selector is exposed in the current DOM', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const toolSearch = page.locator('#tool-search-select');
 

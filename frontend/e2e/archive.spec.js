@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('archive controls are exposed in the current DOM', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   await expect(page.locator('#archive-list')).toHaveCount(1);
   await expect(page.locator('#archive-search')).toBeVisible();

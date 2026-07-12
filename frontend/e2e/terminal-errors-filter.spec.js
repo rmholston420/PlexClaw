@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('terminal errors-only filter toggles cleanly after opening the drawer', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const terminalToggle = page.locator('#terminal-toggle');
   const terminalDrawer = page.locator('#terminal-drawer');

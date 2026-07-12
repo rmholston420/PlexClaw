@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('terminal controls are exposed in the current DOM', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   await expect(page.locator('#terminal-toggle')).toHaveCount(1);
   await expect(page.locator('#terminal-drawer')).toHaveCount(1);

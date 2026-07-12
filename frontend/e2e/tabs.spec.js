@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('new tab button adds a rendered session tab', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const newTabBtn = page.locator('#new-tab-btn');
   const tabButtons = page.locator('.session-tab');

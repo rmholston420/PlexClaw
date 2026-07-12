@@ -28,7 +28,7 @@ PlexClaw aims to be:
 - `app/event_store.py`: Append-only SQLite event log for replay and filtered event queries.
 - `app/normalizer.py`: Maps runtime events into stable protocol envelopes.
 - `app/archive_normalizer.py`: Converts variable archive metadata into a stable canonical shape.
-- `frontend/plexclaw-ui-canonical.html`: PlexClaw-style static browser UI.
+- `frontend/plexclaw-ui-canonical.html`: Backward-compat redirect shim to the main UI.
 - `frontend/sdk-bridge-client.js`: Browser client, replay renderer, archive controls, and tool block rendering.
 - `app/port_check.py`: Launcher port preflight helper used by `run.sh`.
 - `.githooks/pre-push`: Repo-tracked pre-push test gate.
@@ -52,7 +52,8 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 3. Run:
    - `bash run.sh`
 4. Open:
-   - `http://127.0.0.1:5555/plexclaw-ui-canonical.html`
+   - `http://127.0.0.1:5555/` (primary UI)
+  - `http://127.0.0.1:5555/plexclaw-ui-canonical.html` (legacy redirect)
 
 ## Backend routes
 

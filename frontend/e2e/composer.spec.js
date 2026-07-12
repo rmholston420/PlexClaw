@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('composer controls are exposed in the current DOM', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   await expect(page.locator('#composer')).toHaveCount(1);
   await expect(page.locator('#prompt-input')).toBeVisible();

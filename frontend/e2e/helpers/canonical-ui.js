@@ -1,5 +1,5 @@
 export async function gotoCanonicalUi(page) {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 }
 
 export async function openTerminalDrawer(page) {

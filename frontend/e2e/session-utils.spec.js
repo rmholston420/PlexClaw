@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('session utility controls are exposed in the current DOM', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   await expect(page.locator('#session-label')).toHaveCount(1);
 

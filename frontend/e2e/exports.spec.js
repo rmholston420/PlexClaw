@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('export controls expose accessible metadata in the current DOM', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const exportText = page.locator('#export-session');
   const exportJson = page.locator('#export-session-json');

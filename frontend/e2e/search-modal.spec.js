@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('search modal opens and closes from stable controls', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const openBtn = page.locator('#open-search');
   const modal = page.locator('#search-modal');

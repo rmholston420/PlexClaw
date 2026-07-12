@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('backdrop click closes search and cwd modals', async ({ page }) => {
-  await page.goto('/plexclaw-ui-canonical.html');
+  await page.goto('/');
 
   const searchOpen = page.locator('#open-search');
   const searchModal = page.locator('#search-modal');
