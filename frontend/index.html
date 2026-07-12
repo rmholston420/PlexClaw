@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Claude Code</title>
+  <title>PlexClaw</title>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,7 @@
   <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
   <style>
     /* =====================================================================
-       DESIGN TOKENS — Claude Code Dark Console
+       DESIGN TOKENS — PlexClaw Browser Console
     ===================================================================== */
     :root, [data-theme="dark"] {
       /* Surfaces — deep blue-slate */
@@ -36,70 +36,7 @@
       --primary-hover:   #29a9bd;
       --primary-active:  #1b8ea0;
       --primary-hl:      #1a2f38;
-
-      .capability-strip {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      background: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
-    }
-
-    .capability-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface-offset);
-      color: var(--text-muted);
-      font-size: 12px;
-      line-height: 1;
-      white-space: nowrap;
-    }
-
-    .provider-health-strip {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 8px 16px 12px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-
-    .provider-health-pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--surface-offset);
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-
-    .provider-health-pill.is-online {
-      color: var(--success);
-      border-color: var(--success);
-      background: var(--success-hl);
-    }
-
-    .provider-health-pill.is-offline {
-      color: var(--error);
-      border-color: var(--error);
-      background: var(--error-hl);
-    }
-
-    .capability-pill.is-active {
-      color: var(--text);
-      border-color: var(--primary);
-      background: var(--primary-hl);
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
-    }
-
-    /* Tool status colors */
+/* Tool status colors */
       --tool-running:    #f0b429;
       --tool-done:       #3ecf8e;
       --tool-error:      #f87272;
@@ -1583,7 +1520,71 @@
 
 
     .hidden { display: none !important; }
-  </style>
+
+
+.capability-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
+  }
+
+  .capability-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-offset);
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .capability-pill.is-active {
+    color: var(--text);
+    border-color: var(--primary);
+    background: var(--primary-hl);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+
+  .provider-health-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .provider-health-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-offset);
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .provider-health-pill.is-online {
+    color: var(--success);
+    border-color: var(--success);
+    background: var(--success-hl);
+  }
+
+  .provider-health-pill.is-offline {
+    color: var(--error);
+    border-color: var(--error);
+    background: var(--error-hl);
+  }
+
+</style>
 
 </head>
 <body>
@@ -1600,7 +1601,7 @@
         <circle cx="16" cy="24" r="2" fill="var(--primary)"/>
       </svg>
       <div class="brand-text">
-        <h1>Claude Code</h1>
+        <h1>PlexClaw</h1>
         <p>Claude Code workstation</p>
       </div>
     </div>
