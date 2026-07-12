@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PlexClaw</title>
+  <title>Claude Code</title>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,7 @@
   <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
   <style>
     /* =====================================================================
-       DESIGN TOKENS — PlexClaw Dark Console (Nexus-derived, coding-optimised)
+       DESIGN TOKENS — Claude Code Dark Console
     ===================================================================== */
     :root, [data-theme="dark"] {
       /* Surfaces — deep blue-slate */
@@ -1530,7 +1530,7 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="brand">
-      <svg class="brand-logo" viewBox="0 0 32 32" fill="none" aria-label="PlexClaw logo">
+      <svg class="brand-logo" viewBox="0 0 32 32" fill="none" aria-label="Claude Code logo">
         <rect width="32" height="32" rx="8" fill="var(--primary)" opacity="0.15"/>
         <!-- Claw mark -->
         <path d="M8 10 L16 22 L24 10" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -1538,7 +1538,7 @@
         <circle cx="16" cy="24" r="2" fill="var(--primary)"/>
       </svg>
       <div class="brand-text">
-        <h1>PlexClaw</h1>
+        <h1>Claude Code</h1>
         <p>Claude Code workstation</p>
       </div>
     </div>
@@ -1594,7 +1594,7 @@
   <div class="provider-switcher" id="provider-switcher" aria-label="Providers"></div>
   <button class="runtime-meta-toggle" id="runtime-meta-toggle" type="button" aria-expanded="false" aria-controls="runtime-meta-panel" title="Show advanced session details">
     <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
-    <span>Advanced session details</span>
+    <span>Claude session details</span>
   </button>
 </div>
 <div class="runtime-meta-group runtime-meta-panel" id="runtime-meta-panel" aria-label="Provider and tool runtime" hidden>
@@ -1645,7 +1645,7 @@
 </div>
 </div>
 <div class="runtime-meta-help" id="runtime-meta-help">
-  This panel shows the effective runtime state returned by PlexClaw and the Claude bridge. Claude SDK mode controls Claude-native permission behavior; PlexClaw approval prompts are a separate UI workflow layered on top.
+  This panel shows the effective Claude session state returned by the local bridge. Permission mode maps directly to Claude Agent SDK behavior.
 </div>
 <div class="runtime-select-row">
   <label class="runtime-select-label" for="tool-search-select">Requested tool mode</label>
@@ -1658,11 +1658,11 @@
   </select>
 </div>
 <div class="runtime-select-row">
-  <label class="runtime-select-label" for="sdk-permission-mode-select">Requested Claude SDK mode</label>
-  <select class="model-select" id="sdk-permission-mode-select" title="Claude SDK permission mode" aria-label="Claude SDK permission mode">
-    <option value="default">SDK mode: Default</option>
-    <option value="acceptEdits">SDK mode: Accept edits</option>
-    <option value="bypassPermissions">SDK mode: Bypass permissions</option>
+  <label class="runtime-select-label" for="sdk-permission-mode-select">Claude permission mode</label>
+  <select class="model-select" id="sdk-permission-mode-select" title="Claude permission mode" aria-label="Claude permission mode">
+    <option value="default">default</option>
+    <option value="acceptEdits">acceptEdits</option>
+    <option value="bypassPermissions">bypassPermissions</option>
   </select>
 </div>
 </div>
@@ -1709,8 +1709,8 @@
     <!-- TRANSCRIPT -->
     <section class="transcript" id="transcript" aria-label="Conversation transcript" aria-live="polite">
       <div class="welcome" id="welcome">
-        <h2>Build, inspect, <span>replay.</span></h2>
-        <p>Start a live Claude Code session, resume an archived one, or replay a completed run through the exact same renderer.</p>
+        <h2>Code, inspect, <span>replay.</span></h2>
+        <p>Start a Claude Code session, resume an archived one, or replay a completed run through the same renderer.</p>
         <div class="prompt-chips">
           <button class="prompt-chip">Create a FastAPI app skeleton with tests</button>
           <button class="prompt-chip">Refactor this project into vertical slices</button>

@@ -216,7 +216,7 @@ function setRuntimeMode(mockMode) {
  }
  if (mockMode === false) {
    state.runtimeMode = 'live';
-   el.runtimeModeLabel.textContent = 'Live runtime';
+   el.runtimeModeLabel.textContent = 'Working directory';
    el.runtimeModeLabel.className = 'badge live';
    el.runtimeModeLabel.title = 'Using live Claude runtime';
    renderProviderRuntimeMeta();
@@ -385,7 +385,7 @@ function renderProviderRuntimeMeta() {
       state.runtimeMode === 'mock'
         ? 'Mock runtime'
         : state.runtimeMode === 'live'
-          ? 'Live runtime'
+          ? 'Working directory'
           : 'Unknown runtime';
     setRuntimeMetaCopyValue(
       el.sessionRuntimeMeta,
@@ -2350,7 +2350,7 @@ state.effectiveSessionConfig = {
     await loadArchive();
   } catch (error) {
     console.error('Startup initialization failed:', error);
-    appendSystemMessage(`Could not reach backend at [${state.bridgeUrl}](${state.bridgeUrl}). Check that the PlexClaw server is running and reload the page.`);
+    appendSystemMessage(`Could not reach backend at [${state.bridgeUrl}](${state.bridgeUrl}). Check that the Claude bridge server is running and reload the page.`);
   }
 }
 

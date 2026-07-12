@@ -24,7 +24,7 @@ def test_frontend_runtime_meta_is_progressively_disclosed() -> None:
     js = Path("frontend/sdk-bridge-client.js").read_text()
 
     assert 'id="runtime-meta-toggle"' in html
-    assert 'Advanced session details' in html
+    assert 'Claude session details' in html
     assert 'id="runtime-meta-panel"' in html
     assert 'Attach one UTF-8 text file up to 200KB' in html
     assert 'Attached context files' in html
