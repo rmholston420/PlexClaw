@@ -10,7 +10,7 @@ const Bridge = (() => {
     if (panel) panel.hidden = !runtimeMetaExpanded;
     if (toggle) {
       toggle.setAttribute('aria-expanded', runtimeMetaExpanded ? 'true' : 'false');
-      toggle.title = runtimeMetaExpanded ? 'Hide advanced session details' : 'Show advanced session details';
+      toggle.title = runtimeMetaExpanded ? 'Hide Claude runtime details' : 'Show Claude runtime details';
     }
     if (window.lucide?.createIcons) window.lucide.createIcons();
   }
