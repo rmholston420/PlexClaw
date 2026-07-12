@@ -25,17 +25,23 @@ _db_initialized = False
 def _get_conn() -> sqlite3.Connection:
     global _conn, _conn_path
     if _conn is None or _conn_path != DB_PATH:
-        if _conn is not None:
+        old_conn = _conn
+        _conn = None
+        _conn_path = None
+
+        if old_conn is not None:
             try:
-                _conn.close()
+                old_conn.close()
             except Exception:
                 pass
+
         c = sqlite3.connect(str(DB_PATH), check_same_thread=False)
         c.execute("PRAGMA journal_mode=WAL")
         c.execute("PRAGMA cache_size=-32768")
         c.execute("PRAGMA synchronous=NORMAL")
         _conn = c
         _conn_path = DB_PATH
+
     # Always enforce row_factory in case the connection was created externally
     _conn.row_factory = sqlite3.Row
     return _conn
