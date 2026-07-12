@@ -30,6 +30,8 @@ const Bridge = (() => {
   const derivedWsBase = `${wsProtocol}//${pageUrl.host}/ws`;
   const state = {
    gitDiffSelection: null,
+   gitBranches: [],
+   gitCurrentBranch: null,
    gitStatus: null,
     bridgeUrl: bridgeOrigin,
     wsBase: derivedWsBase,
@@ -99,6 +101,13 @@ const Bridge = (() => {
     gitUnstagedCount: document.getElementById('git-unstaged-count'),
     gitFileList: document.getElementById('git-file-list'),
     refreshGit: document.getElementById('refresh-git'),
+    refreshGitBranches: document.getElementById('refresh-git-branches'),
+    gitBranchSelect: document.getElementById('git-branch-select'),
+    gitBranchInput: document.getElementById('git-branch-input'),
+    gitCheckoutBtn: document.getElementById('git-checkout-btn'),
+    gitBranchMeta: document.getElementById('git-branch-meta'),
+    gitCommitMessage: document.getElementById('git-commit-message'),
+    gitCommitBtn: document.getElementById('git-commit-btn'),
     analyticsSessions: document.getElementById('analytics-sessions'),
     analyticsCalls: document.getElementById('analytics-calls'),
     analyticsTokens: document.getElementById('analytics-tokens'),
@@ -379,6 +388,83 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
     } catch (error) {
       renderGitDiff(path, '', 'Could not load diff preview.');
     }
+  }
+
+
+
+  function renderGitBranches(data) {
+    const branches = Array.isArray(data?.branches) ? data.branches : [];
+    state.gitBranches = branches;
+    state.gitCurrentBranch = data?.current || null;
+
+    if (!el.gitBranchSelect) return;
+    el.gitBranchSelect.innerHTML = '<option value="">Select branch</option>' + branches.map((branch) => {
+      const selected = branch.current ? ' selected' : '';
+      return `<option value="${escapeAttr(branch.name || '')}"${selected}>${escapeHtml(branch.name || '')}${branch.current ? ' (current)' : ''}</option>`;
+    }).join('');
+
+    if (el.gitBranchMeta) {
+      if (!branches.length) el.gitBranchMeta.textContent = 'No branches loaded.';
+      else el.gitBranchMeta.textContent = `Current branch: ${data?.current || 'unknown'} · ${branches.length} local branches`;
+    }
+  }
+
+  async function loadGitBranches() {
+    if (!el.gitBranchSelect) return;
+    try {
+      const params = new URLSearchParams();
+      if (state.sessionId) params.set('session_id', state.sessionId);
+      else if (state.cwd) params.set('path', state.cwd);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const data = await api(`/api/git/branches${query}`);
+      renderGitBranches(data);
+    } catch (error) {
+      renderGitBranches({ branches: [], current: null });
+      if (el.gitBranchMeta) el.gitBranchMeta.textContent = 'No Git repository available for branch actions.';
+    }
+  }
+
+  async function runGitCheckout() {
+    const selected = el.gitBranchSelect?.value?.trim() || '';
+    const typed = el.gitBranchInput?.value?.trim() || '';
+    const branch = typed || selected;
+    if (!branch) {
+      appendSystemMessage('Enter or select a branch name first.', 'error');
+      return;
+    }
+    const create = !!typed && !state.gitBranches.some((item) => item.name === typed);
+    await api('/api/git/checkout', {
+      method: 'POST',
+      body: JSON.stringify({
+        branch,
+        create,
+        session_id: state.sessionId || null,
+      }),
+    });
+    if (el.gitBranchInput) el.gitBranchInput.value = '';
+    await loadGitStatus();
+    await loadGitBranches();
+    appendSystemMessage(create ? `Created and switched to ${branch}.` : `Switched to ${branch}.`, 'info');
+  }
+
+  async function runGitCommit() {
+    const message = el.gitCommitMessage?.value?.trim() || '';
+    if (!message) {
+      appendSystemMessage('Enter a commit message first.', 'error');
+      return;
+    }
+    const data = await api('/api/git/commit', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        session_id: state.sessionId || null,
+      }),
+    });
+    if (el.gitCommitMessage) el.gitCommitMessage.value = '';
+    await loadGitStatus();
+    await loadGitBranches();
+    renderGitDiff(null, '', 'Select a file to inspect changes.');
+    appendSystemMessage(data?.output || 'Commit created.', 'info');
   }
 
 
@@ -908,6 +994,7 @@ function setConnection(status) {
 
     setSessionLabel(state.sessionId);
     loadGitStatus().catch(console.error);
+    loadGitBranches().catch(console.error);
     setReplayMode(state.replayMode);
     if (el.transcript) {
       el.transcript.innerHTML = tab.transcriptHtml || '';

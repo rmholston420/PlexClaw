@@ -1790,9 +1790,24 @@
     <div class="sidebar-section">
       <div class="section-title">Git explorer</div>
       <div class="git-panel" id="git-panel">
+        <div class="git-toolbar">
         <div class="git-actions">
           <button class="action-btn" id="refresh-git" type="button">Refresh Git</button>
+          <button class="action-btn" id="refresh-git-branches" type="button">Refresh branches</button>
         </div>
+        <div class="git-branch-row">
+          <select class="git-select" id="git-branch-select" aria-label="Git branches">
+            <option value="">Select branch</option>
+          </select>
+          <input class="git-input" id="git-branch-input" type="text" placeholder="new-branch-name" />
+          <button class="action-btn" id="git-checkout-btn" type="button">Switch / create</button>
+        </div>
+        <div class="git-branch-meta" id="git-branch-meta">Load a repository to manage branches.</div>
+        <div class="git-commit-row">
+          <input class="git-input" id="git-commit-message" type="text" placeholder="Commit message" />
+          <button class="action-btn" id="git-commit-btn" type="button">Commit staged</button>
+        </div>
+      </div>
         <div class="git-repo-path" id="git-repo-path">No repository selected.</div>
         <div class="git-summary-grid">
           <div class="git-card">
