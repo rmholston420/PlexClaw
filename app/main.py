@@ -106,12 +106,16 @@ INDEX_HTML = FRONTEND_DIR / "index.html"
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")
 
 
-@app.get("/", include_in_schema=False)
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 async def frontend_root() -> FileResponse:
     return FileResponse(INDEX_HTML)
 
 
-@app.get("/sdk-bridge-client.js", include_in_schema=False)
+@app.api_route(
+    "/sdk-bridge-client.js",
+    methods=["GET", "HEAD"],
+    include_in_schema=False,
+)
 async def frontend_bridge_js() -> FileResponse:
     return FileResponse(
         FRONTEND_DIR / "sdk-bridge-client.js",
