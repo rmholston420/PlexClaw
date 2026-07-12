@@ -336,6 +336,27 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
       .replaceAll('>', '&gt;');
   }
 
+
+  function gitActionLabel(item) {
+    const status = String(item?.status || '');
+    const indexFlag = status[0] || ' ';
+    const worktreeFlag = status[1] || ' ';
+    if (indexFlag !== ' ' && indexFlag !== '?') return 'Unstage';
+    if (status === '??' || worktreeFlag !== ' ') return 'Stage';
+    return '';
+  }
+
+  async function runGitFileAction(action, path) {
+    const body = { paths: [path], session_id: state.sessionId || null };
+    const route = action === 'unstage' ? '/api/git/unstage' : '/api/git/stage';
+    await api(route, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    await loadGitStatus();
+  }
+
+
   function renderGitStatus(data) {
     state.gitStatus = data || null;
     if (!el.gitRepoPath || !el.gitFileList) return;
@@ -372,12 +393,41 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
       return;
     }
 
-    el.gitFileList.innerHTML = files.map((item) => `
+    el.gitFileList.innerHTML = files.map((item) => {
+      const actionLabel = gitActionLabel(item);
+      const action = actionLabel === 'Unstage' ? 'unstage' : 'stage';
+      return `
       <div class="git-file-item" title="${escapeAttr(item.path || '')}">
-        <span class="git-file-path">${escapeHtml(item.path || '')}</span>
-        <span class="git-file-status">${escapeHtml(item.status || '??')}</span>
+        <div class="git-file-main">
+          <span class="git-file-path">${escapeHtml(item.path || '')}</span>
+        </div>
+        <div class="git-file-actions">
+          <span class="git-file-status">${escapeHtml(item.status || '??')}</span>
+          ${actionLabel ? `<button class="git-file-action" type="button" data-git-action="${action}" data-git-path="${escapeAttr(item.path || '')}">${actionLabel}</button>` : ''}
+        </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
+
+    el.gitFileList.querySelectorAll('[data-git-action]').forEach((btn) => {
+      if (btn.dataset.bound === 'true') return;
+      btn.dataset.bound = 'true';
+      btn.addEventListener('click', async () => {
+        const path = btn.getAttribute('data-git-path') || '';
+        const action = btn.getAttribute('data-git-action') || 'stage';
+        if (!path) return;
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = action === 'unstage' ? 'Unstaging…' : 'Staging…';
+        try {
+          await runGitFileAction(action, path);
+        } catch (error) {
+          appendSystemMessage(`Git ${action} failed for ${path}.`, 'error');
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+      });
+    });
   }
 
   async function loadGitStatus() {
