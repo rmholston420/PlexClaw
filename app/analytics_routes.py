@@ -15,6 +15,7 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 
+from app.config import CLAUDE_PRICING
 from app.event_store import _db_lock, _ensure_initialized, _get_conn
 
 log = logging.getLogger(__name__)
@@ -22,54 +23,8 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 # ---------------------------------------------------------------------------
-# Claude pricing table (USD per 1M tokens, as of July 2026)
-# Override per-model with PLEXCLAW_PRICING env var (JSON dict).
+# Pricing imported from app.config
 # ---------------------------------------------------------------------------
-
-CLAUDE_PRICING: dict[str, dict[str, float]] = {
-    "claude-opus-4": {
-        "input": 15.00,
-        "output": 75.00,
-        "cache_read": 1.50,
-        "cache_write": 18.75,
-    },
-    "claude-sonnet-4": {
-        "input": 3.00,
-        "output": 15.00,
-        "cache_read": 0.30,
-        "cache_write": 3.75,
-    },
-    "claude-haiku-4": {
-        "input": 0.80,
-        "output": 4.00,
-        "cache_read": 0.08,
-        "cache_write": 1.00,
-    },
-    "claude-3-5-sonnet": {
-        "input": 3.00,
-        "output": 15.00,
-        "cache_read": 0.30,
-        "cache_write": 3.75,
-    },
-    "claude-3-5-haiku": {
-        "input": 0.80,
-        "output": 4.00,
-        "cache_read": 0.08,
-        "cache_write": 1.00,
-    },
-    "claude-3-opus": {
-        "input": 15.00,
-        "output": 75.00,
-        "cache_read": 1.50,
-        "cache_write": 18.75,
-    },
-    "qwen": {
-        "input": 0.0,
-        "output": 0.0,
-        "cache_read": 0.0,
-        "cache_write": 0.0,
-    },
-}
 
 _FALLBACK_PRICING = {
     "input": 3.00,
