@@ -1,6 +1,17 @@
 import { test, expect } from '@playwright/test';
 
 test('live runtime telemetry surfaces are visible and can expand', async ({ page }) => {
+  page.on('pageerror', (err) => {
+    console.log('PAGEERROR_MESSAGE=' + err.message);
+    console.log('PAGEERROR_STACK=' + (err.stack || ''));
+  });
+
+  page.on('console', (msg) => {
+    if (msg.type() === 'error' || msg.type() === 'warning') {
+      console.log(`BROWSER_${msg.type().toUpperCase()}=` + msg.text());
+    }
+  });
+
   await page.goto('/');
 
   const runtimeShell = page.locator('#runtime-meta-shell');
