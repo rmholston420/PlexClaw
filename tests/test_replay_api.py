@@ -7,7 +7,7 @@ from app.main import app
 
 
 def test_live_replay_endpoint_returns_canonical_events(monkeypatch):
-    def fake_query_events(session_id: str):
+    async def fake_query_events(session_id: str):
         assert session_id == "live-1"
         return [
             {

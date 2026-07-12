@@ -5,6 +5,14 @@ from fastapi.testclient import TestClient
 import app.main as main
 from app.schemas import SessionUpdateRequest
 
+import asyncio as _asyncio
+
+def _coro(val):
+    async def _inner():
+        return val
+    return _inner()
+
+
 client = TestClient(main.app)
 
 
@@ -67,7 +75,7 @@ def test_delete_context_file_returns_ok_payload(monkeypatch):
 
 
 def test_search_api_returns_search_events(monkeypatch):
-    monkeypatch.setattr(main, "search_events", lambda q: [{"q": q}])
+    monkeypatch.setattr(main, "search_events", lambda q: _coro([{"q": q}]))
 
     resp = client.get("/api/search", params={"q": "needle"})
 
@@ -76,7 +84,7 @@ def test_search_api_returns_search_events(monkeypatch):
 
 
 def test_export_session_json_returns_jsonresponse(monkeypatch):
-    monkeypatch.setattr(main, "query_events", lambda session_id: [{"seq": 1}])
+    monkeypatch.setattr(main, "query_events", lambda session_id: _coro([{"seq": 1}]))
 
     resp = client.get("/api/sessions/s1/export", params={"format": "json"})
 
@@ -85,7 +93,7 @@ def test_export_session_json_returns_jsonresponse(monkeypatch):
 
 
 def test_export_session_md_returns_markdown(monkeypatch):
-    monkeypatch.setattr(main, "query_events", lambda session_id: [{"seq": 1}])
+    monkeypatch.setattr(main, "query_events", lambda session_id: _coro([{"seq": 1}]))
     monkeypatch.setattr(
         main,
         "_render_session_markdown",
@@ -102,7 +110,7 @@ def test_export_session_md_returns_markdown(monkeypatch):
 def test_get_events_passes_filters(monkeypatch):
     captured = {}
 
-    def fake_query_events(session_id, event_type=None, since_seq=None):
+    async def fake_query_events(session_id, event_type=None, since_seq=None):
         captured["args"] = (session_id, event_type, since_seq)
         return [{"seq": 2}]
 

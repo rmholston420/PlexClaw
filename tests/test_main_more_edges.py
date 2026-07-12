@@ -11,6 +11,12 @@ from app.main import app
 from app.schemas import PROTOCOL_VERSION
 
 
+def _coro(val):
+    async def _inner():
+        return val
+    return _inner()
+
+
 @pytest.fixture
 def client():
     return TestClient(app)
@@ -317,7 +323,7 @@ def test_export_session_markdown_route(client, monkeypatch):
     monkeypatch.setattr(
         main,
         "query_events",
-        lambda session_id: [{"type": "assistant.delta", "payload": {"text": "hi"}}],
+        lambda session_id: _coro([{"type": "assistant.delta", "payload": {"text": "hi"}}]),
     )
 
     response = client.get("/api/sessions/s1/export?format=md")
