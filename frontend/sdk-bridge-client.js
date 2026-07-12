@@ -1779,8 +1779,11 @@ function bindStableUiHandlers() {
  else state.providerBaseUrl = null;
 if (Object.prototype.hasOwnProperty.call(data, 'tool_search_mode')) state.toolSearchMode = data.tool_search_mode;
 if (Object.prototype.hasOwnProperty.call(data, 'tool_search_active')) state.toolSearchActive = Boolean(data.tool_search_active);
-  if (data.permission_mode) state.permissionMode = data.permission_mode;
- if (data.sdk_permission_mode) state.sdkPermissionMode = data.sdk_permission_mode;
+if (data.permission_mode) state.permissionMode = data.permission_mode;
+if (data.sdk_permission_mode) state.sdkPermissionMode = data.sdk_permission_mode;
+else if (data.permission_mode === 'manual') state.sdkPermissionMode = 'default';
+else if (data.permission_mode === 'auto') state.sdkPermissionMode = 'acceptEdits';
+normalizePermissionState();
 state.effectiveSessionConfig = {
   sessionId: data.session_id || state.sessionId || null,
   model: data.model || state.model || null,
