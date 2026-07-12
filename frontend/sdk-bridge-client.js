@@ -33,6 +33,8 @@ const Bridge = (() => {
    gitBranches: [],
    gitCurrentBranch: null,
    gitStatus: null,
+   mcpServers: [],
+   mcpConfigPath: null,
     bridgeUrl: bridgeOrigin,
     wsBase: derivedWsBase,
     protocolVersion: '0.2.0',
@@ -159,6 +161,12 @@ const Bridge = (() => {
   providerBaseUrlInput: document.getElementById('provider-base-url-input'),
   providerSettingsBtn: document.getElementById('provider-settings-btn'),
   toolRuntimeMeta: document.getElementById('tool-runtime-meta'),
+  mcpList: document.getElementById('mcp-list'),
+  mcpConfigPath: document.getElementById('mcp-config-path'),
+  mcpRefreshBtn: document.getElementById('mcp-refresh-btn'),
+  mcpNameInput: document.getElementById('mcp-name-input'),
+  mcpCommandInput: document.getElementById('mcp-command-input'),
+  mcpAddBtn: document.getElementById('mcp-add-btn'),
  sessionCwdMeta: document.getElementById('session-cwd-meta'),
  sessionRuntimeMeta: document.getElementById('session-runtime-meta'),
 sessionConfigMeta: document.getElementById('session-config-meta'),
@@ -614,7 +622,140 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
       String(evt.payload?.level || '').toLowerCase() === 'warn';
   }
 
-  function renderRawLog() {
+  
+function renderMcpServers(data) {
+  const servers = Array.isArray(data?.servers) ? data.servers : [];
+  state.mcpServers = servers;
+  state.mcpConfigPath = data?.config_path || null;
+
+  if (el.mcpConfigPath) {
+    el.mcpConfigPath.textContent = data?.config_path || 'No MCP config path available.';
+  }
+  if (!el.mcpList) return;
+
+  if (!servers.length) {
+    el.mcpList.innerHTML = '<div class="mcp-subtle">No MCP servers configured.</div>';
+    return;
+  }
+
+  el.mcpList.innerHTML = servers.map((server) => `
+    <div class="mcp-card" data-mcp-name="${escapeAttr(server.name || '')}">
+      <div class="mcp-card-head">
+        <div>
+          <div class="mcp-name">${escapeHtml(server.name || 'unnamed')}</div>
+          <div class="mcp-subtle">${escapeHtml(server.command || 'no command')}</div>
+        </div>
+        <div class="mcp-chip-row">
+          <span class="mcp-chip">${server.enabled ? 'enabled' : 'disabled'}</span>
+          <span class="mcp-chip">${escapeHtml((server.args || []).join(' ') || 'no args')}</span>
+        </div>
+      </div>
+      <div class="mcp-card-actions">
+        <div class="mcp-subtle" data-mcp-status="${escapeAttr(server.name || '')}">Status not tested.</div>
+        <div class="mcp-chip-row">
+          <button class="action-btn" type="button" data-mcp-test="${escapeAttr(server.name || '')}">Test</button>
+          <button class="action-btn" type="button" data-mcp-toggle="${escapeAttr(server.name || '')}">${server.enabled ? 'Disable' : 'Enable'}</button>
+          <button class="action-btn" type="button" data-mcp-delete="${escapeAttr(server.name || '')}">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  el.mcpList.querySelectorAll('[data-mcp-test]').forEach((btn) => {
+    if (btn.dataset.bound === 'true') return;
+    btn.dataset.bound = 'true';
+    btn.addEventListener('click', async () => {
+      const name = btn.getAttribute('data-mcp-test') || '';
+      const statusNode = el.mcpList?.querySelector(`[data-mcp-status="${CSS.escape(name)}"]`);
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Testing…';
+      if (statusNode) statusNode.textContent = 'Testing command on PATH…';
+      try {
+        const data = await api(`/api/mcp/${encodeURIComponent(name)}/test`, { method: 'POST' });
+        if (statusNode) {
+          statusNode.textContent = data.ok
+            ? `OK · ${data.path || data.command}`
+            : `Failed · ${data.reason || 'command not available'}`;
+          statusNode.className = `mcp-subtle ${data.ok ? 'ok' : 'fail'}`;
+        }
+      } catch (error) {
+        if (statusNode) statusNode.textContent = 'Could not test MCP server.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    });
+  });
+
+  el.mcpList.querySelectorAll('[data-mcp-toggle]').forEach((btn) => {
+    if (btn.dataset.bound === 'true') return;
+    btn.dataset.bound = 'true';
+    btn.addEventListener('click', async () => {
+      const name = btn.getAttribute('data-mcp-toggle') || '';
+      const server = state.mcpServers.find((item) => item.name === name);
+      if (!server) return;
+      btn.disabled = true;
+      try {
+        await api(`/api/mcp/${encodeURIComponent(name)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ enabled: !server.enabled }),
+        });
+        await loadMcpServers();
+      } catch (error) {
+        appendSystemMessage(`Could not update MCP server ${name}.`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+
+  el.mcpList.querySelectorAll('[data-mcp-delete]').forEach((btn) => {
+    if (btn.dataset.bound === 'true') return;
+    btn.dataset.bound = 'true';
+    btn.addEventListener('click', async () => {
+      const name = btn.getAttribute('data-mcp-delete') || '';
+      btn.disabled = true;
+      try {
+        await api(`/api/mcp/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        await loadMcpServers();
+      } catch (error) {
+        appendSystemMessage(`Could not delete MCP server ${name}.`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+async function loadMcpServers() {
+  try {
+    const data = await api('/api/mcp');
+    renderMcpServers(data);
+  } catch (error) {
+    renderMcpServers({ servers: [], config_path: null });
+    if (el.mcpList) el.mcpList.innerHTML = '<div class="mcp-subtle">Could not load MCP servers.</div>';
+  }
+}
+
+async function addMcpServer() {
+  const name = el.mcpNameInput?.value?.trim() || '';
+  const command = el.mcpCommandInput?.value?.trim() || '';
+  if (!name || !command) {
+    appendSystemMessage('Enter both MCP server name and command.', 'error');
+    return;
+  }
+  await api('/api/mcp', {
+    method: 'POST',
+    body: JSON.stringify({ name, command, args: [], env: {}, enabled: true }),
+  });
+  if (el.mcpNameInput) el.mcpNameInput.value = '';
+  if (el.mcpCommandInput) el.mcpCommandInput.value = '';
+  await loadMcpServers();
+}
+
+
+function renderRawLog() {
     if (!el.terminalPre) return;
     const lines = state.rawLogLines.filter(item => shouldIncludeRawLog(item.evt));
     el.terminalPre.textContent = lines.map(item => item.line).join('\n');

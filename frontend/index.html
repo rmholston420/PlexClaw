@@ -760,6 +760,102 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  .mcp-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+
+  .mcp-toolbar,
+  .mcp-add-row {
+    display: flex;
+    gap: var(--s2);
+    align-items: center;
+  }
+
+  .mcp-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+  }
+
+  .mcp-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    padding: var(--s3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+  }
+
+  .mcp-card-head,
+  .mcp-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+  }
+
+  .mcp-name {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .mcp-subtle {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    word-break: break-word;
+  }
+
+  .mcp-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
+  .mcp-chip {
+    font-size: var(--text-xs);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 0.15rem 0.45rem;
+    background: var(--surface);
+    color: var(--text-muted);
+  }
+
+  .mcp-chip.ok {
+    color: var(--success);
+    border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+  }
+
+  .mcp-chip.fail {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  }
+
+  .mcp-input {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.6rem 0.75rem;
+    font-size: var(--text-sm);
+  }
+
+  @media (max-width: 980px) {
+    .mcp-toolbar,
+    .mcp-add-row,
+    .mcp-card-head,
+    .mcp-card-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
   .runtime-meta-help {
   font-size: var(--text-xs);
   color: var(--text-muted);
@@ -1928,6 +2024,27 @@
   <button class="runtime-meta-value runtime-meta-copy" id="session-config-meta" type="button" title="Click to copy session config" aria-label="Copy session config">Copy config</button>
 </div>
 </div>
+
+<div class="runtime-meta-group" aria-label="MCP control plane">
+  <div class="runtime-meta-header">
+    <div class="runtime-meta-title">MCP control plane</div>
+  </div>
+  <div class="mcp-panel">
+    <div class="mcp-toolbar">
+      <button class="action-btn" id="mcp-refresh-btn" type="button">Refresh MCP</button>
+      <div class="mcp-subtle" id="mcp-config-path">Loading MCP config…</div>
+    </div>
+    <div class="mcp-add-row">
+      <input class="mcp-input" id="mcp-name-input" type="text" placeholder="server-name" />
+      <input class="mcp-input" id="mcp-command-input" type="text" placeholder="command" />
+      <button class="action-btn" id="mcp-add-btn" type="button">Add MCP server</button>
+    </div>
+    <div class="mcp-list" id="mcp-list">
+      <div class="mcp-subtle">No MCP servers loaded yet.</div>
+    </div>
+  </div>
+</div>
+
 <div class="runtime-meta-help" id="runtime-meta-help">
   This panel shows the effective Claude session state returned by the PlexClaw backend. Permission mode maps directly to Claude Agent SDK behavior.
 </div>
