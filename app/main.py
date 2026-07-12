@@ -124,6 +124,18 @@ async def frontend_bridge_js() -> FileResponse:
     )
 
 
+@app.api_route(
+    "/archive-utils.js",
+    methods=["GET", "HEAD"],
+    include_in_schema=False,
+)
+async def frontend_archive_utils_js() -> FileResponse:
+    return FileResponse(
+        FRONTEND_DIR / "archive-utils.js",
+        media_type="application/javascript",
+    )
+
+
 @app.get("/plexclaw-ui-canonical.html", include_in_schema=False)
 async def frontend_legacy_redirect() -> RedirectResponse:
     return RedirectResponse(url="/", status_code=307)
