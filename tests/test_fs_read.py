@@ -40,7 +40,7 @@ def test_read_path_escape_returns_403(tmp_path: Path):
     assert resp.status_code == 403
 
 
-def test_read_nonexistent_returns_400(tmp_path: Path):
+def test_read_nonexistent_inside_root_returns_400(tmp_path: Path):
     client = TestClient(app)
     resp = client.get("/api/fs/read", params={"path": str(tmp_path / "nope.txt")})
     assert resp.status_code == 400

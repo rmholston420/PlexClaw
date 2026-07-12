@@ -68,7 +68,9 @@ def test_resolve_safe_path_nonexistent_raises_400(monkeypatch, tmp_path):
     assert "path does not exist" in exc.value.detail
 
 
-def test_resolve_safe_path_absolute_escape_raises_403(monkeypatch, tmp_path):
+def test_resolve_safe_path_absolute_escape_raises_403_even_when_missing(
+    monkeypatch, tmp_path
+):
     root = tmp_path / "root"
     root.mkdir()
     outside = tmp_path / "outside.txt"
@@ -290,3 +292,18 @@ async def test_git_roots_returns_empty_when_no_repo_found(monkeypatch, tmp_path)
 
     assert out["root"] == str(root.resolve())
     assert out["roots"] == []
+
+def test_resolve_safe_path_absolute_missing_escape_still_raises_403(
+    monkeypatch, tmp_path
+):
+    root = tmp_path / "root"
+    root.mkdir()
+    outside = tmp_path / "outside" / "missing.txt"
+
+    monkeypatch.setattr(fs_routes, "get_default_fs_root", lambda: root)
+
+    with pytest.raises(HTTPException) as exc:
+        fs_routes._resolve_safe_path(str(outside))
+
+    assert exc.value.status_code == 403
+

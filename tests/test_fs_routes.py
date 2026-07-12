@@ -15,9 +15,9 @@ def test_browse_root_ok():
     assert isinstance(data["entries"], list)
 
 
-def test_browse_invalid_path():
+def test_browse_absolute_outside_jail_returns_403():
     resp = client.get("/api/fs/browse", params={"path": "/this/path/should/not/exist"})
-    assert resp.status_code == 400
+    assert resp.status_code == 403
 
 
 def test_git_roots_ok():

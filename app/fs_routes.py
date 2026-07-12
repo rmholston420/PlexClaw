@@ -50,12 +50,12 @@ def _resolve_safe_path(
     else:
         resolved = (root / candidate).resolve()
 
-    if not resolved.exists():
-        raise HTTPException(status_code=400, detail=f"path does not exist: {resolved}")
     if not _is_within_root(resolved, root):
         raise HTTPException(
             status_code=403, detail=f"path escapes allowed root: {resolved}"
         )
+    if not resolved.exists():
+        raise HTTPException(status_code=400, detail=f"path does not exist: {resolved}")
     return resolved, root
 
 @router.get("/browse")
