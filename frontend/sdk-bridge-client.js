@@ -1779,6 +1779,7 @@ function bindStableUiHandlers() {
       cwd: effectiveCwd || null,
       provider: state.provider,
       permission_mode: state.permissionMode,
+      sdk_permission_mode: state.sdkPermissionMode || 'default',
       tool_search_mode: state.toolSearchMode,
       system_prompt: null,
       resume_session_id: resumeSessionId,
