@@ -100,7 +100,7 @@ app = FastAPI(
 
 app.include_router(fs_routes.router)
 
-FRONTEND_DIR = Path("frontend")
+FRONTEND_DIR = Path(os.environ.get("FRONTEND_TMP_DIR", "frontend")).resolve()
 INDEX_HTML = FRONTEND_DIR / "index.html"
 
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")
