@@ -66,3 +66,9 @@ def test_session_create_defaults_match_local_frontend_bootstrap() -> None:
     assert data["provider"] == "ollama"
     assert data["model"] == "qwen3:latest"
     assert isinstance(data["mock_mode"], bool)
+
+
+def test_frontend_bootstrap_uses_root_bridge_script_path() -> None:
+    html = Path("frontend/index.html").read_text()
+
+    assert 'sdk-bridge-client.js?v=DEV' in html

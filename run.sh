@@ -57,3 +57,5 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$FRONTEND_TMP_DIR"
+
+wait "$BACKEND_PID"

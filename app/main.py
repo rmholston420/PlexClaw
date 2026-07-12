@@ -111,6 +111,14 @@ async def frontend_root() -> FileResponse:
     return FileResponse(INDEX_HTML)
 
 
+@app.get("/sdk-bridge-client.js", include_in_schema=False)
+async def frontend_bridge_js() -> FileResponse:
+    return FileResponse(
+        FRONTEND_DIR / "sdk-bridge-client.js",
+        media_type="application/javascript",
+    )
+
+
 @app.get("/plexclaw-ui-canonical.html", include_in_schema=False)
 async def frontend_legacy_redirect() -> RedirectResponse:
     return RedirectResponse(url="/", status_code=307)
