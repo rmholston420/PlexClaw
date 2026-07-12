@@ -1186,7 +1186,11 @@ function bindStableUiHandlers() {
     web_search: 'globe',
     web_fetch: 'download',
     browser_action: 'chrome',
-    default: 'zap',
+    case "system.message":
+        if (event.payload?.kind === "hook.event") renderHookEvent(event.payload);
+        break;
+
+      default: 'zap',
   };
 
   function toolIcon(name) {
@@ -2397,3 +2401,31 @@ function syncCapabilityPills(state) {
   setCapabilityPill("cap-tools-pill", hasTools, hasTools ? "Tool streaming active" : "Tool streaming");
 }
 
+
+
+
+function setProviderHealthPill(id, label, online) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = label;
+  el.classList.toggle("is-online", online === true);
+  el.classList.toggle("is-offline", online === false);
+}
+
+function syncProviderHealthPills(state) {
+  const health = state?.providerHealth || {};
+  setProviderHealthPill("provider-health-cloud", `Cloud: ${health.cloud === true ? "online" : health.cloud === false ? "offline" : "unknown"}`, health.cloud);
+  setProviderHealthPill("provider-health-ollama", `Ollama: ${health.ollama === true ? "online" : health.ollama === false ? "offline" : "unknown"}`, health.ollama);
+  setProviderHealthPill("provider-health-vllm", `vLLM: ${health.vllm === true ? "online" : health.vllm === false ? "offline" : "unknown"}`, health.vllm);
+}
+
+
+
+function renderHookEvent(payload) {
+  const transcript = document.getElementById("messages");
+  if (!transcript) return;
+  const node = document.createElement("div");
+  node.className = "system-banner";
+  node.textContent = payload?.message || "Hook event observed.";
+  transcript.appendChild(node);
+}

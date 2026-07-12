@@ -60,6 +60,38 @@
       white-space: nowrap;
     }
 
+    .provider-health-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .provider-health-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-offset);
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .provider-health-pill.is-online {
+      color: var(--success);
+      border-color: var(--success);
+      background: var(--success-hl);
+    }
+
+    .provider-health-pill.is-offline {
+      color: var(--error);
+      border-color: var(--error);
+      background: var(--error-hl);
+    }
+
     .capability-pill.is-active {
       color: var(--text);
       border-color: var(--primary);
@@ -1750,6 +1782,11 @@
         </div>
       </div>
     </section>
+      <section class="provider-health-strip" id="provider-health-strip" aria-label="Provider health">
+        <span class="provider-health-pill" id="provider-health-cloud">Cloud: unknown</span>
+        <span class="provider-health-pill" id="provider-health-ollama">Ollama: unknown</span>
+        <span class="provider-health-pill" id="provider-health-vllm">vLLM: unknown</span>
+      </section>
 
     <!-- COMPOSER -->
     <footer class="composer" id="composer">

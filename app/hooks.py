@@ -71,3 +71,24 @@ def reset_hooks() -> None:
     """Reset hook registry to the default built-in hooks."""
     global _hooks
     _hooks[:] = [_log_hook]
+
+
+def describe_hook_event(event_type: str, payload: dict[str, Any]) -> str:
+    tool_name = payload.get("tool_name") or payload.get("tool") or "tool"
+    if event_type == "session.start":
+        return "Hook observed session start."
+    if event_type == "session.end":
+        return "Hook observed session end."
+    if event_type == "pre_tool":
+        return f"Hook observed pre-tool event for {tool_name}."
+    if event_type == "post_tool":
+        return f"Hook observed post-tool event for {tool_name}."
+    return f"Hook observed {event_type}."
+
+def hook_system_message(ctx: HookContext) -> dict[str, Any]:
+    return {
+        "kind": "hook.event",
+        "event_type": ctx.event_type,
+        "message": describe_hook_event(ctx.event_type, ctx.payload),
+        "payload": ctx.payload,
+    }
