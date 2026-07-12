@@ -1854,11 +1854,7 @@ function bindStableUiHandlers() {
     web_search: 'globe',
     web_fetch: 'download',
     browser_action: 'chrome',
-    case "system.message":
-        if (event.payload?.kind === "hook.event") renderHookEvent(event.payload);
-        break;
-
-      default: 'zap',
+  default: 'zap',
   };
 
   function toolIcon(name) {
