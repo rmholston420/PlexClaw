@@ -52,6 +52,7 @@ const Bridge = (() => {
     cwd: '',
     cwdSelected: '',
     cwdBrowsing: null,
+    cwdPreviewPath: null,
     assistantChunkBuffer: '',
     fakeToolWarningShown: false,
     replayMode: false,
@@ -133,6 +134,10 @@ const Bridge = (() => {
     cwdGitRoots: document.getElementById('cwd-git-roots'),
     cwdManualInput: document.getElementById('cwd-manual-input'),
     cwdBrowser: document.getElementById('cwd-browser'),
+    cwdPreviewPath: document.getElementById('cwd-preview-path'),
+    cwdPreviewMeta: document.getElementById('cwd-preview-meta'),
+    cwdPreviewEmpty: document.getElementById('cwd-preview-empty'),
+    cwdPreviewPre: document.getElementById('cwd-preview-pre'),
     archiveList: document.getElementById('archive-list'),
     archiveSearch: document.getElementById('archive-search'),
     archiveSort: document.getElementById('archive-sort'),
@@ -1229,7 +1234,80 @@ function renderProviderSwitcher() {
    renderProviderRuntimeMeta();
  }
 
-  async function browseCwd(path = null) {
+ 
+ function formatBytes(bytes) {
+  const value = Number(bytes || 0);
+  if (!Number.isFinite(value) || value < 1024) return `${value} bytes`;
+  const units = ['KB', 'MB', 'GB'];
+  let size = value / 1024;
+  let unit = units[0];
+  for (let i = 1; i < units.length && size >= 1024; i += 1) {
+    size /= 1024;
+    unit = units[i];
+  }
+  return `${size.toFixed(size >= 10 ? 0 : 1)} ${unit}`;
+ }
+
+ function renderCwdPreview(payload = {}) {
+  const path = payload.path || null;
+  const content = payload.content || '';
+  const size = payload.size;
+  const truncated = !!payload.truncated;
+  state.cwdPreviewPath = path;
+
+  if (el.cwdPreviewPath) {
+    el.cwdPreviewPath.textContent = path || 'Select a file to preview.';
+  }
+  if (el.cwdPreviewMeta) {
+    const bits = [];
+    if (typeof size === 'number') bits.push(formatBytes(size));
+    if (truncated) bits.push('truncated');
+    el.cwdPreviewMeta.textContent = bits.join(' · ');
+  }
+  if (el.cwdPreviewPre) {
+    el.cwdPreviewPre.textContent = content;
+    el.cwdPreviewPre.hidden = !path;
+  }
+  if (el.cwdPreviewEmpty) {
+    el.cwdPreviewEmpty.hidden = !!path;
+    if (!path) el.cwdPreviewEmpty.textContent = 'Text file contents will appear here.';
+  }
+
+  el.cwdBrowser?.querySelectorAll('.cwd-entry').forEach((node) => {
+    node.classList.toggle('active', !!path && node.getAttribute('data-path') === path);
+  });
+ }
+
+ async function previewCwdFile(path) {
+  if (!path) {
+    renderCwdPreview({});
+    return;
+  }
+  renderCwdPreview({ path, content: '', truncated: false });
+  if (el.cwdPreviewEmpty) {
+    el.cwdPreviewEmpty.hidden = false;
+    el.cwdPreviewEmpty.textContent = 'Loading file preview…';
+  }
+  if (el.cwdPreviewPre) el.cwdPreviewPre.hidden = true;
+
+  try {
+    const params = new URLSearchParams();
+    params.set('path', path);
+    if (state.sessionId) params.set('session_id', state.sessionId);
+    const data = await api(`/api/fs/read?${params.toString()}`);
+    renderCwdPreview(data);
+  } catch (error) {
+    renderCwdPreview({});
+    if (el.cwdPreviewPath) el.cwdPreviewPath.textContent = path;
+    if (el.cwdPreviewEmpty) {
+      el.cwdPreviewEmpty.hidden = false;
+      el.cwdPreviewEmpty.textContent = 'Could not preview this file.';
+    }
+  }
+ }
+
+
+ async function browseCwd(path = null) {
     const params = new URLSearchParams();
     if (path) params.set('path', path);
     if (state.sessionId) params.set('session_id', state.sessionId);

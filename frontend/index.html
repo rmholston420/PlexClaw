@@ -965,6 +965,89 @@
     border-radius: var(--radius-md);
     padding: var(--s3);
   }
+
+  .cwd-split {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.05fr) minmax(320px, 1fr);
+    gap: var(--s3);
+    align-items: stretch;
+  }
+
+  .cwd-browser-pane,
+  .cwd-preview-pane {
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+  }
+
+  .cwd-preview {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-2);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+  }
+
+  .cwd-preview-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: var(--s3);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .cwd-preview-path {
+    min-width: 0;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    word-break: break-word;
+  }
+
+  .cwd-preview-meta {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .cwd-preview-empty {
+    padding: var(--s4);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .cwd-preview-pre {
+    margin: 0;
+    padding: var(--s4);
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text);
+    flex: 1;
+    background: var(--surface-2);
+  }
+
+  .cwd-entry.active {
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent);
+    background: color-mix(in srgb, var(--primary-hl) 35%, var(--surface-2));
+  }
+
+  @media (max-width: 980px) {
+    .cwd-split {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .cwd-browser {
     max-height: 320px;
     overflow: auto;
@@ -2044,8 +2127,22 @@
           <input class="cwd-input" id="cwd-manual-input" type="text" placeholder="/home/rmholston/project" />
         </div>
         <div class="cwd-group">
-          <label class="cwd-group-label">Directory browser</label>
-          <div class="cwd-browser" id="cwd-browser"></div>
+          <label class="cwd-group-label">Filesystem explorer</label>
+          <div class="cwd-split">
+            <div class="cwd-browser-pane">
+              <div class="cwd-browser" id="cwd-browser"></div>
+            </div>
+            <div class="cwd-preview-pane">
+              <div class="cwd-preview" id="cwd-preview">
+                <div class="cwd-preview-head">
+                  <div class="cwd-preview-path" id="cwd-preview-path">Select a file to preview.</div>
+                  <div class="cwd-preview-meta" id="cwd-preview-meta"></div>
+                </div>
+                <div class="cwd-preview-empty" id="cwd-preview-empty">Text file contents will appear here.</div>
+                <pre class="cwd-preview-pre" id="cwd-preview-pre" hidden></pre>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="cwd-footer">
