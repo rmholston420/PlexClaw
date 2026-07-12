@@ -64,5 +64,6 @@
   };
 
   global.ClaudeArchiveUtils = api;
+  // Temporary compatibility alias for older frontend references.
   global.PlexClawArchiveUtils = api;
 })(window);
