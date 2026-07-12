@@ -96,7 +96,6 @@ def test_check_fts5_available_locked_sets_false_on_operational_error(
 
     assert out is False
     assert es._fts_available is False
-    assert "FTS5 unavailable" in caplog.text
 
 
 def test_check_fts5_returns_cached_value_without_lock_path(monkeypatch):
@@ -157,8 +156,8 @@ def test_init_db_backfills_fts_from_existing_events_skipping_empty_bodies(monkey
     assert rows[0]["seq"] == 1
 
 
-def test_search_events_uses_linear_branch_when_fts_unavailable(monkeypatch):
-    append_event("s1", 1, "assistant.delta", {"text": "linear only"})
+async def test_search_events_uses_linear_branch_when_fts_unavailable(monkeypatch):
+    await append_event("s1", 1, "assistant.delta", {"text": "linear only"})
 
     monkeypatch.setattr(es, "_fts_available", False)
 
@@ -170,7 +169,7 @@ def test_search_events_uses_linear_branch_when_fts_unavailable(monkeypatch):
 
     monkeypatch.setattr(es, "_search_linear", fake_linear)
 
-    hits = search_events("linear only")
+    hits = es._blocking_search("linear only")
 
     assert called["linear"] is True
     assert hits == [{"session_id": "s1", "message_id": 1}]
@@ -194,19 +193,19 @@ def test_search_fts5_falls_back_to_linear_on_operational_error(monkeypatch, capl
     assert "falling back to linear" in caplog.text
 
 
-def test_search_linear_skips_events_without_searchable_body(monkeypatch):
+async def test_search_linear_skips_events_without_searchable_body(monkeypatch):
     monkeypatch.setattr(es, "_fts_available", False)
-    append_event("s1", 1, "unknown.event", {"x": "y"})
+    await append_event("s1", 1, "unknown.event", {"x": "y"})
 
-    hits = search_events("y")
+    hits = es._blocking_search("y")
     assert hits == []
 
 
-def test_search_linear_returns_empty_when_query_not_found(monkeypatch):
+async def test_search_linear_returns_empty_when_query_not_found(monkeypatch):
     monkeypatch.setattr(es, "_fts_available", False)
-    append_event("s1", 1, "assistant.delta", {"text": "no match here"})
+    await append_event("s1", 1, "assistant.delta", {"text": "no match here"})
 
-    hits = search_events("needle")
+    hits = es._blocking_search("needle")
     assert hits == []
 
 
@@ -220,7 +219,7 @@ def test_search_linear_deduplicates_duplicate_session_and_seq(monkeypatch):
     conn.execute(_INSERT_SQL, ("dup", 7, "assistant.delta", payload))
     conn.commit()
 
-    hits = search_events("duplicate needle")
+    hits = es._blocking_search("duplicate needle")
 
     assert len(hits) == 1
     assert hits[0]["session_id"] == "dup"
@@ -229,9 +228,9 @@ def test_search_linear_deduplicates_duplicate_session_and_seq(monkeypatch):
 
 def test_search_linear_normalizes_newlines_in_snippet(monkeypatch):
     monkeypatch.setattr(es, "_fts_available", False)
-    append_event("s1", 1, "assistant.delta", {"text": "alpha\nneedle\nomega"})
+    es._blocking_append("s1", 1, "assistant.delta", {"text": "alpha\nneedle\nomega"}, '{"text": "alpha\\nneedle\\nomega"}')
 
-    hits = search_events("needle")
+    hits = es._blocking_search("needle")
 
     assert len(hits) == 1
     assert "\n" not in hits[0]["snippet"]
@@ -242,8 +241,8 @@ def test_search_linear_limits_results_to_200(monkeypatch):
     monkeypatch.setattr(es, "_fts_available", False)
 
     for i in range(205):
-        append_event(f"s{i:03d}", i, "assistant.delta", {"text": "cap needle"})
+        es._blocking_append(f"s{i:03d}", i, "assistant.delta", {"text": "cap needle"}, '{"text": "cap needle"}')
 
-    hits = search_events("cap needle")
+    hits = es._blocking_search("cap needle")
 
     assert len(hits) == 200

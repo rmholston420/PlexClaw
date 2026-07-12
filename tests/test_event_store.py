@@ -19,85 +19,85 @@ def _reset_conn(path: Path, monkeypatch):
     monkeypatch.setattr(es, "_db_initialized", False)
 
 
-def test_event_store_append_and_query(tmp_path, monkeypatch):
+async def test_event_store_append_and_query(tmp_path, monkeypatch):
     _reset_conn(tmp_path / "events.db", monkeypatch)
     init_db()
-    append_event("s1", 1, "assistant.delta", {"text": "hello"})
-    append_event("s1", 2, "assistant.completed", {"stop_reason": "end_turn"})
+    await append_event("s1", 1, "assistant.delta", {"text": "hello"})
+    await append_event("s1", 2, "assistant.completed", {"stop_reason": "end_turn"})
 
-    rows = query_events("s1")
+    rows = await query_events("s1")
     assert len(rows) == 2
     assert rows[0]["payload"]["text"] == "hello"
 
 
-def test_event_store_filters(tmp_path, monkeypatch):
+async def test_event_store_filters(tmp_path, monkeypatch):
     _reset_conn(tmp_path / "events.db", monkeypatch)
     init_db()
-    append_event("s1", 1, "assistant.delta", {"text": "a"})
-    append_event("s1", 2, "tool.started", {"tool_id": "1"})
-    append_event("s1", 3, "assistant.delta", {"text": "b"})
+    await append_event("s1", 1, "assistant.delta", {"text": "a"})
+    await append_event("s1", 2, "tool.started", {"tool_id": "1"})
+    await append_event("s1", 3, "assistant.delta", {"text": "b"})
 
-    rows = query_events("s1", event_type="assistant.delta", since_seq=1)
+    rows = await query_events("s1", event_type="assistant.delta", since_seq=1)
     assert len(rows) == 1
     assert rows[0]["seq"] == 3
 
 
-def test_search_events_returns_match(tmp_path, monkeypatch):
+async def test_search_events_returns_match(tmp_path, monkeypatch):
     _reset_conn(tmp_path / "events.db", monkeypatch)
     init_db()
-    append_event("s2", 1, "assistant.delta", {"text": "The answer is forty-two"})
-    append_event("s2", 2, "system.message", {"text": "session ready"})
+    await append_event("s2", 1, "assistant.delta", {"text": "The answer is forty-two"})
+    await append_event("s2", 2, "system.message", {"text": "session ready"})
 
-    hits = search_events("forty-two")
+    hits = await search_events("forty-two")
     assert len(hits) >= 1
     assert hits[0]["session_id"] == "s2"
 
 
-def test_search_events_no_match(tmp_path, monkeypatch):
+async def test_search_events_no_match(tmp_path, monkeypatch):
     _reset_conn(tmp_path / "events.db", monkeypatch)
     init_db()
-    append_event("s3", 1, "assistant.delta", {"text": "nothing relevant here"})
+    await append_event("s3", 1, "assistant.delta", {"text": "nothing relevant here"})
 
-    hits = search_events("xyzzy_not_present")
+    hits = await search_events("xyzzy_not_present")
     assert hits == []
 
 
-def test_search_events_empty_query(tmp_path, monkeypatch):
+async def test_search_events_empty_query(tmp_path, monkeypatch):
     _reset_conn(tmp_path / "events.db", monkeypatch)
     init_db()
-    append_event("s4", 1, "assistant.delta", {"text": "some text"})
+    await append_event("s4", 1, "assistant.delta", {"text": "some text"})
 
-    hits = search_events("  ")
+    hits = await search_events("  ")
     assert hits == []
 
 
-def test_append_event_lazy_init(tmp_path, monkeypatch):
+async def test_append_event_lazy_init(tmp_path, monkeypatch):
     _reset_conn(tmp_path / "events.db", monkeypatch)
     monkeypatch.setattr(es, "_db_initialized", False)
 
-    append_event("lazy", 1, "assistant.delta", {"text": "bootstrapped"})
+    await append_event("lazy", 1, "assistant.delta", {"text": "bootstrapped"})
 
-    rows = query_events("lazy")
+    rows = await query_events("lazy")
     assert len(rows) == 1
     assert rows[0]["payload"]["text"] == "bootstrapped"
 
 
-def test_search_events_matches_final_tool_delta_input(tmp_path, monkeypatch):
+async def test_search_events_matches_final_tool_delta_input(tmp_path, monkeypatch):
     _reset_conn(tmp_path / "events.db", monkeypatch)
     init_db()
-    append_event(
+    await append_event(
         "s5",
         1,
         "tool.started",
         {"tool_id": "t1", "tool_name": "bash", "tool_input": {}},
     )
-    append_event(
+    await append_event(
         "s5",
         2,
         "tool.delta",
         {"tool_id": "t1", "tool_input": {"cmd": "ls -la /tmp"}},
     )
 
-    hits = search_events("ls -la /tmp")
+    hits = await search_events("ls -la /tmp")
     assert len(hits) >= 1
     assert hits[0]["session_id"] == "s5"

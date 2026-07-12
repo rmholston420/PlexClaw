@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import sqlite3
@@ -29,12 +30,13 @@ def _get_conn() -> sqlite3.Connection:
             except Exception:
                 pass
         c = sqlite3.connect(str(DB_PATH), check_same_thread=False)
-        c.row_factory = sqlite3.Row
         c.execute("PRAGMA journal_mode=WAL")
         c.execute("PRAGMA cache_size=-32768")
         c.execute("PRAGMA synchronous=NORMAL")
         _conn = c
         _conn_path = DB_PATH
+    # Always enforce row_factory in case the connection was created externally
+    _conn.row_factory = sqlite3.Row
     return _conn
 
 
@@ -49,8 +51,7 @@ def _check_fts5_available_locked() -> bool:
         _fts_available = True
     except sqlite3.OperationalError:
         _fts_available = False
-        log.warning("SQLite FTS5 unavailable – falling back to linear search")
-    return _fts_available
+    return _fts_available  # type: ignore[return-value]
 
 
 def _check_fts5() -> bool:
@@ -61,6 +62,7 @@ def _check_fts5() -> bool:
 
 
 def init_db() -> None:
+    """Synchronous DB initialisation – called once at startup."""
     global _db_initialized
     with _db_lock:
         c = _get_conn()
@@ -128,21 +130,22 @@ def _ensure_initialized() -> None:
     init_db()
 
 
-def append_event(
+# ── Blocking helpers (run inside asyncio.to_thread) ──────────────────────────
+
+def _blocking_append(
     session_id: str,
     seq: int,
     event_type: str,
     payload: dict[str, Any],
+    payload_json: str,
 ) -> None:
     _ensure_initialized()
-    payload_json = json.dumps(payload)
     with _db_lock:
         c = _get_conn()
         c.execute(
             "INSERT INTO events (session_id, seq, type, payload) VALUES (?,?,?,?)",
             (session_id, seq, event_type, payload_json),
         )
-
         if _check_fts5_available_locked():
             role, body = _event_search_parts(event_type, payload)
             if body:
@@ -151,14 +154,13 @@ def append_event(
                     "VALUES (?,?,?,?,datetime('now'))",
                     (role, body, session_id, seq),
                 )
-
         c.commit()
 
 
-def query_events(
+def _blocking_query(
     session_id: str,
-    event_type: str | None = None,
-    since_seq: int | None = None,
+    event_type: str | None,
+    since_seq: int | None,
 ) -> list[dict[str, Any]]:
     _ensure_initialized()
     sql = "SELECT * FROM events WHERE session_id = ?"
@@ -184,6 +186,49 @@ def query_events(
     ]
 
 
+def _blocking_search(needle: str) -> list[dict[str, Any]]:
+    _ensure_initialized()
+    with _db_lock:
+        c = _get_conn()
+        if _check_fts5_available_locked():
+            return _search_fts5(c, needle)
+        return _search_linear(c, needle)
+
+
+# ── Public async API ─────────────────────────────────────────────────────────
+
+async def append_event(
+    session_id: str,
+    seq: int,
+    event_type: str,
+    payload: dict[str, Any],
+) -> None:
+    """Append an event; runs SQLite I/O in a thread to avoid blocking the loop."""
+    payload_json = json.dumps(payload)
+    await asyncio.to_thread(
+        _blocking_append, session_id, seq, event_type, payload, payload_json
+    )
+
+
+async def query_events(
+    session_id: str,
+    event_type: str | None = None,
+    since_seq: int | None = None,
+) -> list[dict[str, Any]]:
+    """Query events; runs SQLite I/O in a thread to avoid blocking the loop."""
+    return await asyncio.to_thread(_blocking_query, session_id, event_type, since_seq)
+
+
+async def search_events(query: str) -> list[dict[str, Any]]:
+    """Full-text or linear search; runs in a thread to avoid blocking the loop."""
+    needle = query.strip()
+    if not needle:
+        return []
+    return await asyncio.to_thread(_blocking_search, needle)
+
+
+# ── Search internals (called only inside _db_lock, safe to stay sync) ────────
+
 def _event_search_parts(event_type: str, payload: dict[str, Any]) -> tuple[str, str]:
     if event_type == "assistant.delta":
         return "assistant", str(payload.get("text", ""))
@@ -204,21 +249,8 @@ def _event_search_parts(event_type: str, payload: dict[str, Any]) -> tuple[str, 
 _event_search_text = _event_search_parts
 
 
-def search_events(query: str) -> list[dict[str, Any]]:
-    _ensure_initialized()
-    needle = query.strip()
-    if not needle:
-        return []
-
-    with _db_lock:
-        c = _get_conn()
-        if _check_fts5_available_locked():
-            return _search_fts5(c, needle)
-        return _search_linear(c, needle)
-
-
 def _search_fts5(c: sqlite3.Connection, query: str) -> list[dict[str, Any]]:
-    escaped = query.replace('"', '""')
+    escaped = query.replace('"', '""'  )
     fts_query = f'"{escaped}"'
     try:
         rows = c.execute(

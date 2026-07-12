@@ -112,12 +112,12 @@ def test_search_parts_unknown_event_type():
     assert body == ""
 
 
-def test_query_events_multi_session_isolation():
-    append_event("alpha", 1, "assistant.delta", {"text": "a"})
-    append_event("beta", 1, "assistant.delta", {"text": "b"})
+async def test_query_events_multi_session_isolation():
+    await append_event("alpha", 1, "assistant.delta", {"text": "a"})
+    await append_event("beta", 1, "assistant.delta", {"text": "b"})
 
-    alpha = query_events("alpha")
-    beta = query_events("beta")
+    alpha = await query_events("alpha")
+    beta = await query_events("beta")
 
     assert len(alpha) == 1
     assert alpha[0]["payload"]["text"] == "a"
@@ -125,53 +125,53 @@ def test_query_events_multi_session_isolation():
     assert beta[0]["payload"]["text"] == "b"
 
 
-def test_query_events_no_filters_returns_all():
+async def test_query_events_no_filters_returns_all():
     for i in range(1, 6):
-        append_event("sess", i, "assistant.delta", {"text": str(i)})
+        await append_event("sess", i, "assistant.delta", {"text": str(i)})
 
-    rows = query_events("sess")
+    rows = await query_events("sess")
     assert len(rows) == 5
 
 
-def test_query_events_since_seq_inclusive_edge():
+async def test_query_events_since_seq_inclusive_edge():
     for i in range(1, 4):
-        append_event("s", i, "assistant.delta", {"text": str(i)})
+        await append_event("s", i, "assistant.delta", {"text": str(i)})
 
-    rows = query_events("s", since_seq=2)
+    rows = await query_events("s", since_seq=2)
     assert len(rows) == 1
     assert rows[0]["seq"] == 3
 
 
-def test_query_events_type_filter_with_no_match():
-    append_event("s", 1, "assistant.delta", {"text": "hi"})
-    rows = query_events("s", event_type="tool.started")
+async def test_query_events_type_filter_with_no_match():
+    await append_event("s", 1, "assistant.delta", {"text": "hi"})
+    rows = await query_events("s", event_type="tool.started")
     assert rows == []
 
 
-def test_query_events_returns_created_at_field():
-    append_event("s", 1, "assistant.delta", {"text": "hi"})
-    rows = query_events("s")
+async def test_query_events_returns_created_at_field():
+    await append_event("s", 1, "assistant.delta", {"text": "hi"})
+    rows = await query_events("s")
     assert "created_at" in rows[0]
     assert rows[0]["created_at"]
 
 
-def test_search_events_tool_completed_output():
-    append_event("s", 1, "tool.completed", {"tool_id": "t1", "output": "zap the cache"})
-    hits = search_events("zap the cache")
+async def test_search_events_tool_completed_output():
+    await append_event("s", 1, "tool.completed", {"tool_id": "t1", "output": "zap the cache"})
+    hits = await search_events("zap the cache")
     assert len(hits) >= 1
     assert hits[0]["session_id"] == "s"
 
 
-def test_search_events_system_message():
-    append_event("s", 1, "system.message", {"text": "plasma storm incoming"})
-    hits = search_events("plasma storm")
+async def test_search_events_system_message():
+    await append_event("s", 1, "system.message", {"text": "plasma storm incoming"})
+    hits = await search_events("plasma storm")
     assert len(hits) >= 1
     assert hits[0]["role"] == "system"
 
 
-def test_search_events_result_has_expected_keys():
-    append_event("s", 1, "assistant.delta", {"text": "keycheck"})
-    hits = search_events("keycheck")
+async def test_search_events_result_has_expected_keys():
+    await append_event("s", 1, "assistant.delta", {"text": "keycheck"})
+    hits = await search_events("keycheck")
     assert len(hits) == 1
     hit = hits[0]
     for key in (
@@ -185,7 +185,7 @@ def test_search_events_result_has_expected_keys():
         assert key in hit, f"missing key: {key}"
 
 
-def test_search_events_session_title_is_first_8_chars():
-    append_event("abcdefghij", 1, "assistant.delta", {"text": "trunc-test"})
-    hits = search_events("trunc-test")
+async def test_search_events_session_title_is_first_8_chars():
+    await append_event("abcdefghij", 1, "assistant.delta", {"text": "trunc-test"})
+    hits = await search_events("trunc-test")
     assert hits[0]["session_title"] == "abcdefgh"
