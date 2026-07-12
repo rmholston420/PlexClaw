@@ -996,6 +996,7 @@ def _sdkmessage_to_dict(msg: Any) -> dict:
 def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[dict]:
     events: list[dict] = []
     seq = 1
+    pending_tools: dict[str, dict[str, Any]] = {}
 
     def push(env) -> None:
         nonlocal seq
@@ -1030,6 +1031,37 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                         if text:
                             push(normalize_text_delta(session_id, seq, text))
 
+                    elif btype == "tool_result":
+                        tool_id = str(
+                            block.get("tool_use_id")
+                            or block.get("parent_tool_use_id")
+                            or ""
+                        )
+                        if tool_id:
+                            meta = pending_tools.pop(tool_id, {})
+                            tool_name = str(meta.get("tool_name", "tool"))
+                            output = _coerce_tool_result_output(block.get("content"))
+                            is_error = bool(block.get("is_error", False))
+                            push(
+                                normalize_tool_completed(
+                                    session_id,
+                                    seq,
+                                    tool_id,
+                                    tool_name,
+                                    output,
+                                    is_error=is_error,
+                                )
+                            )
+                        else:
+                            push(
+                                normalize_system_message(
+                                    session_id,
+                                    0,
+                                    "Archive tool_result missing tool_use_id",
+                                    level="warn",
+                                )
+                            )
+
                     elif btype == "tool_use":
                         tool_id = str(block.get("id", ""))
                         tool_name = str(block.get("name", "tool"))
@@ -1054,6 +1086,10 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                             tool_input=tool_input,
                         )
                         push(env)
+                        pending_tools[tool_id] = {
+                            "tool_name": tool_name,
+                            "tool_input": tool_input,
+                        }
 
                     else:
                         push(
