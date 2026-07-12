@@ -1,4 +1,4 @@
-"""Claude bridge FastAPI backend – port 8020."""
+"""PlexClaw FastAPI backend – port 8020."""
 
 from __future__ import annotations
 

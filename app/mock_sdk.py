@@ -1,4 +1,4 @@
-"""Mock SDK driver for the Claude bridge.
+"""Mock SDK driver for the PlexClaw runtime bridge.
 
 Used when `claude-agent-sdk` is not installed.  Every session
 created in mock mode gets a MockSDKClient that streams a realistic
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     pass
 
 _MOCK_INTRO = (
-    "\u26a0\ufe0f  **Claude bridge mock mode** — "
+    "\u26a0\ufe0f  **PlexClaw mock mode** — "
     "`claude-agent-sdk` is not installed.\n\n"
     "To enable real Claude Code sessions:\n"
     "1. `pip install claude-agent-sdk`\n"

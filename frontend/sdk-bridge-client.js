@@ -2370,7 +2370,7 @@ state.effectiveSessionConfig = {
     await loadArchive();
   } catch (error) {
     console.error('Startup initialization failed:', error);
-    appendSystemMessage(`Could not reach backend at [${state.bridgeUrl}](${state.bridgeUrl}). Check that the Claude bridge server is running and reload the page.`);
+    appendSystemMessage(`Could not reach backend at [${state.bridgeUrl}](${state.bridgeUrl}). Check that the PlexClaw backend is running and reload the page.`);
   }
 }
 
