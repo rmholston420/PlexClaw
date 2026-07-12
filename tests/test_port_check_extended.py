@@ -7,15 +7,10 @@ from app.port_check import DEFAULT_PORTS, blocked_ports, format_blocked_ports
 
 def test_default_ports_shape():
     assert isinstance(DEFAULT_PORTS, tuple)
-    assert DEFAULT_PORTS == (
-        (8020, "plexclaw"),
-    )
+    assert DEFAULT_PORTS == ((8020, "plexclaw"),)
+    assert all(isinstance(item, tuple) and len(item) == 2 for item in DEFAULT_PORTS)
     assert all(
-        isinstance(item, tuple) and len(item) == 2 for item in DEFAULT_PORTS
-    )
-    assert all(
-        isinstance(port, int) and isinstance(name, str)
-        for port, name in DEFAULT_PORTS
+        isinstance(port, int) and isinstance(name, str) for port, name in DEFAULT_PORTS
     )
 
 
@@ -25,6 +20,9 @@ def test_blocked_ports_empty_iterable():
 
 def test_blocked_ports_all_blocked(monkeypatch):
     class BusySocket:
+        def setsockopt(self, level, optname, value):
+            return None
+
         def bind(self, addr):
             raise OSError("in use")
 
@@ -40,6 +38,10 @@ def test_blocked_ports_closes_socket_on_bind_error(monkeypatch):
     class BusySocket:
         def __init__(self):
             self.closed = False
+            self.sockopts = []
+
+        def setsockopt(self, level, optname, value):
+            self.sockopts.append((level, optname, value))
 
         def bind(self, addr):
             raise OSError("in use")

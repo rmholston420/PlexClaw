@@ -3,9 +3,7 @@ from __future__ import annotations
 import socket
 from collections.abc import Iterable
 
-DEFAULT_PORTS: tuple[tuple[int, str], ...] = (
-    (8020, "plexclaw"),
-)
+DEFAULT_PORTS: tuple[tuple[int, str], ...] = ((8020, "plexclaw"),)
 
 
 def blocked_ports(
@@ -15,6 +13,7 @@ def blocked_ports(
 
     for port, label in ports:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             sock.bind(("127.0.0.1", port))
         except OSError:
@@ -29,12 +28,7 @@ def format_blocked_ports(
     blocked: Iterable[tuple[int, str]],
 ) -> list[str]:
     items = list(blocked)
-    lines = [
-        f"[run.sh] Port {port} already in use ({label})."
-        for port, label in items
-    ]
+    lines = [f"[run.sh] Port {port} already in use ({label})." for port, label in items]
     if items:
-        lines.append(
-            "[run.sh] Stop the existing process or free the port, then retry."
-        )
+        lines.append("[run.sh] Stop the existing process or free the port, then retry.")
     return lines
