@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300..700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     /* =====================================================================
        DESIGN TOKENS — PlexClaw Browser Console
@@ -1619,6 +1620,38 @@
         <option value="root">Lineage</option>
       </select>
     </div>
+
+
+    <div class="sidebar-section">
+      <div class="section-title">Usage analytics</div>
+      <div class="analytics-panel" id="analytics-panel">
+        <div class="analytics-grid">
+          <div class="analytics-card">
+            <div class="label">Sessions</div>
+            <div class="value" id="analytics-sessions">--</div>
+          </div>
+          <div class="analytics-card">
+            <div class="label">Calls</div>
+            <div class="value" id="analytics-calls">--</div>
+          </div>
+          <div class="analytics-card">
+            <div class="label">Tokens</div>
+            <div class="value" id="analytics-tokens">--</div>
+          </div>
+          <div class="analytics-card">
+            <div class="label">Cost</div>
+            <div class="value" id="analytics-cost">--</div>
+          </div>
+        </div>
+        <div class="analytics-chart-wrap">
+          <div class="analytics-chart-title">Daily cost</div>
+          <canvas id="analytics-chart" height="120"></canvas>
+          <div class="analytics-empty" id="analytics-empty" hidden>No usage data yet.</div>
+        </div>
+        <div class="analytics-note">Aggregated from saved assistant completion events in the PlexClaw event store.</div>
+      </div>
+    </div>
+
 
     <div class="session-list" id="archive-list">
       <div class="empty-archive">

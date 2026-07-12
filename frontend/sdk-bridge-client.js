@@ -70,7 +70,8 @@ const Bridge = (() => {
     firstToolExpanded: false,
     copiedRuntimeMetaTimeouts: new Map(),
    sdkPermissionMode: 'default',
-  effectiveSessionConfig: {
+  analyticsChart: null,
+ effectiveSessionConfig: {
     sessionId: null,
     model: null,
     provider: null,
@@ -85,6 +86,12 @@ const Bridge = (() => {
   };
 
   const el = {
+    analyticsSessions: document.getElementById('analytics-sessions'),
+    analyticsCalls: document.getElementById('analytics-calls'),
+    analyticsTokens: document.getElementById('analytics-tokens'),
+    analyticsCost: document.getElementById('analytics-cost'),
+    analyticsChart: document.getElementById('analytics-chart'),
+    analyticsEmpty: document.getElementById('analytics-empty'),
     cwdContextLabel: document.getElementById('cwd-context-label'),
     transcript: document.getElementById('transcript'),
     welcome: document.getElementById('welcome'),
@@ -159,6 +166,103 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
   };
 
   // ---- Helpers ----
+
+  function formatCompactNumber(value) {
+    const num = Number(value || 0);
+    if (!Number.isFinite(num)) return '--';
+    return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(num);
+  }
+
+  function formatUsd(value) {
+    const num = Number(value || 0);
+    if (!Number.isFinite(num)) return '$0.00';
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: num < 1 ? 4 : 2 }).format(num);
+  }
+
+  function destroyAnalyticsChart() {
+    if (state.analyticsChart && typeof state.analyticsChart.destroy === 'function') {
+      state.analyticsChart.destroy();
+    }
+    state.analyticsChart = null;
+  }
+
+  function renderAnalyticsChart(series) {
+    if (!el.analyticsChart || !window.Chart) return;
+    if (!Array.isArray(series) || !series.length) {
+      destroyAnalyticsChart();
+      el.analyticsChart.hidden = true;
+      if (el.analyticsEmpty) el.analyticsEmpty.hidden = false;
+      return;
+    }
+    el.analyticsChart.hidden = false;
+    if (el.analyticsEmpty) el.analyticsEmpty.hidden = true;
+    destroyAnalyticsChart();
+    const labels = series.map(item => item.date || '');
+    const data = series.map(item => Number(item.cost_usd || 0));
+    state.analyticsChart = new window.Chart(el.analyticsChart, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Daily cost (USD)',
+          data,
+          backgroundColor: 'rgba(79, 195, 212, 0.55)',
+          borderColor: 'rgba(79, 195, 212, 1)',
+          borderWidth: 1,
+          borderRadius: 6,
+          maxBarThickness: 20,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            ticks: { color: '#7b8ab4', maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+            grid: { display: false },
+          },
+          y: {
+            ticks: {
+              color: '#7b8ab4',
+              callback: (v) => '$' + Number(v).toFixed(2),
+            },
+            grid: { color: 'rgba(123, 138, 180, 0.15)' },
+          },
+        },
+      },
+    });
+  }
+
+  async function loadAnalytics() {
+    if (!el.analyticsSessions) return;
+    try {
+      const data = await api('/api/analytics');
+      const totals = data?.totals || {};
+      const sessionCount = Object.keys(data?.by_session || {}).length;
+      const totalTokens =
+        Number(totals.input_tokens || 0) +
+        Number(totals.output_tokens || 0) +
+        Number(totals.cache_read_tokens || 0) +
+        Number(totals.cache_write_tokens || 0);
+
+      el.analyticsSessions.textContent = formatCompactNumber(sessionCount);
+      el.analyticsCalls.textContent = formatCompactNumber(totals.calls || 0);
+      el.analyticsTokens.textContent = formatCompactNumber(totalTokens);
+      el.analyticsCost.textContent = formatUsd(totals.cost_usd || 0);
+
+      renderAnalyticsChart(Array.isArray(data?.daily_series) ? data.daily_series.slice(-14) : []);
+    } catch (error) {
+      console.error('Analytics load failed', error);
+      el.analyticsSessions.textContent = '--';
+      el.analyticsCalls.textContent = '--';
+      el.analyticsTokens.textContent = '--';
+      el.analyticsCost.textContent = '--';
+      renderAnalyticsChart([]);
+    }
+  }
+
+
   function hideWelcome() {
     if (el.welcome) el.welcome.classList.add('hidden');
   }
@@ -2338,6 +2442,7 @@ state.effectiveSessionConfig = {
   try {
     openNewTab();
     await initCwd();
+    await loadAnalytics();
     renderPermissionMode();
     el.cwdPill?.addEventListener('click', openCwdModal);
     el.cwdBackdrop?.addEventListener('click', closeCwdModal);
