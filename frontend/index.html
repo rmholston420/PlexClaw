@@ -856,6 +856,65 @@
     }
   }
 
+
+  .hook-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+
+  .hook-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    max-height: 260px;
+    overflow: auto;
+  }
+
+  .hook-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    padding: var(--s3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .hook-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+  }
+
+  .hook-item-title {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .hook-item-time {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .hook-item-body {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .hook-empty {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--s3);
+    background: var(--surface);
+  }
+
   .runtime-meta-help {
   font-size: var(--text-xs);
   color: var(--text-muted);
@@ -2041,6 +2100,18 @@
     </div>
     <div class="mcp-list" id="mcp-list">
       <div class="mcp-subtle">No MCP servers loaded yet.</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="runtime-meta-group" aria-label="Hook activity">
+  <div class="runtime-meta-header">
+    <div class="runtime-meta-title">Hook activity</div>
+  </div>
+  <div class="hook-panel">
+    <div class="hook-list" id="hook-list">
+      <div class="hook-empty">No hook lifecycle events observed yet.</div>
     </div>
   </div>
 </div>

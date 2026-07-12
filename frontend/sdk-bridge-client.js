@@ -35,6 +35,7 @@ const Bridge = (() => {
    gitStatus: null,
    mcpServers: [],
    mcpConfigPath: null,
+   hookEvents: [],
     bridgeUrl: bridgeOrigin,
     wsBase: derivedWsBase,
     protocolVersion: '0.2.0',
@@ -167,6 +168,7 @@ const Bridge = (() => {
   mcpNameInput: document.getElementById('mcp-name-input'),
   mcpCommandInput: document.getElementById('mcp-command-input'),
   mcpAddBtn: document.getElementById('mcp-add-btn'),
+  hookList: document.getElementById('hook-list'),
  sessionCwdMeta: document.getElementById('session-cwd-meta'),
  sessionRuntimeMeta: document.getElementById('session-runtime-meta'),
 sessionConfigMeta: document.getElementById('session-config-meta'),
@@ -1208,6 +1210,7 @@ function setConnection(status) {
        state.toolSearchActive = null;
     state.attachments = [];
     state.rawLogLines = [];
+  state.hookEvents = [];
     state.replayMode = false;
     clearTranscript();
     renderAttachments();
@@ -3069,6 +3072,7 @@ function syncCapabilityPills(state) {
   setCapabilityPill("cap-lineage-pill", true, "Resume / fork lineage");
   setCapabilityPill("cap-replay-pill", hasReplay, hasReplay ? "Replay mode active" : "Replayable events");
   setCapabilityPill("cap-hooks-pill", true, "Hook-ready runtime");
+  renderHookActivity();
   setCapabilityPill("cap-routing-pill", hasRouting, hasRouting ? `Route: ${state.provider || "configured"}` : "Local model routing");
   setCapabilityPill("cap-tools-pill", hasTools, hasTools ? "Tool streaming active" : "Tool streaming");
 }
@@ -3093,7 +3097,50 @@ function syncProviderHealthPills(state) {
 
 
 
+
+function hookEventLabel(eventType) {
+  const raw = String(eventType || '').trim();
+  if (!raw) return 'Hook event';
+  const mapping = {
+    'session.start': 'SessionStart',
+    'session.end': 'SessionEnd',
+    'pre_tool': 'PreToolUse',
+    'post_tool': 'PostToolUse',
+    'system.message': 'Notification',
+  };
+  return mapping[raw] || raw;
+}
+
+function renderHookActivity() {
+  if (!el.hookList) return;
+  if (!state.hookEvents.length) {
+    el.hookList.innerHTML = '<div class="hook-empty">No hook lifecycle events observed yet.</div>';
+    return;
+  }
+  el.hookList.innerHTML = state.hookEvents.map((item) => `
+    <div class="hook-item">
+      <div class="hook-item-head">
+        <div class="hook-item-title">${escapeHtml(hookEventLabel(item.eventType))}</div>
+        <div class="hook-item-time">${escapeHtml(item.timeLabel || '--:--:--')}</div>
+      </div>
+      <div class="hook-item-body">${escapeHtml(item.message || 'Hook event observed.')}</div>
+    </div>
+  `).join('');
+}
+
+function pushHookEvent(payload) {
+  const now = new Date();
+  state.hookEvents = [{
+    eventType: payload?.event_type || 'hook.event',
+    message: payload?.message || 'Hook event observed.',
+    timeLabel: now.toLocaleTimeString(),
+  }, ...state.hookEvents].slice(0, 25);
+  renderHookActivity();
+}
+
+
 function renderHookEvent(payload) {
+  pushHookEvent(payload);
   const transcript = document.getElementById("messages");
   if (!transcript) return;
   const node = document.createElement("div");
