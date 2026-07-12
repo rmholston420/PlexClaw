@@ -2112,9 +2112,6 @@ state.effectiveSessionConfig = {
       renderProviderRuntimeMeta();
       syncStateToActiveTab();
     });
-   el.sdkPermissionModeSelect?.addEventListener('change', () => {
-     setSdkPermissionMode(el.sdkPermissionModeSelect?.value || 'default');
-   });
     el.composer?.addEventListener('dragover', (e) => {
       e.preventDefault();
       el.composer.classList.add('dragover');
