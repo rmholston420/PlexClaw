@@ -284,7 +284,7 @@ function buildSessionConfigSummary() {
     provider: state.provider || null,
     providerBaseUrl: state.providerBaseUrl || null,
     permissionMode: state.permissionMode || null,
-    sdkPermissionMode: state.sdkPermissionMode || null,
+    sdkPermissionMode: state.sdkPermissionMode || 'default',
     toolSearchMode: state.toolSearchMode || null,
     cwd: state.cwdSelected || state.cwd || null,
   };
@@ -510,7 +510,8 @@ function setConnection(status) {
     tab.transcriptHtml = el.transcript?.innerHTML || '';
     tab.attachments = [...state.attachments];
     tab.attachmentTokens = state.attachmentTokens;
-    tab.permissionMode = state.permissionMode;
+    normalizePermissionState();
+   tab.permissionMode = state.permissionMode;
     tab.replayMode = state.replayMode;
     tab.rawLogLines = [...state.rawLogLines];
     tab.terminalErrorsOnly = state.terminalErrorsOnly;
@@ -546,6 +547,7 @@ function setConnection(status) {
    state.toolSearchMode = Object.prototype.hasOwnProperty.call(tab, 'toolSearchMode') ? tab.toolSearchMode : state.toolSearchMode;
    state.toolSearchActive = Object.prototype.hasOwnProperty.call(tab, 'toolSearchActive') ? tab.toolSearchActive : state.toolSearchActive;
   state.sdkPermissionMode = Object.prototype.hasOwnProperty.call(tab, 'sdkPermissionMode') ? tab.sdkPermissionMode : (state.sdkPermissionMode || 'default');
+ normalizePermissionState();
 
     setSessionLabel(state.sessionId);
     setReplayMode(state.replayMode);
@@ -703,6 +705,17 @@ function setConnection(status) {
   }
 
 
+
+function deriveLegacyPermissionMode(sdkMode) {
+  if (sdkMode === 'default') return 'manual';
+  return 'auto';
+}
+
+function normalizePermissionState(target = state) {
+  if (!target) return;
+  target.sdkPermissionMode = target.sdkPermissionMode || 'default';
+  target.permissionMode = deriveLegacyPermissionMode(target.sdkPermissionMode);
+}
 
 function renderPermissionMode() {
   if (el.modeManualBtn) el.modeManualBtn.classList.toggle('active', state.permissionMode === 'manual');
