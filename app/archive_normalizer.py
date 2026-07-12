@@ -78,8 +78,9 @@ def normalize_session(raw: Any) -> dict[str, Any]:
 def normalize_session_list(
     sessions: list[Any],
 ) -> list[dict[str, Any]]:
-    """Normalize a list and sort descending by updated_at."""
+    """Normalize a list and sort deterministically by recency."""
     normalized = [normalize_session(s) for s in sessions]
+
     def _ts(value: object) -> float:
         if value is None:
             return 0.0
@@ -88,12 +89,15 @@ def normalize_session_list(
         try:
             from datetime import datetime
 
-            return datetime.fromisoformat(str(value)).timestamp()
+            return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
         except Exception:
             return 0.0
 
     return sorted(
         normalized,
-        key=lambda s: _ts(s["updated_at"]),
-        reverse=True,
+        key=lambda s: (
+            -_ts(s.get("updated_at")),
+            -_ts(s.get("created_at")),
+            str(s.get("id") or s.get("session_id") or ""),
+        ),
     )

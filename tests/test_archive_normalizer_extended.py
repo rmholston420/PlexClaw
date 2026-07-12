@@ -141,3 +141,31 @@ def test_normalize_session_list_invalid_or_missing_timestamps_sort_last():
 
     assert out[0]["id"] == "good"
     assert {out[1]["id"], out[2]["id"]} == {"bad", "none"}
+
+def test_normalize_session_list_uses_created_at_when_updated_at_missing():
+    sessions = [
+        {"session_id": "older-created", "updated_at": None, "created_at": 100},
+        {"session_id": "newer-created", "updated_at": None, "created_at": 200},
+    ]
+
+    out = normalize_session_list(sessions)
+
+    assert [item["session_id"] for item in out] == [
+        "newer-created",
+        "older-created",
+    ]
+
+
+def test_normalize_session_list_none_updated_at_ties_break_by_id():
+    sessions = [
+        {"session_id": "b-session", "updated_at": None, "created_at": None},
+        {"session_id": "a-session", "updated_at": None, "created_at": None},
+    ]
+
+    out = normalize_session_list(sessions)
+
+    assert [item["session_id"] for item in out] == [
+        "a-session",
+        "b-session",
+    ]
+
