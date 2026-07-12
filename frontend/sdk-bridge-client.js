@@ -29,6 +29,7 @@ const Bridge = (() => {
   const bridgeOrigin = pageUrl.origin;
   const derivedWsBase = `${wsProtocol}//${pageUrl.host}/ws`;
   const state = {
+   gitDiffSelection: null,
    gitStatus: null,
     bridgeUrl: bridgeOrigin,
     wsBase: derivedWsBase,
@@ -87,6 +88,9 @@ const Bridge = (() => {
   };
 
   const el = {
+    gitDiffPath: document.getElementById('git-diff-path'),
+    gitDiffPre: document.getElementById('git-diff-pre'),
+    gitDiffEmpty: document.getElementById('git-diff-empty'),
     gitRepoPath: document.getElementById('git-repo-path'),
     gitBranch: document.getElementById('git-branch'),
     gitState: document.getElementById('git-state'),
@@ -337,6 +341,42 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
   }
 
 
+
+  function renderGitDiff(path, diffText, message) {
+    state.gitDiffSelection = path || null;
+    if (!el.gitDiffPath || !el.gitDiffPre || !el.gitDiffEmpty) return;
+    el.gitDiffPath.textContent = path || 'Select a file to inspect changes.';
+    el.gitDiffPre.textContent = diffText || '';
+    const hasDiff = !!(diffText && diffText.trim());
+    el.gitDiffPre.hidden = !hasDiff;
+    el.gitDiffEmpty.hidden = hasDiff;
+    el.gitDiffEmpty.textContent = message || 'Unified diff will appear here.';
+    el.gitFileList?.querySelectorAll('.git-file-item').forEach((node) => {
+      node.classList.toggle('active', !!path && node.getAttribute('data-git-path') === path);
+    });
+  }
+
+  async function loadGitDiff(path, staged = false) {
+    if (!path) {
+      renderGitDiff(null, '', 'Unified diff will appear here.');
+      return;
+    }
+    renderGitDiff(path, '', 'Loading diff…');
+    try {
+      const params = new URLSearchParams();
+      if (state.sessionId) params.set('session_id', state.sessionId);
+      else if (state.cwd) params.set('path', state.cwd);
+      params.set('file', path);
+      if (staged) params.set('staged', 'true');
+      const data = await api(`/api/git/diff?${params.toString()}`);
+      const diffText = String(data?.diff || '');
+      renderGitDiff(path, diffText, diffText.trim() ? '' : 'No diff output for this file.');
+    } catch (error) {
+      renderGitDiff(path, '', 'Could not load diff preview.');
+    }
+  }
+
+
   function gitActionLabel(item) {
     const status = String(item?.status || '');
     const indexFlag = status[0] || ' ';
@@ -390,6 +430,7 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
 
     if (!files.length) {
       el.gitFileList.innerHTML = '<div class="git-empty">Working tree clean.</div>';
+      renderGitDiff(null, '', 'Working tree clean.');
       return;
     }
 
@@ -397,7 +438,7 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
       const actionLabel = gitActionLabel(item);
       const action = actionLabel === 'Unstage' ? 'unstage' : 'stage';
       return `
-      <div class="git-file-item" title="${escapeAttr(item.path || '')}">
+      <div class="git-file-item" data-git-path="${escapeAttr(item.path || '')}" data-git-staged="${actionLabel === 'Unstage' ? 'true' : 'false'}" title="${escapeAttr(item.path || '')}">
         <div class="git-file-main">
           <span class="git-file-path">${escapeHtml(item.path || '')}</span>
         </div>
@@ -408,6 +449,18 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
       </div>
     `;
     }).join('');
+
+
+    el.gitFileList.querySelectorAll('.git-file-item').forEach((row) => {
+      if (row.dataset.previewBound === 'true') return;
+      row.dataset.previewBound = 'true';
+      row.addEventListener('click', async (event) => {
+        if (event.target.closest('[data-git-action]')) return;
+        const path = row.getAttribute('data-git-path') || '';
+        const staged = row.getAttribute('data-git-staged') === 'true';
+        await loadGitDiff(path, staged);
+      });
+    });
 
     el.gitFileList.querySelectorAll('[data-git-action]').forEach((btn) => {
       if (btn.dataset.bound === 'true') return;
@@ -432,6 +485,7 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
 
   async function loadGitStatus() {
     if (!el.gitRepoPath) return;
+    const previousSelection = state.gitDiffSelection;
     try {
       const params = new URLSearchParams();
       if (state.sessionId) params.set('session_id', state.sessionId);
@@ -439,8 +493,17 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
       const query = params.toString() ? `?${params.toString()}` : '';
       const data = await api(`/api/git/status${query}`);
       renderGitStatus(data);
+      if (previousSelection) {
+        const row = el.gitFileList?.querySelector(`.git-file-item[data-git-path="${CSS.escape(previousSelection)}"]`);
+        if (row) {
+          await loadGitDiff(previousSelection, row.getAttribute('data-git-staged') === 'true');
+        } else {
+          renderGitDiff(null, '', 'Select a file to inspect changes.');
+        }
+      }
     } catch (error) {
       renderGitStatus(null);
+      renderGitDiff(null, '', 'No Git repository found for the current workspace.');
       if (el.gitFileList) {
         el.gitFileList.innerHTML = '<div class="git-empty">No Git repository found for the current workspace.</div>';
       }
