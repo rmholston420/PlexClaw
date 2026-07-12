@@ -81,7 +81,7 @@ This configures `core.hooksPath` to use `.githooks`, so every `git push` runs `p
 
 ## Current status
 
-- 109 tests passing locally as of July 2026.
+- Playwright scaffold contract coverage (not a counted runnable browser suite) passing locally as of July 2026.
 - Mock runtime fallback, WebSocket session flow, protocol mismatch handling, launcher port checks, launcher shell contract, runtime routing metadata, and tool-search UI semantics are all covered by tests.
 
 ## Session-aware filesystem routing
