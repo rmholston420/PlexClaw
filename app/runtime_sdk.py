@@ -1065,7 +1065,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                     if btype == "text":
                         text = block.get("text", "")
                         if text:
-                            push(normalize_text_delta(session_id, seq, text))
+                            push(normalize_text_delta(session_id, 0, text))
 
                     elif btype == "tool_result":
                         tool_id = str(
@@ -1081,7 +1081,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                             push(
                                 normalize_tool_completed(
                                     session_id,
-                                    seq,
+                                    0,
                                     tool_id,
                                     tool_name,
                                     output,
@@ -1106,7 +1106,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
                         push(
                             normalize_tool_started(
                                 session_id,
-                                seq,
+                                0,
                                 tool_id,
                                 tool_name,
                                 {},
@@ -1115,7 +1115,7 @@ def _archive_messages_to_events(session_id: str, messages: list[dict]) -> list[d
 
                         env = normalize_tool_delta(
                             session_id,
-                            seq,
+                            0,
                             tool_id,
                             "",
                             tool_name=tool_name,
