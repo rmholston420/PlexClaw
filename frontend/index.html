@@ -1703,6 +1703,38 @@
     </div>
 
 
+
+    <div class="sidebar-section">
+      <div class="section-title">Git explorer</div>
+      <div class="git-panel" id="git-panel">
+        <div class="git-actions">
+          <button class="action-btn" id="refresh-git" type="button">Refresh Git</button>
+        </div>
+        <div class="git-repo-path" id="git-repo-path">No repository selected.</div>
+        <div class="git-summary-grid">
+          <div class="git-card">
+            <div class="label">Branch</div>
+            <div class="value" id="git-branch">--</div>
+          </div>
+          <div class="git-card">
+            <div class="label">State</div>
+            <div class="value" id="git-state">--</div>
+          </div>
+          <div class="git-card">
+            <div class="label">Staged</div>
+            <div class="value" id="git-staged-count">--</div>
+          </div>
+          <div class="git-card">
+            <div class="label">Unstaged</div>
+            <div class="value" id="git-unstaged-count">--</div>
+          </div>
+        </div>
+        <div class="git-file-list" id="git-file-list">
+          <div class="git-empty">No Git status loaded yet.</div>
+        </div>
+      </div>
+    </div>
+
     <div class="session-list" id="archive-list">
       <div class="empty-archive">
         <i data-lucide="folder-open" style="width:36px;height:36px"></i>

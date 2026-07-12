@@ -29,6 +29,7 @@ const Bridge = (() => {
   const bridgeOrigin = pageUrl.origin;
   const derivedWsBase = `${wsProtocol}//${pageUrl.host}/ws`;
   const state = {
+   gitStatus: null,
     bridgeUrl: bridgeOrigin,
     wsBase: derivedWsBase,
     protocolVersion: '0.2.0',
@@ -86,6 +87,13 @@ const Bridge = (() => {
   };
 
   const el = {
+    gitRepoPath: document.getElementById('git-repo-path'),
+    gitBranch: document.getElementById('git-branch'),
+    gitState: document.getElementById('git-state'),
+    gitStagedCount: document.getElementById('git-staged-count'),
+    gitUnstagedCount: document.getElementById('git-unstaged-count'),
+    gitFileList: document.getElementById('git-file-list'),
+    refreshGit: document.getElementById('refresh-git'),
     analyticsSessions: document.getElementById('analytics-sessions'),
     analyticsCalls: document.getElementById('analytics-calls'),
     analyticsTokens: document.getElementById('analytics-tokens'),
@@ -318,6 +326,77 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
     const toggle = block.querySelector('.tool-details-toggle');
     if (toggle) toggle.textContent = visible ? 'Hide details' : 'Show details';
   }
+
+
+  function escapeAttr(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('"', '&quot;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+  }
+
+  function renderGitStatus(data) {
+    state.gitStatus = data || null;
+    if (!el.gitRepoPath || !el.gitFileList) return;
+
+    if (!data || !data.repo) {
+      el.gitRepoPath.textContent = 'No repository selected.';
+      el.gitBranch.textContent = '--';
+      el.gitState.textContent = '--';
+      el.gitStagedCount.textContent = '--';
+      el.gitUnstagedCount.textContent = '--';
+      el.gitFileList.innerHTML = '<div class="git-empty">No Git status loaded yet.</div>';
+      return;
+    }
+
+    const staged = Array.isArray(data.staged) ? data.staged : [];
+    const unstaged = Array.isArray(data.unstaged) ? data.unstaged : [];
+    const merged = [...staged, ...unstaged];
+    const seen = new Set();
+    const files = merged.filter((item) => {
+      const key = `${item.status || ''}:${item.path || ''}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 8);
+
+    el.gitRepoPath.textContent = data.repo || 'Unknown repository';
+    el.gitBranch.textContent = data.branch || '(detached)';
+    el.gitState.textContent = data.clean ? 'Clean' : 'Modified';
+    el.gitStagedCount.textContent = String(staged.length);
+    el.gitUnstagedCount.textContent = String(unstaged.length);
+
+    if (!files.length) {
+      el.gitFileList.innerHTML = '<div class="git-empty">Working tree clean.</div>';
+      return;
+    }
+
+    el.gitFileList.innerHTML = files.map((item) => `
+      <div class="git-file-item" title="${escapeAttr(item.path || '')}">
+        <span class="git-file-path">${escapeHtml(item.path || '')}</span>
+        <span class="git-file-status">${escapeHtml(item.status || '??')}</span>
+      </div>
+    `).join('');
+  }
+
+  async function loadGitStatus() {
+    if (!el.gitRepoPath) return;
+    try {
+      const params = new URLSearchParams();
+      if (state.sessionId) params.set('session_id', state.sessionId);
+      else if (state.cwd) params.set('path', state.cwd);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const data = await api(`/api/git/status${query}`);
+      renderGitStatus(data);
+    } catch (error) {
+      renderGitStatus(null);
+      if (el.gitFileList) {
+        el.gitFileList.innerHTML = '<div class="git-empty">No Git repository found for the current workspace.</div>';
+      }
+    }
+  }
+
 
   function hideWelcome() {
     if (el.welcome) el.welcome.classList.add('hidden');
@@ -710,6 +789,7 @@ function setConnection(status) {
  normalizePermissionState();
 
     setSessionLabel(state.sessionId);
+    loadGitStatus().catch(console.error);
     setReplayMode(state.replayMode);
     if (el.transcript) {
       el.transcript.innerHTML = tab.transcriptHtml || '';
@@ -1119,6 +1199,7 @@ function renderProviderSwitcher() {
       const roots = gitData.roots || [];
       const initial = roots[0] || fsData.root || fsData.path || '';
       setCwd(initial);
+    loadGitStatus().catch(console.error);
       state.cwdSelected = initial;
       state.cwdBrowsing = initial;
       renderFsContextLabel();
@@ -2509,6 +2590,7 @@ state.effectiveSessionConfig = {
     openNewTab();
     await initCwd();
     await loadAnalytics();
+    await loadGitStatus();
     renderPermissionMode();
     el.cwdPill?.addEventListener('click', openCwdModal);
     el.cwdBackdrop?.addEventListener('click', closeCwdModal);
