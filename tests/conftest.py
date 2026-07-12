@@ -9,7 +9,10 @@ Provides a single autouse fixture that:
 Individual test files may still define their own fixtures on top of this,
 but they must NOT re-patch the same globals (use the shared fixture instead).
 """
+
 from __future__ import annotations
+
+from threading import Lock
 
 import pytest
 
@@ -31,7 +34,8 @@ def reset_plexclaw_state(tmp_path, monkeypatch):
     monkeypatch.setattr(event_store, "_conn", None)
     monkeypatch.setattr(event_store, "_conn_path", None)
     monkeypatch.setattr(event_store, "_fts_available", None)
-    monkeypatch.setattr(event_store, "_db_initialized", False)  # THE MISSING RESET
+    monkeypatch.setattr(event_store, "_db_lock", Lock())
+    monkeypatch.setattr(event_store, "_db_initialized", False)
     init_db()
 
     yield
@@ -49,4 +53,5 @@ def reset_plexclaw_state(tmp_path, monkeypatch):
     event_store._conn = None
     event_store._conn_path = None
     event_store._fts_available = None
+    event_store._db_lock = Lock()
     event_store._db_initialized = False
