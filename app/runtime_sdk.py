@@ -535,13 +535,13 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
         mock_mode,
     )
 
-    session.seq += 1
+    seq = next_seq(session)
     await _emit(
         session,
         WSEnvelope(
             protocol_version=PROTOCOL_VERSION,
             session_id=session.id,
-            seq=session.seq,
+            seq=seq,
             type="system.message",
             payload={
                 "subtype": "session.created",
