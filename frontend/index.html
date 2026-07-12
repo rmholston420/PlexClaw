@@ -1313,6 +1313,74 @@
       width: 100%;
       min-width: 0;
     }
+    .runtime-meta-shell {
+      display: grid;
+      gap: var(--s2);
+    }
+    .runtime-meta-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s2);
+      flex-wrap: wrap;
+    }
+    .runtime-meta-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--s1);
+      padding: var(--s1) var(--s2);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      white-space: nowrap;
+      transition: background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+    }
+    .runtime-meta-toggle:hover {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--primary);
+    }
+    .runtime-meta-toggle i {
+      transition: transform var(--fast) var(--ease);
+    }
+    .runtime-meta-shell.expanded .runtime-meta-toggle i {
+      transform: rotate(90deg);
+    }
+    .runtime-meta-panel[hidden] {
+      display: none !important;
+    }
+    .composer-helper-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s3);
+      flex-wrap: wrap;
+      margin-bottom: var(--s2);
+      grid-column: 1 / -1;
+    }
+    .composer-helper-copy {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .attachment-helper {
+      grid-column: 1 / -1;
+      margin-bottom: var(--s1);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+    #attachment-row {
+      min-height: 28px;
+      padding: 2px 0;
+    }
+    #attachment-error {
+      padding: var(--s2) var(--s3);
+      border-radius: var(--radius-md);
+      border: 1px solid color-mix(in srgb, var(--danger) 26%, var(--border));
+      background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+    }
     #attachment-row,
     #attachment-error {
       grid-column: 1 / -1;
@@ -1521,10 +1589,17 @@
         <button class="icon-btn terminal-toggle" id="terminal-toggle" aria-label="Toggle terminal drawer" title="Toggle terminal drawer">
   <i data-lucide="terminal-square" style="width:16px;height:16px"></i>
 </button>
-<div class="runtime-meta-group" aria-label="Provider and tool runtime">
+<div class="runtime-meta-shell" id="runtime-meta-shell">
+<div class="runtime-meta-summary">
+  <div class="provider-switcher" id="provider-switcher" aria-label="Providers"></div>
+  <button class="runtime-meta-toggle" id="runtime-meta-toggle" type="button" aria-expanded="false" aria-controls="runtime-meta-panel" title="Show advanced session details">
+    <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+    <span>Advanced session details</span>
+  </button>
+</div>
+<div class="runtime-meta-group runtime-meta-panel" id="runtime-meta-panel" aria-label="Provider and tool runtime" hidden>
 <div class="runtime-meta-header">
   <div class="runtime-meta-title">Runtime routing</div>
-  <div class="provider-switcher" id="provider-switcher" aria-label="Providers"></div>
 </div>
 <div class="runtime-meta-grid">
   <div class="runtime-meta-card">
@@ -1589,6 +1664,7 @@
     <option value="acceptEdits">SDK mode: Accept edits</option>
     <option value="bypassPermissions">SDK mode: Bypass permissions</option>
   </select>
+</div>
 </div>
 </div>
         <div class="mode-toggle" id="mode-toggle" aria-label="PlexClaw approval policy">
@@ -1663,7 +1739,12 @@
         <span class="prompt-stats" id="prompt-stats">~0 tok · 0 ch</span>
         <span class="label">Enter to send · Shift+Enter for newline</span>
       </div>
+      <div class="composer-helper-row" aria-live="polite">
+        <div class="composer-helper-copy">Attach one UTF-8 text file up to 200KB, or drag and drop it into the composer before sending.</div>
+        <div class="composer-helper-copy">New sessions are created automatically when needed.</div>
+      </div>
       <div class="composer-input-row">
+      <div class="attachment-helper">Attached context files</div>
       <div id="attachment-row" class="chips" style="margin-bottom:8px;"></div>
       <div id="attachment-error" class="tiny" style="margin-bottom:8px;color:var(--danger);display:none;"></div>
         <textarea

@@ -1,4 +1,29 @@
 const Bridge = (() => {
+  let runtimeMetaExpanded = false;
+
+  function setRuntimeMetaExpanded(expanded) {
+    runtimeMetaExpanded = !!expanded;
+    const shell = document.getElementById('runtime-meta-shell');
+    const panel = document.getElementById('runtime-meta-panel');
+    const toggle = document.getElementById('runtime-meta-toggle');
+    if (shell) shell.classList.toggle('expanded', runtimeMetaExpanded);
+    if (panel) panel.hidden = !runtimeMetaExpanded;
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', runtimeMetaExpanded ? 'true' : 'false');
+      toggle.title = runtimeMetaExpanded ? 'Hide advanced session details' : 'Show advanced session details';
+    }
+    if (window.lucide?.createIcons) window.lucide.createIcons();
+  }
+
+  function bindRuntimeMetaToggle() {
+    const toggle = document.getElementById('runtime-meta-toggle');
+    if (!toggle || toggle.dataset.bound === 'true') return;
+    toggle.dataset.bound = 'true';
+    toggle.addEventListener('click', () => {
+      setRuntimeMetaExpanded(!runtimeMetaExpanded);
+    });
+  }
+
   const pageUrl = new URL(window.location.href);
   const wsProtocol = pageUrl.protocol === 'https:' ? 'wss:' : 'ws:';
   const bridgeOrigin = pageUrl.origin;
@@ -2309,6 +2334,8 @@ state.effectiveSessionConfig = {
     });
 
     await loadProviders();
+    bindRuntimeMetaToggle();
+    setRuntimeMetaExpanded(false);
     bindEvents();
     bindTextareaResize();
     applyTerminalHeight();
