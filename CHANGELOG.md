@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 - 2026-07-12
+
+### Added
+- Git explorer workstation: branch list, branch switch/create, staged/unstaged summaries, and unified diff inspection wired to the active session repo.
+- Filesystem explorer workstation: session-aware directory browser with inline text preview panel bound to the active session working directory.
+- MCP control plane: Claude Desktop MCP server inventory, command-path testing, enabled/disabled toggles, and add/delete controls surfaced in the runtime UI.
+
+### Changed
+- Runtime meta panel now includes MCP control-plane status alongside provider routing, tool-search state, session cwd, and runtime mode to keep orchestration details visible in one place.
+- Session-aware filesystem routes now drive both Git explorer and filesystem explorer panes, so browser UX follows the active session jail root rather than only the process startup directory.
+
+### Hardening
+- Git explorer actions (branch checkout/create and commit) now refresh status and branch lists atomically to keep frontend state aligned with the underlying repo.
+- MCP config I/O continues to use atomic writes to the standard Claude Desktop config path, and UI operations respect the existing config layout instead of introducing a new format.
+
+
 ## 0.2.0 - 2026-07-10
 
 ### Added
