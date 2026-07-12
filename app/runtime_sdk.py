@@ -220,6 +220,7 @@ class LiveSession:
     )
     context_files: dict[str, str] = field(default_factory=dict, repr=False)
     _context_injected: bool = field(default=False, repr=False)
+    prompt_task: asyncio.Task | None = field(default=None, repr=False)
     mock_mode: bool = field(default=False, repr=False)
     interrupt_requested: bool = field(default=False, repr=False)
 
@@ -896,8 +897,32 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
                 session.status = "ready"
 
 
+async def _cancel_prompt_task(session: LiveSession) -> None:
+    task = session.prompt_task
+    if task is None:
+        return
+    if task.done():
+        session.prompt_task = None
+        return
+
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+    finally:
+        session.prompt_task = None
+
+
 async def handle_prompt(req: PromptRequest) -> None:
-    asyncio.create_task(submit_prompt(req.session_id, req.prompt))
+    session = _sessions.get(req.session_id)
+    if not session:
+        raise KeyError(f"Session {req.session_id} not found")
+
+    if session.prompt_task is not None and not session.prompt_task.done():
+        await _cancel_prompt_task(session)
+
+    session.prompt_task = asyncio.create_task(submit_prompt(req.session_id, req.prompt))
 
 
 async def interrupt_session(session_id: str) -> None:
@@ -934,6 +959,8 @@ async def delete_session(session_id: str) -> None:
     session = _sessions.get(session_id)
     if not session:
         raise KeyError(f"Session {session_id} not found")
+
+    await _cancel_prompt_task(session)
 
     if session._client:
         try:
