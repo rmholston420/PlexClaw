@@ -437,6 +437,24 @@ def remove_context_file(session_id: str, filename: str) -> None:
 
 
 def _rewrite_prompt_for_local_agent(prompt: str) -> str:
+    lowered = prompt.strip().lower()
+    repo_summary_triggers = {
+        "summarize this repo",
+        "summarize the repo",
+        "summarize the current repo",
+        "what does this repo do",
+        "what does this app do",
+    }
+    if lowered in repo_summary_triggers:
+        return (
+            "Using only the current repository under the active session cwd "
+            "and any injected context files, summarize this project. Focus on "
+            "its purpose, main architecture, key backend and frontend "
+            "components, and notable configuration or build-status details. "
+            "Do not propose edits, refactors, workflows, or new files."
+        )
+
+def _rewrite_prompt_for_local_agent(prompt: str) -> str:
     raw = prompt.strip()
     lowered = raw.lower()
 
