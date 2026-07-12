@@ -1948,14 +1948,20 @@ state.effectiveSessionConfig = {
       return;
     }
 
-    const groups = groupByLineage(filtered);
+    const groups = Array.isArray(groupByLineage(filtered)) ? groupByLineage(filtered) : [];
 
-    groups.forEach(({ root, items }) => {
+    groups.forEach((groupEntry) => {
+      const root = groupEntry?.root || 'unknown';
+      const items = Array.isArray(groupEntry?.items) ? groupEntry.items : [];
       const isOpen = state.lineageOpen.has(root) ? state.lineageOpen.get(root) : items.length <= 3;
       state.lineageOpen.set(root, isOpen);
 
       const group = document.createElement('div');
       group.className = 'lineage-group' + (isOpen ? ' lineage-open' : '');
+
+      if (!items.length) {
+        return;
+      }
 
       if (items.length > 1) {
         const header = document.createElement('button');
