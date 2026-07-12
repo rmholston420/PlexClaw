@@ -52,3 +52,7 @@ Prefer project-local `.claude/settings.local.json` for non-secret defaults and `
 For local Anthropic-compatible backends, keep `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`,
 and the default model mapping variables aligned between Claude Code, the SDK, and PlexClaw.
 
+## Local verification
+Use `scripts/doctor-local-claude.sh` to confirm the Claude Agent SDK is importable,
+PlexClaw sees `_SDK_AVAILABLE = True`, and local Anthropic-compatible routing env vars
+match the project-local `.claude/settings.local.json` contract.
