@@ -6,7 +6,7 @@ import sqlite3
 import pytest
 
 import app.event_store as es
-from app.event_store import append_event, search_events
+from app.event_store import append_event
 
 _INSERT_SQL = (
     "INSERT INTO events "
@@ -228,7 +228,10 @@ def test_search_linear_deduplicates_duplicate_session_and_seq(monkeypatch):
 
 def test_search_linear_normalizes_newlines_in_snippet(monkeypatch):
     monkeypatch.setattr(es, "_fts_available", False)
-    es._blocking_append("s1", 1, "assistant.delta", {"text": "alpha\nneedle\nomega"}, '{"text": "alpha\\nneedle\\nomega"}')
+    payload = '{"text": "alpha\\nneedle\\nomega"}'
+    es._blocking_append(
+        "s1", 1, "assistant.delta", {"text": "alpha\nneedle\nomega"}, payload
+    )
 
     hits = es._blocking_search("needle")
 
@@ -241,7 +244,10 @@ def test_search_linear_limits_results_to_200(monkeypatch):
     monkeypatch.setattr(es, "_fts_available", False)
 
     for i in range(205):
-        es._blocking_append(f"s{i:03d}", i, "assistant.delta", {"text": "cap needle"}, '{"text": "cap needle"}')
+        pj = '{"text": "cap needle"}'
+        es._blocking_append(
+            f"s{i:03d}", i, "assistant.delta", {"text": "cap needle"}, pj
+        )
 
     hits = es._blocking_search("cap needle")
 

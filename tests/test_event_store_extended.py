@@ -156,7 +156,9 @@ async def test_query_events_returns_created_at_field():
 
 
 async def test_search_events_tool_completed_output():
-    await append_event("s", 1, "tool.completed", {"tool_id": "t1", "output": "zap the cache"})
+    await append_event(
+        "s", 1, "tool.completed", {"tool_id": "t1", "output": "zap the cache"}
+    )
     hits = await search_events("zap the cache")
     assert len(hits) >= 1
     assert hits[0]["session_id"] == "s"
