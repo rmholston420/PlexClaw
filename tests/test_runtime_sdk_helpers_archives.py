@@ -829,3 +829,34 @@ def test_archive_messages_to_events_uses_dict_for_mapping_like_env(monkeypatch):
         "normalize_assistant_completed",
         original_completed,
     )
+
+@pytest.mark.asyncio
+async def test_submit_prompt_connects_once(monkeypatch, clean_sessions):
+    class DummyClient:
+        def __init__(self):
+            self.connect_calls = 0
+            self.query_calls = []
+
+        async def connect(self):
+            self.connect_calls += 1
+
+        async def query(self, *, prompt: str):
+            self.query_calls.append(prompt)
+
+        async def receive_response(self):
+            if False:
+                yield None
+
+        async def interrupt(self):
+            return None
+
+    session = make_session()
+    session._client = DummyClient()
+    runtime_sdk._sessions[session.id] = session
+
+    await runtime_sdk.submit_prompt(session.id, "first")
+    await runtime_sdk.submit_prompt(session.id, "second")
+
+    assert session._client.connect_calls == 1
+    assert session._client.query_calls == ["first", "second"]
+

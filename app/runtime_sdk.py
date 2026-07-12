@@ -213,6 +213,7 @@ class LiveSession:
     tag: str | None = None
     seq: int = 0
     _client: Any = field(default=None, repr=False)
+    _client_connected: bool = field(default=False, repr=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, repr=False)
     pending_approvals: dict[str, PendingApproval] = field(
         default_factory=dict,
@@ -670,8 +671,12 @@ async def _stream_sdk(session: LiveSession, prompt: str) -> None:
     _pending_tools: dict[str, dict[str, Any]] = {}
 
     try:
-        # ClaudeSDKClient (and MockSDKClient) must be connected before querying
-        await client.connect()
+        # ClaudeSDKClient (and MockSDKClient) must be connected before querying.
+        # Real SDK clients may treat connect() as non-idempotent, so only connect once
+        # per live session/client instance.
+        if not session._client_connected:
+            await client.connect()
+            session._client_connected = True
         await client.query(prompt=prompt)
 
         _completed_emitted = False
