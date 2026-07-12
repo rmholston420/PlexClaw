@@ -19,3 +19,9 @@ def test_cwd_confirm_prefers_manual_input_value() -> None:
         "setCwd(manualValue || state.cwdBrowsing || state.cwdSelected || state.cwd);"
         in text
     )
+
+def test_cwd_pill_click_is_bound_once() -> None:
+    text = Path("frontend/sdk-bridge-client.js").read_text()
+    assert text.count("el.cwdPill?.addEventListener('click', openCwdModal);") == 1
+    assert "el.cwdPill.addEventListener('click', () => openCwdModal());" not in text
+

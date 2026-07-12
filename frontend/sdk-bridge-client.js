@@ -1021,11 +1021,6 @@ function bindStableUiHandlers() {
      el.newTabBtn.dataset.bound = 'true';
    }
 
-   if (el.cwdPill && !el.cwdPill.dataset.bound) {
-     el.cwdPill.addEventListener('click', () => openCwdModal());
-     el.cwdPill.dataset.bound = 'true';
-   }
-
    if (el.cwdClose && !el.cwdClose.dataset.bound) {
      el.cwdClose.addEventListener('click', () => closeCwdModal());
      el.cwdClose.dataset.bound = 'true';
