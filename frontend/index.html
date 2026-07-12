@@ -1548,19 +1548,19 @@
         <i data-lucide="plus" style="width:16px;height:16px"></i>
         New session
       </button>
-      <input id="archive-search" class="search-input" type="search" placeholder="Search sessions…" autocomplete="off" />
+      <input id="archive-search" class="search-input" type="search" placeholder="Search title, summary, tag, cwd, or lineage…" autocomplete="off" />
       <select id="archive-sort" class="sort-select">
-        <option value="recent">Recent first</option>
-        <option value="title">By title</option>
-        <option value="tag">By tag</option>
-        <option value="root">By lineage</option>
+        <option value="recent">Recent activity</option>
+        <option value="title">Title</option>
+        <option value="tag">Tag</option>
+        <option value="root">Lineage</option>
       </select>
     </div>
 
     <div class="session-list" id="archive-list">
       <div class="empty-archive">
         <i data-lucide="folder-open" style="width:36px;height:36px"></i>
-        <p>No archived sessions yet. Start a live session to see history here.</p>
+        <p>No archived sessions yet. Completed or resumable Claude sessions will appear here with replay, continue, fork, rename, and tag controls.</p>
       </div>
     </div>
   </aside>

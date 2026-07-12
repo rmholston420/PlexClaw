@@ -1936,95 +1936,124 @@ state.effectiveSessionConfig = {
       return !query || hay.includes(query);
     });
 
-    const groups = groupByLineage(filtered);
     el.archiveList.innerHTML = '';
 
-    if (!groups.length) {
+    if (!filtered.length) {
       el.archiveList.innerHTML = `
         <div class="empty-archive">
-          <i data-lucide="folder-open" style="width:32px;height:32px"></i>
-          <p>${query ? 'No sessions match your search.' : 'No archived sessions yet.'}</p>
+          <i data-lucide="folder-search" style="width:36px;height:36px"></i>
+          <p>${query ? 'No sessions match your search, tag, cwd, or lineage query.' : 'No archived sessions yet. Completed or resumable Claude sessions will appear here.'}</p>
         </div>`;
       safeCreateIcons([el.archiveList]);
       return;
     }
 
-    for (const [root, items] of groups) {
+    const groups = groupByLineage(filtered);
+
+    groups.forEach(({ root, items }) => {
       const isOpen = state.lineageOpen.has(root) ? state.lineageOpen.get(root) : items.length <= 3;
       state.lineageOpen.set(root, isOpen);
 
       const group = document.createElement('div');
       group.className = 'lineage-group' + (isOpen ? ' lineage-open' : '');
 
-      if (items.length > 1 || root !== items[0]?.id) {
-        const header = document.createElement('div');
+      if (items.length > 1) {
+        const header = document.createElement('button');
+        header.type = 'button';
         header.className = 'lineage-header';
         header.innerHTML = `
-          <i data-lucide="chevron-right" class="lineage-chevron" style="width:14px;height:14px"></i>
-          <span>Lineage <code>${root.slice(0, 8)}</code></span>
-          <span style="margin-left:auto;opacity:0.6">${items.length} session${items.length !== 1 ? 's' : ''}</span>
+          <span style="display:flex;align-items:center;gap:8px;">
+            <i data-lucide="chevron-right" class="lineage-chevron" style="width:14px;height:14px"></i>
+            <strong>${escapeHtml(items[0].title || 'Untitled root')}</strong>
+          </span>
+          <span class="badge">${items.length} sessions</span>
         `;
         header.addEventListener('click', () => {
           const next = !state.lineageOpen.get(root);
           state.lineageOpen.set(root, next);
           group.classList.toggle('lineage-open', next);
-          body.classList.toggle('hidden', !next);
+          body.hidden = !next;
         });
         group.appendChild(header);
       }
 
       const body = document.createElement('div');
-      body.className = 'group-body' + (!isOpen ? ' hidden' : '');
+      body.hidden = !isOpen;
 
-      items.forEach(item => {
+      items.forEach((item) => {
         const card = document.createElement('div');
-        card.className = 'session-card' + (item.id === state.sessionId ? ' active' : '');
-        card.setAttribute('data-session-id', item.id);
+        card.className = 'session-card';
+        card.dataset.sessionId = item.id;
 
-        const chips = [
-          item.tag ? `<span class="chip accent">${escapeHtml(item.tag)}</span>` : '',
-          item.model ? `<span class="chip">${escapeHtml(item.model)}</span>` : '',
-          item.message_count != null ? `<span class="chip">${item.message_count} msgs</span>` : '',
-        ].filter(Boolean).join('');
-
-        const ts = item.updated_at
-          ? new Date(item.updated_at).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
-          : '';
-        const cwdLabel = item.cwd ? shortenPath(item.cwd) : '';
-        const summary = item.summary || '';
-        const title = item.title || summary || 'Untitled session';
+        const title = item.title || 'Untitled session';
+        const summary = item.summary || 'No summary available.';
+        const rootId = item.root_session_id || item.id;
+        const isRoot = rootId === item.id;
+        const lineageLabel = isRoot ? 'Lineage root' : `Branch of ${rootId.slice(0, 8)}`;
+        const cwdLabel = item.cwd || '~';
+        const modelLabel = item.model || 'Unknown model';
+        const tagChip = item.tag ? `<span class="chip accent">${escapeHtml(item.tag)}</span>` : '';
+        const updatedLabel = item.updated_at || item.created_at || 'Unknown activity time';
+        const messageCount = Number.isFinite(item.message_count) ? `${item.message_count} msgs` : null;
 
         card.innerHTML = `
-          <div class="session-title" title="${escapeHtml(item.id)}">${escapeHtml(title)}</div>
-          ${summary ? `<div class="session-meta">${escapeHtml(summary)}</div>` : ''}
-          ${cwdLabel ? `<div class="session-submeta" title="${escapeHtml(item.cwd)}">CWD: ${escapeHtml(cwdLabel)}</div>` : ''}
-          ${ts ? `<div class="session-submeta">Last updated: ${escapeHtml(ts)}</div>` : ''}
-          <div class="chips">${chips}</div>
+          <div class="session-card-header">
+            <div class="session-title-wrap">
+              <div class="session-title">${escapeHtml(title)}</div>
+              <div class="session-subtitle">${escapeHtml(lineageLabel)}</div>
+            </div>
+            <div class="session-card-chips">
+              ${tagChip}
+              <span class="chip">${isRoot ? 'Root' : 'Branch'}</span>
+            </div>
+          </div>
+
+          <div class="session-summary">${escapeHtml(summary)}</div>
+
+          <div class="session-meta">
+            <span class="meta-pill" title="Last activity">${escapeHtml(updatedLabel)}</span>
+            <span class="meta-pill" title="Working directory">${escapeHtml(cwdLabel)}</span>
+            <span class="meta-pill" title="Model">${escapeHtml(modelLabel)}</span>
+            ${messageCount ? `<span class="meta-pill" title="Message count">${escapeHtml(messageCount)}</span>` : ''}
+          </div>
+
           <div class="card-actions">
-            <button class="card-btn primary" data-action="continue"><i data-lucide="play" style="width:11px;height:11px"></i>Continue</button>
-            <button class="card-btn" data-action="fork"><i data-lucide="git-branch" style="width:11px;height:11px"></i>Fork</button>
-            <button class="card-btn" data-action="replay"><i data-lucide="rewind" style="width:11px;height:11px"></i>Replay</button>
-            <button class="card-btn" data-action="rename"><i data-lucide="pencil" style="width:11px;height:11px"></i>Rename</button>
-            <button class="card-btn" data-action="tag"><i data-lucide="tag" style="width:11px;height:11px"></i>Tag</button>
+            <button class="card-btn" data-action="continue" title="Resume this archived session in its existing lineage">
+              <i data-lucide="play" style="width:11px;height:11px"></i>Continue
+            </button>
+            <button class="card-btn" data-action="fork" title="Start a new branch from this archived session">
+              <i data-lucide="git-branch" style="width:11px;height:11px"></i>Fork
+            </button>
+            <button class="card-btn" data-action="replay" title="Replay stored events through the transcript renderer">
+              <i data-lucide="rewind" style="width:11px;height:11px"></i>Replay
+            </button>
+            <button class="card-btn" data-action="rename" title="Rename this archived session">
+              <i data-lucide="pencil" style="width:11px;height:11px"></i>Rename
+            </button>
+            <button class="card-btn" data-action="tag" title="Add or change session tag">
+              <i data-lucide="tag" style="width:11px;height:11px"></i>Tag
+            </button>
           </div>
         `;
 
         card.querySelector('[data-action="continue"]').addEventListener('click', async () => {
-          clearTranscript();
           try { await createSession({ resumeSessionId: item.id, forkSession: false }); }
-          catch (e) { appendSystemMessage('Failed to resume session.', 'error'); }
+          catch (e) { appendSystemMessage('Failed to continue session lineage.', 'error'); }
         });
+
         card.querySelector('[data-action="fork"]').addEventListener('click', async () => {
-          clearTranscript();
           try { await createSession({ resumeSessionId: item.id, forkSession: true }); }
           catch (e) { appendSystemMessage('Failed to fork session.', 'error'); }
         });
+
         card.querySelector('[data-action="replay"]').addEventListener('click', async () => {
           await replaySession(item.id, 'archive');
         });
+
         card.querySelector('[data-action="rename"]').addEventListener('click', async () => {
           await renameSession(item.id, item.title || '');
         });
+
         card.querySelector('[data-action="tag"]').addEventListener('click', async () => {
           await tagSession(item.id, item.tag || '');
         });
@@ -2034,7 +2063,7 @@ state.effectiveSessionConfig = {
 
       group.appendChild(body);
       el.archiveList.appendChild(group);
-    }
+    });
 
     safeCreateIcons([el.archiveList]);
   }
