@@ -19,7 +19,7 @@ import pytest
 import app.event_store as event_store
 from app import hooks
 from app import runtime_sdk as runtime
-from app.event_store import init_db
+from app.event_store import close_db, init_db
 
 
 @pytest.fixture(autouse=True)
@@ -31,11 +31,8 @@ def reset_plexclaw_state(tmp_path, monkeypatch):
     # --- event store: redirect to isolated temp DB ---
     db_path = tmp_path / "test_events.db"
     monkeypatch.setattr(event_store, "DB_PATH", db_path)
-    monkeypatch.setattr(event_store, "_conn", None)
-    monkeypatch.setattr(event_store, "_conn_path", None)
-    monkeypatch.setattr(event_store, "_fts_available", None)
     monkeypatch.setattr(event_store, "_db_lock", Lock())
-    monkeypatch.setattr(event_store, "_db_initialized", False)
+    close_db()
     init_db()
 
     yield
@@ -44,14 +41,5 @@ def reset_plexclaw_state(tmp_path, monkeypatch):
     # --- teardown ---
     runtime._sessions.clear()
 
-    conn = getattr(event_store, "_conn", None)
-    if conn is not None:
-        try:
-            conn.close()
-        except Exception:
-            pass
-    event_store._conn = None
-    event_store._conn_path = None
-    event_store._fts_available = None
+    close_db()
     event_store._db_lock = Lock()
-    event_store._db_initialized = False

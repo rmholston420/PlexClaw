@@ -124,6 +124,22 @@ def init_db() -> None:
         _db_initialized = True
 
 
+def close_db() -> None:
+    """Close and reset module-global SQLite state safely."""
+    global _conn, _conn_path, _fts_available, _db_initialized
+    with _db_lock:
+        conn = _conn
+        _conn = None
+        _conn_path = None
+        _fts_available = None
+        _db_initialized = False
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
 def _ensure_initialized() -> None:
     if _db_initialized:
         return
