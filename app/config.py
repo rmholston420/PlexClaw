@@ -3,6 +3,14 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load repo-local environment for Claude Agent SDK before settings are read.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
+
+
 
 DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost",
@@ -73,4 +81,3 @@ def get_tool_search_env(mode: str | None) -> dict[str, str]:
     if not mode:
         return {}
     return {"ENABLE_TOOL_SEARCH": mode}
-
