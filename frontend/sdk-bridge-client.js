@@ -1951,7 +1951,7 @@ function bindStableUiHandlers() {
 
     el.transcript.appendChild(block);
     safeCreateIcons([block]);
-    setToolJson(block, 'started', 'tool.started payload', { tool_name: toolName || 'tool', input: input || {}, event_type: 'tool.started' });
+    setToolJson(block, 'started', 'tool.started payload', { tool_name: toolName || 'tool', event_type: 'tool.started' });
   setToolDetailsVisible(block, false);
   state.toolEls.set(toolId, block);
     scrollBottom();
@@ -2648,11 +2648,9 @@ state.effectiveSessionConfig = {
       return;
     }
 
-    const groups = Array.isArray(groupByLineage(filtered)) ? groupByLineage(filtered) : [];
+    const groups = groupByLineage(filtered);
 
-    groups.forEach((groupEntry) => {
-      const root = groupEntry?.root || 'unknown';
-      const items = Array.isArray(groupEntry?.items) ? groupEntry.items : [];
+    groups.forEach(([root, items]) => {
       const isOpen = state.lineageOpen.has(root) ? state.lineageOpen.get(root) : items.length <= 3;
       state.lineageOpen.set(root, isOpen);
 
