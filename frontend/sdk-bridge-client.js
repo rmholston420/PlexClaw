@@ -2322,7 +2322,8 @@ state.effectiveSessionConfig = {
     el.cwdClose?.addEventListener('click', closeCwdModal);
     el.cwdCancel?.addEventListener('click', closeCwdModal);
     el.cwdConfirm?.addEventListener('click', () => {
-      setCwd(state.cwdBrowsing || state.cwdSelected || state.cwd);
+      const manualValue = el.cwdManualInput?.value.trim() || '';
+      setCwd(manualValue || state.cwdBrowsing || state.cwdSelected || state.cwd);
       closeCwdModal();
     });
     el.cwdManualInput?.addEventListener('keydown', async (e) => {
