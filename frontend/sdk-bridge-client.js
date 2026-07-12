@@ -263,6 +263,62 @@ sessionElapsedMeta: document.getElementById('session-elapsed-meta'),
   }
 
 
+
+  function safeJson(value) {
+    try {
+      return JSON.stringify(value ?? {}, null, 2);
+    } catch (error) {
+      return JSON.stringify({ error: 'Could not serialize payload' }, null, 2);
+    }
+  }
+
+  function ensureToolJsonSection(block, key, label) {
+    let section = block.querySelector(`.tool-json-section[data-json-key="${key}"]`);
+    if (section) return section;
+    section = document.createElement('div');
+    section.className = 'tool-body-section tool-json-section';
+    section.dataset.jsonKey = key;
+    section.hidden = true;
+    section.innerHTML = `
+      <div class="tool-label">Details</div>
+      <div class="tool-json-meta">
+        <span class="tool-json-kind">${escapeHtml(label)}</span>
+        <button class="tool-json-copy" type="button">Copy JSON</button>
+      </div>
+      <pre></pre>
+    `;
+    const copyBtn = section.querySelector('.tool-json-copy');
+    copyBtn?.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      const text = section.querySelector('pre')?.textContent || '';
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = 'Copied';
+        setTimeout(() => { copyBtn.textContent = 'Copy JSON'; }, 900);
+      } catch (error) {
+        appendSystemMessage('Could not copy tool JSON.', 'error');
+      }
+    });
+    block.querySelector('.tool-body')?.appendChild(section);
+    return section;
+  }
+
+  function setToolJson(block, key, label, payload) {
+    const section = ensureToolJsonSection(block, key, label);
+    const pre = section.querySelector('pre');
+    if (pre) pre.textContent = safeJson(payload);
+  }
+
+  function setToolDetailsVisible(block, visible) {
+    block.dataset.detailsExpanded = visible ? 'true' : 'false';
+    block.querySelectorAll('.tool-json-section').forEach((section) => {
+      section.hidden = !visible;
+    });
+    const toggle = block.querySelector('.tool-details-toggle');
+    if (toggle) toggle.textContent = visible ? 'Hide details' : 'Show details';
+  }
+
   function hideWelcome() {
     if (el.welcome) el.welcome.classList.add('hidden');
   }
@@ -1378,13 +1434,22 @@ function bindStableUiHandlers() {
       </div>
     `;
 
-    block.querySelector('.tool-header').addEventListener('click', () => {
+    block.querySelector('.tool-header').addEventListener('click', (event) => {
+      if (event.target.closest('.tool-details-toggle') || event.target.closest('.tool-json-copy')) return;
       block.classList.toggle('expanded');
+    });
+    block.querySelector('.tool-details-toggle')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const next = block.dataset.detailsExpanded !== 'true';
+      setToolDetailsVisible(block, next);
+      if (!block.classList.contains('expanded')) block.classList.add('expanded');
     });
 
     el.transcript.appendChild(block);
     safeCreateIcons([block]);
-    state.toolEls.set(toolId, block);
+    setToolJson(block, 'started', 'tool.started payload', { tool_name: toolName || 'tool', input: input || {}, event_type: 'tool.started' });
+  setToolDetailsVisible(block, false);
+  state.toolEls.set(toolId, block);
     scrollBottom();
     return block;
   }
@@ -1644,6 +1709,7 @@ function bindStableUiHandlers() {
           </div>
         `;
         block.querySelector('.tool-body').appendChild(approvalSection);
+      setToolJson(block, 'approval', 'approval payload', evt.payload || {});
       }
 
       const approveBtn = approvalSection.querySelector(`[data-approve-tool="${evt.payload?.tool_id}"]`);

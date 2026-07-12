@@ -390,6 +390,56 @@
     font-weight: 700;
   }
 
+
+  .tool-details-toggle {
+    margin-left: auto;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 0.2rem 0.5rem;
+    background: var(--surface-2);
+    transition: background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  }
+
+  .tool-details-toggle:hover {
+    background: var(--surface-offset);
+    color: var(--text);
+  }
+
+  .tool-json-section[hidden] {
+    display: none !important;
+  }
+
+  .tool-json-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    margin-bottom: var(--s2);
+  }
+
+  .tool-json-kind {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .tool-json-copy {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 0.2rem 0.5rem;
+    background: var(--surface);
+  }
+
+  .tool-json-copy:hover {
+    background: var(--surface-offset);
+    color: var(--text);
+  }
+
   .tool-body pre {
     margin: 0;
     padding: var(--s3);
