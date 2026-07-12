@@ -41,6 +41,7 @@ from app.config import (
     get_vllm_base_url,
 )
 from app.event_store import init_db, query_events, search_events
+from app.normalizer import normalize_session_failed
 from app.provider_defaults import DEFAULT_CLOUD_MODELS
 from app.schemas import (
     PROTOCOL_VERSION,
@@ -139,9 +140,6 @@ app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=get_allowed_hosts(),
 )
-
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -572,6 +570,26 @@ async def tag_session(session_id: str, body: TagRequest) -> dict:
 # ---------------------------------------------------------------------------
 
 
+async def _submit_prompt_task(session_id: str, prompt: str) -> None:
+    try:
+        await runtime.submit_prompt(session_id, prompt)
+    except Exception as exc:
+        logging.exception("submit_prompt failed for session %s", session_id)
+
+        session = runtime.get_session(session_id)
+        if not session:
+            return
+
+        session.status = "failed"
+        env = normalize_session_failed(session.id, session.next_seq(), str(exc))
+        try:
+            await runtime._emit(session, env)
+        except Exception:
+            logging.exception(
+                "failed to emit session.failed for session %s", session_id
+            )
+
+
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
     client_protocol = websocket.query_params.get("protocol_version")
@@ -636,7 +654,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str) -> None:
 
             prompt = data.get("prompt", "")
             if prompt:
-                asyncio.create_task(runtime.submit_prompt(session_id, prompt))
+                asyncio.create_task(_submit_prompt_task(session_id, prompt))
     except WebSocketDisconnect:
         pass
     finally:
