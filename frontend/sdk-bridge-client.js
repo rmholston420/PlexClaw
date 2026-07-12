@@ -2374,3 +2374,26 @@ return { init };
 })();
 
 document.addEventListener('DOMContentLoaded', Bridge.init);
+
+
+
+function setCapabilityPill(id, active, label) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (label) el.textContent = label;
+  el.classList.toggle("is-active", !!active);
+}
+
+function syncCapabilityPills(state) {
+  const hasSession = !!state?.sessionId;
+  const hasReplay = !!state?.isReplayMode;
+  const hasRouting = !!state?.provider || !!state?.providerBaseUrl;
+  const hasTools = !!state?.toolSearchActive || !!state?.activeToolUseId;
+  setCapabilityPill("cap-session-pill", hasSession, "Session continuity");
+  setCapabilityPill("cap-lineage-pill", true, "Resume / fork lineage");
+  setCapabilityPill("cap-replay-pill", hasReplay, hasReplay ? "Replay mode active" : "Replayable events");
+  setCapabilityPill("cap-hooks-pill", true, "Hook-ready runtime");
+  setCapabilityPill("cap-routing-pill", hasRouting, hasRouting ? `Route: ${state.provider || "configured"}` : "Local model routing");
+  setCapabilityPill("cap-tools-pill", hasTools, hasTools ? "Tool streaming active" : "Tool streaming");
+}
+
