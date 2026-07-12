@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
-import pytest
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 import app.event_store as es
@@ -22,7 +23,14 @@ def _tmp_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     es.close_db()
 
 
-def _insert_completed(session_id: str, model: str, inp: int, out: int, cr: int = 0, cw: int = 0) -> None:
+def _insert_completed(
+    session_id: str,
+    model: str,
+    inp: int,
+    out: int,
+    cr: int = 0,
+    cw: int = 0,
+) -> None:
     """Insert a synthetic assistant.completed event with usage metadata."""
     payload = {
         "model": model,

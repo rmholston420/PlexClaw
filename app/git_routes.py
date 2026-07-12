@@ -8,7 +8,6 @@ filesystem jail (_resolve_safe_path) and session cwd.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import shutil
 import subprocess
@@ -57,7 +56,10 @@ def _require_git_repo(path: Path) -> Path:
         if parent == current:
             break
         current = parent
-    raise HTTPException(status_code=404, detail=f"no git repository found at or above: {path}")
+    raise HTTPException(
+        status_code=404,
+        detail=f"no git repository found at or above: {path}",
+    )
 
 
 def _parse_status(output: str) -> list[dict[str, str]]:
@@ -135,7 +137,11 @@ async def git_status(
     lines = result.stdout.splitlines()
 
     branch_line = lines[0] if lines else ""
-    branch = branch_line.lstrip("# ").split("...")[0] if branch_line.startswith("## ") else "(detached)"
+    branch = (
+        branch_line.lstrip("# ").split("...")[0]
+        if branch_line.startswith("## ")
+        else "(detached)"
+    )
     if branch.startswith("## "):
         branch = branch[3:].split("...")[0]
 
@@ -143,7 +149,14 @@ async def git_status(
     files = _parse_status(file_lines)
 
     staged   = [f for f in files if f["status"][0] not in (" ", "?")]
-    unstaged = [f for f in files if f["status"][1] not in (" ",) or f["status"] == "??"]
+    unstaged = [
+        f for f in files
+        if f["status"] == "??"
+        or (
+            len(f["status"]) > 1
+            and f["status"][1] not in (" ",)
+        )
+    ]
 
     return {
         "repo": str(repo),
@@ -200,7 +213,12 @@ async def git_branches(
     resolved, _root = _resolve_safe_path(path, session_id=session_id)
     repo = _require_git_repo(resolved)
 
-    result = await _agit("branch", "--list", "--format=%(refname:short)|%(HEAD)", cwd=repo)
+    result = await _agit(
+        "branch",
+        "--list",
+        "--format=%(refname:short)|%(HEAD)",
+        cwd=repo,
+    )
     branches: list[dict[str, Any]] = []
     current = None
     for line in result.stdout.splitlines():

@@ -11,12 +11,11 @@ import asyncio
 import json
 import logging
 from collections import defaultdict
-from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Query
 
-from app.event_store import _db_lock, _get_conn, _ensure_initialized
+from app.event_store import _db_lock, _ensure_initialized, _get_conn
 
 log = logging.getLogger(__name__)
 
@@ -28,21 +27,56 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 # ---------------------------------------------------------------------------
 
 CLAUDE_PRICING: dict[str, dict[str, float]] = {
-    # Model prefix → {input, output, cache_read, cache_write}
-    "claude-opus-4":       {"input": 15.00, "output": 75.00, "cache_read": 1.50,  "cache_write": 18.75},
-    "claude-sonnet-4":     {"input":  3.00, "output": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
-    "claude-haiku-4":      {"input":  0.80, "output":  4.00, "cache_read": 0.08,  "cache_write":  1.00},
-    "claude-3-5-sonnet":   {"input":  3.00, "output": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
-    "claude-3-5-haiku":    {"input":  0.80, "output":  4.00, "cache_read": 0.08,  "cache_write":  1.00},
-    "claude-3-opus":       {"input": 15.00, "output": 75.00, "cache_read": 1.50,  "cache_write": 18.75},
-    # Local models — zero cost
-    "qwen":   {"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
-    "llama":  {"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
-    "mistral":{"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
-    "gemma":  {"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
+    "claude-opus-4": {
+        "input": 15.00,
+        "output": 75.00,
+        "cache_read": 1.50,
+        "cache_write": 18.75,
+    },
+    "claude-sonnet-4": {
+        "input": 3.00,
+        "output": 15.00,
+        "cache_read": 0.30,
+        "cache_write": 3.75,
+    },
+    "claude-haiku-4": {
+        "input": 0.80,
+        "output": 4.00,
+        "cache_read": 0.08,
+        "cache_write": 1.00,
+    },
+    "claude-3-5-sonnet": {
+        "input": 3.00,
+        "output": 15.00,
+        "cache_read": 0.30,
+        "cache_write": 3.75,
+    },
+    "claude-3-5-haiku": {
+        "input": 0.80,
+        "output": 4.00,
+        "cache_read": 0.08,
+        "cache_write": 1.00,
+    },
+    "claude-3-opus": {
+        "input": 15.00,
+        "output": 75.00,
+        "cache_read": 1.50,
+        "cache_write": 18.75,
+    },
+    "qwen": {
+        "input": 0.0,
+        "output": 0.0,
+        "cache_read": 0.0,
+        "cache_write": 0.0,
+    },
 }
 
-_FALLBACK_PRICING = {"input": 3.00, "output": 15.00, "cache_read": 0.30, "cache_write": 3.75}
+_FALLBACK_PRICING = {
+    "input": 3.00,
+    "output": 15.00,
+    "cache_read": 0.30,
+    "cache_write": 3.75,
+}
 
 
 def _get_pricing(model: str) -> dict[str, float]:
@@ -84,10 +118,20 @@ def _aggregate_usage() -> dict[str, Any]:
             """
         ).fetchall()
 
-    by_model:   dict[str, dict[str, Any]] = defaultdict(lambda: {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "cost_usd": 0.0, "calls": 0})
-    by_day:     dict[str, dict[str, Any]] = defaultdict(lambda: {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0})
-    by_session: dict[str, dict[str, Any]] = defaultdict(lambda: {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0, "calls": 0})
-    totals: dict[str, Any] = {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "cost_usd": 0.0, "calls": 0}
+    def _bucket() -> dict[str, Any]:
+        return {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "cost_usd": 0.0,
+            "calls": 0,
+        }
+
+    by_model: dict[str, dict[str, Any]] = defaultdict(_bucket)
+    by_day: dict[str, dict[str, Any]] = defaultdict(_bucket)
+    by_session: dict[str, dict[str, Any]] = defaultdict(_bucket)
+    totals: dict[str, Any] = _bucket()
 
     for row in rows:
         try:
@@ -101,31 +145,34 @@ def _aggregate_usage() -> dict[str, Any]:
 
         model = (payload.get("model") or "unknown").strip()
         created_at = row["created_at"] or ""
-        day = created_at[:10]  # YYYY-MM-DD
+        day = created_at[:10]
         session_id = row["session_id"]
         cost = _cost_usd(usage, model)
 
         for bucket in (by_model[model], by_day[day], by_session[session_id], totals):
-            bucket["input_tokens"]       += usage.get("input_tokens",      0) or 0
-            bucket["output_tokens"]      += usage.get("output_tokens",     0) or 0
-            bucket["cache_read_tokens"]  += usage.get("cache_read_tokens", 0) or 0
-            bucket["cache_write_tokens"] += usage.get("cache_write_tokens",0) or 0
-            bucket["cost_usd"]           += cost
-            bucket["calls"]              += 1
+            bucket["input_tokens"] += usage.get("input_tokens", 0) or 0
+            bucket["output_tokens"] += usage.get("output_tokens", 0) or 0
+            bucket["cache_read_tokens"] += usage.get("cache_read_tokens", 0) or 0
+            bucket["cache_write_tokens"] += usage.get("cache_write_tokens", 0) or 0
+            bucket["cost_usd"] += cost
+            bucket["calls"] += 1
 
-    # Sort daily buckets chronologically
     daily_series = [
-        {"date": d, **v}
-        for d, v in sorted(by_day.items())
+        {
+            "date": day,
+            **bucket,
+        }
+        for day, bucket in sorted(by_day.items(), key=lambda kv: kv[0])
     ]
 
     return {
-        "totals":       totals,
-        "by_model":     dict(by_model),
-        "by_session":   dict(by_session),
+        "totals": totals,
+        "by_model": dict(sorted(by_model.items(), key=lambda kv: kv[0])),
+        "by_day": dict(sorted(by_day.items(), key=lambda kv: kv[0])),
+        "by_session": dict(sorted(by_session.items(), key=lambda kv: kv[0])),
         "daily_series": daily_series,
-        "pricing_table": CLAUDE_PRICING,
     }
+
 
 
 # ---------------------------------------------------------------------------

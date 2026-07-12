@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import os
 import subprocess
-import pytest
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -28,7 +28,12 @@ def git_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # Create an initial commit so the repo is valid
     readme = tmp_path / "README.md"
     readme.write_text("# test repo\n")
-    subprocess.run(["git", "add", "."], cwd=str(tmp_path), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", "."],
+        cwd=str(tmp_path),
+        check=True,
+        capture_output=True,
+    )
     subprocess.run(
         ["git", "commit", "-m", "init"],
         cwd=str(tmp_path), check=True, capture_output=True,
@@ -107,8 +112,18 @@ def test_git_stage_empty_paths(git_repo: Path):
 
 def test_git_diff(git_repo: Path):
     (git_repo / "diff_me.txt").write_text("original")
-    subprocess.run(["git", "add", "."], cwd=str(git_repo), check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "add file"], cwd=str(git_repo), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", "."],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "add file"],
+        cwd=str(git_repo),
+        check=True,
+        capture_output=True,
+    )
     (git_repo / "diff_me.txt").write_text("modified")
     r = client.get("/api/git/diff")
     assert r.status_code == 200

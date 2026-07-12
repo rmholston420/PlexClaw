@@ -31,10 +31,7 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from app import analytics_routes
-from app import fs_routes
-from app import git_routes
-from app import mcp_routes
+from app import analytics_routes, fs_routes, git_routes, mcp_routes
 from app import runtime_sdk as runtime
 from app.archive_normalizer import normalize_session, normalize_session_list
 from app.config import (

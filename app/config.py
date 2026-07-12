@@ -91,15 +91,46 @@ def get_tool_search_env(mode: str | None) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 CLAUDE_PRICING: dict[str, dict[str, float]] = {
-    "claude-opus-4":     {"input": 15.00, "output": 75.00, "cache_read": 1.50,  "cache_write": 18.75},
-    "claude-sonnet-4":   {"input":  3.00, "output": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
-    "claude-haiku-4":    {"input":  0.80, "output":  4.00, "cache_read": 0.08,  "cache_write":  1.00},
-    "claude-3-5-sonnet": {"input":  3.00, "output": 15.00, "cache_read": 0.30,  "cache_write":  3.75},
-    "claude-3-5-haiku":  {"input":  0.80, "output":  4.00, "cache_read": 0.08,  "cache_write":  1.00},
-    "claude-3-opus":     {"input": 15.00, "output": 75.00, "cache_read": 1.50,  "cache_write": 18.75},
-    # Local models — zero cost
-    "qwen":    {"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
-    "llama":   {"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
-    "mistral": {"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
-    "gemma":   {"input": 0.0, "output": 0.0, "cache_read": 0.0, "cache_write": 0.0},
+    "claude-opus-4": {
+        "input": 15.00,
+        "output": 75.00,
+        "cache_read": 1.50,
+        "cache_write": 18.75,
+    },
+    "claude-sonnet-4": {
+        "input": 3.00,
+        "output": 15.00,
+        "cache_read": 0.30,
+        "cache_write": 3.75,
+    },
+    "claude-haiku-4": {
+        "input": 0.80,
+        "output": 4.00,
+        "cache_read": 0.08,
+        "cache_write": 1.00,
+    },
+    "claude-3-5-sonnet": {
+        "input": 3.00,
+        "output": 15.00,
+        "cache_read": 0.30,
+        "cache_write": 3.75,
+    },
+    "claude-3-5-haiku": {
+        "input": 0.80,
+        "output": 4.00,
+        "cache_read": 0.08,
+        "cache_write": 1.00,
+    },
+    "claude-3-opus": {
+        "input": 15.00,
+        "output": 75.00,
+        "cache_read": 1.50,
+        "cache_write": 18.75,
+    },
+    "qwen": {
+        "input": 0.0,
+        "output": 0.0,
+        "cache_read": 0.0,
+        "cache_write": 0.0,
+    },
 }

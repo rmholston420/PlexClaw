@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
-import pytest
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 import app.mcp_routes as mcp_mod
@@ -48,7 +49,10 @@ def test_list_after_add():
 
 
 def test_update_server():
-    client.post("/api/mcp", json={"name": "myserver", "command": "node", "args": ["old.js"]})
+    client.post(
+        "/api/mcp",
+        json={"name": "myserver", "command": "node", "args": ["old.js"]},
+    )
     r = client.patch("/api/mcp/myserver", json={"args": ["new.js"]})
     assert r.status_code == 200
     assert r.json()["ok"] is True
@@ -97,7 +101,14 @@ def test_config_persistence(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     fake = tmp_path / "cfg" / "claude_desktop_config.json"
     fake.parent.mkdir(parents=True)
     monkeypatch.setattr(mcp_mod, "_CLAUDE_CONFIG", fake)
-    client.post("/api/mcp", json={"name": "persist", "command": "uvx", "args": ["mcp-server-git"]})
+    client.post(
+        "/api/mcp",
+        json={
+            "name": "persist",
+            "command": "uvx",
+            "args": ["mcp-server-git"],
+        },
+    )
     raw = json.loads(fake.read_text())
     assert "persist" in raw["mcpServers"]
     assert raw["mcpServers"]["persist"]["command"] == "uvx"
