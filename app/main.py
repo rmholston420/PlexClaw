@@ -224,9 +224,7 @@ async def create_session(req: SessionCreateRequest) -> SessionCreateResponse:
     provider_env = runtime._provider_env(session.provider)
     provider_base_url = provider_env.get("ANTHROPIC_BASE_URL")
     tool_search_mode = req.tool_search_mode
-    tool_search_active = (
-        bool(tool_search_mode) if tool_search_mode is not None else None
-    )
+    tool_search_active = bool(tool_search_mode)
 
     return SessionCreateResponse(
         session_id=session.id,
