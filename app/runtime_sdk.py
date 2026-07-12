@@ -44,7 +44,12 @@ from app.normalizer import (
     normalize_tool_permission_decided,
     normalize_tool_started,
 )
-from app.schemas import PROTOCOL_VERSION, SessionCreateRequest, WSEnvelope
+from app.schemas import (
+    PROTOCOL_VERSION,
+    PromptRequest,
+    SessionCreateRequest,
+    WSEnvelope,
+)
 from app.websocket_manager import ws_manager
 
 log = logging.getLogger(__name__)
@@ -535,7 +540,7 @@ async def create_session(req: SessionCreateRequest) -> LiveSession:
         mock_mode,
     )
 
-    seq = next_seq(session)
+    seq = session.next_seq()
     await _emit(
         session,
         WSEnvelope(
@@ -889,6 +894,10 @@ async def submit_prompt(session_id: str, prompt: str) -> None:
         finally:
             if session.status not in {"failed", "interrupted"}:
                 session.status = "ready"
+
+
+async def handle_prompt(req: PromptRequest) -> None:
+    asyncio.create_task(submit_prompt(req.session_id, req.prompt))
 
 
 async def interrupt_session(session_id: str) -> None:
