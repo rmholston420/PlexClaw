@@ -524,7 +524,132 @@ def _maybe_handle_literal_shell_prompt(session: LiveSession, prompt: str) -> str
     return None
 
 
+def _build_repo_summary(session) -> str | None:
+    """Inspect session.cwd and synthesize a concise repo summary."""
+    cwd = getattr(session, "cwd", None)
+    if not cwd:
+        return None
+
+    try:
+        root = Path(cwd)
+    except TypeError:
+        return None
+
+    if not root.exists() or not root.is_dir():
+        return None
+
+    top_dirs = []
+    top_files = []
+    try:
+        for entry in root.iterdir():
+            if entry.is_dir():
+                top_dirs.append(entry.name)
+            elif entry.is_file():
+                top_files.append(entry.name)
+    except OSError:
+        top_dirs = []
+        top_files = []
+
+    key_files = [
+        "README.md",
+        "CLAUDE.md",
+        "AGENTS.md",
+        "BUILD_STATUS.md",
+        "pyproject.toml",
+    ]
+    snippets = []
+    for name in key_files:
+        path = root / name
+        if not path.exists() or not path.is_file():
+            continue
+        try:
+            raw = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+        if not lines:
+            continue
+        snippets.append(f"{name} -> " + " ".join(lines[:6]))
+
+    def has_file(*parts: str) -> bool:
+        p = root.joinpath(*parts)
+        return p.exists() and p.is_file()
+
+    project_hints = []
+    if "app" in top_dirs:
+        project_hints.append("FastAPI backend under app/.")
+    if "frontend" in top_dirs:
+        project_hints.append("Static HTML/JS frontend under frontend/.")
+    if "tests" in top_dirs:
+        project_hints.append("Test suite under tests/.")
+    if has_file("app", "eventstore.py"):
+        project_hints.append(
+            "SQLite-backed append-only event store "
+            "(app/eventstore.py) for replay and filtered queries."
+        )
+    if has_file("app", "hooks.py"):
+        project_hints.append(
+            "Hook extension point (app/hooks.py) for tool-call "
+            "interception, session lifecycle, and policy."
+        )
+    if has_file("app", "websocketmanager.py"):
+        project_hints.append(
+            "WebSocket manager (app/websocketmanager.py) for "
+            "per-session browser fanout."
+        )
+    if has_file("app", "normalizer.py"):
+        project_hints.append(
+            "Runtime event normalizer (app/normalizer.py) mapping "
+            "SDK events into stable frontend envelopes."
+        )
+    if has_file("app", "archivenormalizer.py"):
+        project_hints.append(
+            "Archive normalizer (app/archivenormalizer.py) "
+            "providing canonical metadata shape."
+        )
+
+    summary_lines = [f"Repository root: {root}."]
+    if top_dirs:
+        summary_lines.append("Top-level directories: " + ", ".join(sorted(top_dirs)))
+    if top_files:
+        summary_lines.append(
+            "Representative top-level files: "
+            + ", ".join(sorted(top_files[:12]))
+        )
+    if project_hints:
+        summary_lines.append("Architectural hints: " + " ".join(project_hints))
+    if snippets:
+        summary_lines.append("Key file snippets:")
+        for sn in snippets:
+            summary_lines.append(f"- {sn}")
+    return "\n".join(summary_lines) if summary_lines else None
+
+
+def _maybe_attach_repo_summary(session, prompt: str) -> str:
+    lowered = prompt.strip().lower()
+    repo_like_triggers = {
+        "summarize this repo",
+        "summarize the repo",
+        "summarize the current repo",
+        "describe this repo",
+        "describe the current repo",
+    }
+    if lowered not in repo_like_triggers:
+        return prompt
+
+    summary = _build_repo_summary(session)
+    if not summary:
+        return prompt
+
+    return (
+        "Project summary (from filesystem inspection):\n\n"
+        + summary
+        + "\n\n---\n\nUser request:\n"
+        + prompt
+    )
+
 def _inject_context_into_prompt(session: LiveSession, prompt: str) -> str:
+    prompt = _maybe_attach_repo_summary(session, prompt)
     """Inject attached context files once per unchanged context set.
 
     Context files are prepended to the next prompt after they are added or
