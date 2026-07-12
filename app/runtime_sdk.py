@@ -439,14 +439,6 @@ def _rewrite_prompt_for_local_agent(prompt: str) -> str:
     raw = prompt.strip()
     lowered = raw.lower()
 
-    shell_like = {
-        "pwd",
-        "ls",
-        "ls -l",
-        "ls -la",
-        "git status",
-        "git branch",
-    }
     repo_like = {
         "describe the current repo",
         "describe this repo",
@@ -454,7 +446,7 @@ def _rewrite_prompt_for_local_agent(prompt: str) -> str:
         "list the current directory",
     }
 
-    if lowered in shell_like or lowered in repo_like:
+    if lowered in repo_like:
         return (
             "Treat the user's request as a literal repo/shell inspection task.\n"
             "User request: " + raw + "\n\n"
