@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 import app.main as main
 from app.schemas import SessionUpdateRequest
 
-import asyncio as _asyncio
 
 def _coro(val):
     async def _inner():

@@ -323,7 +323,9 @@ def test_export_session_markdown_route(client, monkeypatch):
     monkeypatch.setattr(
         main,
         "query_events",
-        lambda session_id: _coro([{"type": "assistant.delta", "payload": {"text": "hi"}}]),
+        lambda session_id: _coro(
+            [{"type": "assistant.delta", "payload": {"text": "hi"}}]
+        ),
     )
 
     response = client.get("/api/sessions/s1/export?format=md")
