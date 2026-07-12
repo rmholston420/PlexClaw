@@ -64,7 +64,7 @@ def test_session_create_defaults_match_local_frontend_bootstrap() -> None:
     assert data["status"] == "created"
     assert data["protocol_version"] == PROTOCOL_VERSION
     assert data["provider"] == "ollama"
-    assert data["model"] == "qwen3:latest"
+    assert data["model"] == "qwen3-coder:latest"
     assert isinstance(data["mock_mode"], bool)
 
 

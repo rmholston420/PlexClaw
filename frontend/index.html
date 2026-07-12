@@ -1766,7 +1766,11 @@
 
 <script>
   // Init Lucide icons
-  lucide.createIcons();
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    } else {
+      console.warn('Lucide failed to load; continuing without icons.');
+    }
 
   // Theme management
   (function(){
@@ -1779,7 +1783,11 @@
       const icon = btn.querySelector('i');
       if (icon) {
         icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon');
-        lucide.createIcons();
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    } else {
+      console.warn('Lucide failed to load; continuing without icons.');
+    }
       }
     };
     updateIcon(theme);

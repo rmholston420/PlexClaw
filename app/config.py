@@ -40,7 +40,7 @@ def get_allowed_hosts() -> list[str]:
 
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_VLLM_BASE_URL = "http://127.0.0.1:30000"
-DEFAULT_OLLAMA_MODEL = "qwen3:latest"
+DEFAULT_OLLAMA_MODEL = "qwen3-coder:latest"
 DEFAULT_VLLM_MODEL = "Qwen/Qwen3-Coder-30B-A3B-Instruct"
 
 
