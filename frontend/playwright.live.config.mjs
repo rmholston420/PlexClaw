@@ -2,6 +2,22 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  testMatch: [
+    'runtime-telemetry-live.spec.js',
+    'controls.spec.js',
+    'composer.spec.js',
+    'runtime-mode.spec.js',
+    'exports.spec.js',
+    'archive.spec.js',
+    'archive-search.spec.js',
+    'archive-refresh.spec.js',
+    'terminal.spec.js',
+    'terminal-toggle.spec.js',
+    'terminal-clear.spec.js',
+    'terminal-copy.spec.js',
+    'terminal-toolbar.spec.js',
+    'search-modal-diagnostic.spec.js',
+  ],
   timeout: 45000,
   fullyParallel: false,
   use: {

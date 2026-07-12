@@ -336,6 +336,7 @@ def test_playwright_live_config_exists() -> None:
     assert "baseURL: 'http://127.0.0.1:8020'" in text
     assert "command: 'bash ./run.sh'" in text
     assert "chromium-live" in text
+    assert "runtime-telemetry-live.spec.js" in text
 
 
 def test_playwright_runtime_telemetry_live_spec_exists() -> None:
