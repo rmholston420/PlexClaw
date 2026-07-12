@@ -1,7 +1,11 @@
 const Bridge = (() => {
+  const pageUrl = new URL(window.location.href);
+  const wsProtocol = pageUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+  const bridgeOrigin = pageUrl.origin;
+  const derivedWsBase = `${wsProtocol}//${pageUrl.host}/ws`;
   const state = {
-    bridgeUrl: 'http://127.0.0.1:8020',
-    wsBase: 'ws://127.0.0.1:8020/ws',
+    bridgeUrl: bridgeOrigin,
+    wsBase: derivedWsBase,
     protocolVersion: '0.2.0',
     sessionId: null,
    connections: 0,
@@ -2315,7 +2319,7 @@ state.effectiveSessionConfig = {
     await loadArchive();
   } catch (error) {
     console.error('Startup initialization failed:', error);
-    appendSystemMessage('Could not reach backend at http://127.0.0.1:8020. Check that the PlexClaw server is running and reload the page.');
+    appendSystemMessage(`Could not reach backend at [${state.bridgeUrl}](${state.bridgeUrl}). Check that the PlexClaw server is running and reload the page.`);
   }
 }
 

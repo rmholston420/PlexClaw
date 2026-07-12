@@ -9,6 +9,7 @@ import os
 import time
 import urllib.request
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Literal
 
 from fastapi import (
@@ -22,7 +23,12 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+)
 from fastapi.staticfiles import StaticFiles
 
 from app import fs_routes
@@ -94,7 +100,20 @@ app = FastAPI(
 
 app.include_router(fs_routes.router)
 
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+FRONTEND_DIR = Path("frontend")
+INDEX_HTML = FRONTEND_DIR / "index.html"
+
+app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")
+
+
+@app.get("/", include_in_schema=False)
+async def frontend_root() -> FileResponse:
+    return FileResponse(INDEX_HTML)
+
+
+@app.get("/plexclaw-ui-canonical.html", include_in_schema=False)
+async def frontend_legacy_redirect() -> RedirectResponse:
+    return RedirectResponse(url="/", status_code=307)
 
 
 app.add_middleware(
