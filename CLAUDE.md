@@ -46,6 +46,26 @@ sessions still work but use the echo-back mock, not real Claude.
 - mock_mode and model are frontend-visible contract fields — treat as API surface.
 - Do not edit generated or unrelated files as cleanup.
 
+## Lifecycle mapping
+
+PlexClaw maps its runtime and hook events onto Claude Code and Claude Agent SDK lifecycle concepts so the
+browser UI stays close to Claude-native behavior:
+
+- `session.start` → **SessionStart** — emitted when a new Claude session is created and initialized.
+- `session.end` → **SessionEnd** — emitted when a session is torn down or completed.
+- `session.interrupted` → **Stop** — emitted when a user interrupt is processed and the SDK interrupt drain runs.
+- `pre_tool` → **PreToolUse** — hook context for tools about to run, suitable for audit or blocking logic.
+- `post_tool` → **PostToolUse** — hook context for tools that just completed successfully.
+- `tool.permission_required` → **PermissionRequest** — emitted when a tool needs explicit approval.
+- `tool.permission_decided` → **PermissionDecision** — emitted after approve / reject decisions are applied.
+- `system.message` with `kind="hook.event"` → **Notification** — general hook-driven notifications surfaced
+  as normalized system messages.
+
+The hook activity panel and tool permission UI prefer these Claude lifecycle names in labels and summaries,
+so that operators familiar with Claude Code and the Agent SDK can recognize events at a glance without
+learning new terminology.
+
+
 ## Claude-native capabilities to preserve
 
 When changing backend, protocol, or frontend behavior, preserve these Claude-native concepts as first-class product features rather than flattening them into generic chat UX:

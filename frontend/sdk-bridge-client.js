@@ -3102,10 +3102,16 @@ function hookEventLabel(eventType) {
   const raw = String(eventType || '').trim();
   if (!raw) return 'Hook event';
   const mapping = {
+    // Session lifecycle
     'session.start': 'SessionStart',
     'session.end': 'SessionEnd',
+    'session.interrupted': 'Stop',
+    // Tool lifecycle
     'pre_tool': 'PreToolUse',
     'post_tool': 'PostToolUse',
+    'tool.permission_required': 'PermissionRequest',
+    'tool.permission_decided': 'PermissionDecision',
+    // General notifications
     'system.message': 'Notification',
   };
   return mapping[raw] || raw;
